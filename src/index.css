@@ -8,3 +8,13 @@
 body {
   font-family: 'Montserrat', sans-serif;
 }
+
+@layer components {
+  .title {
+    @apply text-[28px] font-medium tracking-wide
+  }
+}
+
+@layer utils {
+
+}

@@ -7,6 +7,8 @@ import SidebarLayout from "./components/SidebarLayout";
 import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
 import Search from "./features/account/search/Search";
+import Header from "./components/Header";
+import UserDetails from "./features/account/users/userDetails";
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
         >
           <Route path="upload-files" element={<UploadFiles />} />
           <Route path="users" element={<Users />} />
+          <Route path="users/:id" element={<UserDetails />} />
           <Route path="health-check" element={<HealthCheck />} />
           <Route path="system-stats" element={<SystemStatistics />} />
           <Route path="search" element={<Search />} />
@@ -32,7 +35,7 @@ function App() {
         <Route
           path="/"
           element={
-            !!localStorage.getItem("access_token") ? (
+            localStorage.getItem("access_token") ? (
               <Navigate to="/account/upload-files" replace />
             ) : (
               <Navigate to="/sign-in" replace />

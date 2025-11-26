@@ -3,15 +3,15 @@ import { MdDownloading, MdOutlineAnalytics } from "react-icons/md";
 import { IoDocumentTextOutline, IoExitOutline } from "react-icons/io5";
 import { IoIosSearch } from "react-icons/io";
 import { RxHamburgerMenu } from "react-icons/rx";
-import { useState } from "react";
+import { GoChevronRight } from "react-icons/go";
+
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
+import React from "react";
 
-const Sidebar = () => {
+const Sidebar = ({ setIsOpen, isOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [isOpen, setIsOpen] = useState(false);
 
   const links = [
     { name: "Пользователи", icon: <FaRegCircleUser />, path: "/account/users" },
@@ -38,16 +38,19 @@ const Sidebar = () => {
   return (
     <section
       className={clsx(
-        "fixed top-0 left-0 h-screen text-white bg-[#03294b] p-4 flex flex-col justify-between transition-all duration-300 ease-in-out",
-        isOpen ? "w-[60px]" : "w-[300px]"
+        "h-screen text-white bg-[#03294b] pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
+        isOpen ? "w-[80px]" : "w-[300px]"
       )}
     >
       {/* Гамбургер */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex justify-end mb-4"
+        className={clsx(
+          "flex justify-end mb-20 pr-4",
+          isOpen && "items-center justify-center"
+        )}
       >
-        <RxHamburgerMenu size={30} />
+        {isOpen ? <GoChevronRight size={36} /> : <RxHamburgerMenu size={30} />}
       </button>
 
       {/* Ссылки */}
@@ -65,16 +68,17 @@ const Sidebar = () => {
           >
             <span
               className={clsx(
-                "flex-shrink-0 transition-all duration-300",
-                isOpen ? "w-6 h-6" : "w-5 h-5"
+                "flex-shrink-0 flex items-center justify-center transition-all duration-300"
               )}
             >
-              {link.icon}
+              {React.cloneElement(link.icon, {
+                className: isOpen ? "w-8 h-8" : "w-5 h-5",
+              })}
             </span>
             <span
               className={clsx(
                 "transition-opacity duration-300 whitespace-nowrap",
-                isOpen && "opacity-0"
+                isOpen ? "opacity-0 w-0" : "opacity-100 w-auto"
               )}
             >
               {link.name}
@@ -94,10 +98,15 @@ const Sidebar = () => {
           "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300 hover:bg-white hover:text-[#03294b]"
         )}
       >
-        <IoExitOutline className="w-5 h-5 rotate-180" />
+        <IoExitOutline
+          className={clsx(
+            "transition-all duration-300 rotate-180 flex-shrink-0",
+            isOpen ? "w-8 h-8" : "w-5 h-5"
+          )}
+        />
         <span
           className={clsx(
-            "transition-opacity duration-300",
+            "transition-opacity duration-300 text-left min-w-[50px]",
             isOpen && "opacity-0"
           )}
         >

@@ -2,24 +2,37 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
+import Toast from "../../components/Toast";
+import { login } from "./auth";
+
 export default function SignIn() {
   const isAuth = !!localStorage.getItem("access_token");
   if (isAuth) return <Navigate to="/account/upload-files" replace />;
+
   const {
     register,
     handleSubmit,
     formState: { errors, touchedFields },
   } = useForm();
+
   const navigate = useNavigate();
   const [notify, setNotify] = useState("");
 
-  const onSubmit = (data) => {
-    if (data.username === "admin1" && data.password === "secretpass") {
-      localStorage.setItem("access_token", "fake-jwt-token");
-      localStorage.setItem("refresh_token", "fake-refresh-token");
+  const onSubmit = async (data) => {
+    try {
+      await login(data.username, data.password);
+      setNotify();
+
       navigate("/account/upload-files");
-    } else {
-      setNotify("Неверный логин или пароль");
+    } catch (err) {
+      console.error(err);
+      setNotify({
+        message:
+          err.response?.status === 401
+            ? "Неверный логин или пароль"
+            : "Ошибка при входе",
+        type: "error",
+      });
     }
   };
 
@@ -67,9 +80,14 @@ export default function SignIn() {
         >
           Войти
         </button>
-
-        {notify && <p className="text-center text-red-500">{notify}</p>}
       </form>
+      {notify && (
+        <Toast
+          message={notify.message}
+          type={notify.type}
+          onClose={() => setNotify(null)}
+        />
+      )}
     </section>
   );
 }
