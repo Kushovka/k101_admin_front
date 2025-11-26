@@ -5,6 +5,8 @@ const UploadFiles = () => {
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
   const handleClick = () => {
     fileInputRef.current.click();
@@ -36,9 +38,31 @@ const UploadFiles = () => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleUpload = () => {
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    let progress = 0;
+
+    const interval = setInterval(() => {
+      progress += 1;
+      setUploadProgress(progress);
+
+      if (progress > 100) {
+        clearInterval(interval);
+        setUploading(false);
+        alert("Файлы успешно загружены!");
+        setFiles([]);
+        setUploadProgress(0);
+      }
+    }, 50);
+  };
+
   return (
     <section className="flex flex-col p-5">
-      <h1 className="title">Загрузка файлов</h1>
+      <h1 className="title text-2xl font-bold">Загрузка файлов</h1>
 
       <div
         className={`border-2 border-dashed rounded-[12px] mt-5 p-20 flex flex-col items-center justify-center gap-4 transition-colors duration-300 ${
@@ -65,7 +89,7 @@ const UploadFiles = () => {
           Выберите файлы
         </button>
       </div>
-
+      {/* files */}
       {files.length > 0 && (
         <div className="mt-5">
           <h3 className="font-semibold mb-2">Выбранные файлы:</h3>
@@ -85,6 +109,24 @@ const UploadFiles = () => {
               </li>
             ))}
           </ul>
+
+          {/* progress bar */}
+          {uploading && (
+            <div className="w-[300px] h-4 bg-gray-200 rounded mt-3 overflow-hidden">
+              <div
+                className="h-full bg-green-500"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="mt-4 bg-green-500 px-4 py-2 rounded text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+          >
+            {uploading ? `Загрузка... ${uploadProgress}%` : "Загрузить"}
+          </button>
         </div>
       )}
     </section>

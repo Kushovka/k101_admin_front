@@ -45,7 +45,7 @@ export default function SignIn() {
         <h3 className="text-2xl tracking-widest text-black/80 text-center mb-4">
           Войти
         </h3>
-
+        {/* login */}
         <div className="relative flex items-center justify-between">
           <input
             type="text"
@@ -59,7 +59,7 @@ export default function SignIn() {
             </span>
           )}
         </div>
-
+        {/* password */}
         <div className="relative flex items-center justify-between">
           <input
             type="password"
@@ -81,6 +81,7 @@ export default function SignIn() {
           Войти
         </button>
       </form>
+      {/* message */}
       {notify && (
         <Toast
           message={notify.message}
