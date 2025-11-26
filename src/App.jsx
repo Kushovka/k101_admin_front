@@ -7,8 +7,7 @@ import SidebarLayout from "./components/SidebarLayout";
 import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
 import Search from "./features/account/search/Search";
-import Header from "./components/Header";
-import UserDetails from "./features/account/users/userDetails";
+import UserDetails from "./features/account/users/UserDetails";
 
 function App() {
   return (
