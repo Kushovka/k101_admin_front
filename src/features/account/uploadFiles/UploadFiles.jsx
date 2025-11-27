@@ -1,8 +1,10 @@
+import clsx from "clsx";
 import { useRef, useState } from "react";
 import { IoMdClose } from "react-icons/io";
 
 const UploadFiles = () => {
   const fileInputRef = useRef(null);
+  const intervalRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -35,7 +37,17 @@ const UploadFiles = () => {
   };
 
   const handleDeleteFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index);
+
+      if (newFiles.length === 0 && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        setUploading(false);
+        setUploadProgress(0);
+      }
+
+      return newFiles;
+    });
   };
 
   const handleUpload = () => {
@@ -46,12 +58,12 @@ const UploadFiles = () => {
 
     let progress = 0;
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       progress += 1;
       setUploadProgress(progress);
 
       if (progress > 100) {
-        clearInterval(interval);
+        clearInterval(intervalRef.current);
         setUploading(false);
         alert("Файлы успешно загружены!");
         setFiles([]);
@@ -62,7 +74,7 @@ const UploadFiles = () => {
 
   return (
     <section className="flex flex-col p-5">
-      <h1 className="title text-2xl font-bold">Загрузка файлов</h1>
+      <h1 className="title">Загрузка файлов</h1>
 
       <div
         className={`border-2 border-dashed rounded-[12px] mt-5 p-20 flex flex-col items-center justify-center gap-4 transition-colors duration-300 ${
@@ -102,8 +114,10 @@ const UploadFiles = () => {
               >
                 <span>{file.name}</span>
                 <button
-                data-testid="delete-button"
-                  onClick={() => handleDeleteFile(index)}
+                  data-testid="delete-button"
+                  onClick={() => {
+                    handleDeleteFile(index);
+                  }}
                   className="border p-1 rounded hover:bg-red-500 hover:text-white transition-colors"
                 >
                   <IoMdClose />
@@ -125,7 +139,10 @@ const UploadFiles = () => {
           <button
             onClick={handleUpload}
             disabled={uploading}
-            className="mt-4 bg-green-500 px-4 py-2 rounded text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+            className={clsx(
+              "mt-4 bg-green-500 px-4 py-2 rounded text-white hover:bg-green-600 transition-colors disabled:cursor-not-allowed",
+              uploading && "bg-green-500 hover:bg-green-500 opacity-50"
+            )}
           >
             {uploading ? `Загрузка... ${uploadProgress}%` : "Загрузить"}
           </button>
