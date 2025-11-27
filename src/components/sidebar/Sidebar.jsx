@@ -44,6 +44,7 @@ const Sidebar = ({ setIsOpen, isOpen }) => {
     >
       {/* Гамбургер */}
       <button
+        data-testid="hamburger-button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={clsx(
           "flex justify-end mb-20 pr-4",

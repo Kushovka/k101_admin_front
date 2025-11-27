@@ -80,6 +80,7 @@ const UploadFiles = () => {
           className="hidden"
           onChange={handleFiles}
           multiple
+          data-testid="file-input"
         />
 
         <button
@@ -101,6 +102,7 @@ const UploadFiles = () => {
               >
                 <span>{file.name}</span>
                 <button
+                data-testid="delete-button"
                   onClick={() => handleDeleteFile(index)}
                   className="border p-1 rounded hover:bg-red-500 hover:text-white transition-colors"
                 >
