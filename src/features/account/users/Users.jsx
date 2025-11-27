@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Loader from "../../../components/loader/Loader";
 
 const API_URL = "http://192.168.0.45:18001";
 
@@ -14,6 +15,7 @@ const getHeaders = () => ({
 export default function Users() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function Users() {
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/admin/users`, {
         headers: getHeaders(),
@@ -51,6 +54,8 @@ export default function Users() {
           ? "Сервер временно недоступен. Попробуйте позже."
           : "Ошибка при загрузке пользователей"
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,52 +74,57 @@ export default function Users() {
   return (
     <section className="px-6 py-4 flex flex-col gap-4">
       <div className="title">Пользователи</div>
-      <div className="grid grid-cols-9 gap-4 text-gray01 font-medium border-b pb-2">
-        {chapterTitle.map((chapter) => (
-          <span
-            className={clsx(
-              " flex items-center justify-center text-[12px]",
-              chapter.id === chapterTitle.length ? "" : "border-r"
-            )}
-            key={chapter.id}
-          >
-            {chapter.title}
-          </span>
-        ))}
-      </div>
-      {error && (
+      {loading ? (
+        <Loader />
+      ) : error ? (
         <div className="text-red-500 flex items-center justify-center mb-4 font-medium">
           {error}
         </div>
-      )}
-      <div className="flex flex-col">
-        {users.map((user) => (
-          <div
-            key={user.id}
-            className="grid grid-cols-9 gap-4 text-gray01 font-medium text-center text-[12px] items-center border-b py-2 hover:bg-gray-100 transition cursor-pointer"
-            onClick={() => navigate(`/account/users/${user.identifier}`)}
-          >
-            <p>{user.id}</p>
-            <p>{user.nickName}</p>
-            <p>{user.name}</p>
-            <p>{user.surname}</p>
-            <p
-              className={clsx(
-                "rounded-[4px] text-black/70",
-                user.confirmationEmail === "Yes"
-                  ? "bg-green-400/60"
-                  : "bg-red-500/60"
-              )}
-            >
-              {user.email}
-            </p>
-            <p>{user.role}</p>
-            <p>{user.registrationDate}</p>
-            <p>{user.status}</p>
-            <p>{user.identifier}</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-9 gap-4 text-gray01 font-medium border-b pb-2">
+            {chapterTitle.map((chapter) => (
+              <span
+                className={clsx(
+                  " flex items-center justify-center text-[12px]",
+                  chapter.id === chapterTitle.length ? "" : "border-r"
+                )}
+                key={chapter.id}
+              >
+                {chapter.title}
+              </span>
+            ))}
           </div>
-        ))}
-      </div>
+          <div className="flex flex-col">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="grid grid-cols-9 gap-4 text-gray01 font-medium text-center text-[12px] items-center border-b py-2 hover:bg-gray-100 transition cursor-pointer"
+                onClick={() => navigate(`/account/users/${user.identifier}`)}
+              >
+                <p>{user.id}</p>
+                <p>{user.nickName}</p>
+                <p>{user.name}</p>
+                <p>{user.surname}</p>
+                <p
+                  className={clsx(
+                    "rounded-[4px] text-black/70",
+                    user.confirmationEmail === "Yes"
+                      ? "bg-green-400/60"
+                      : "bg-red-500/60"
+                  )}
+                >
+                  {user.email}
+                </p>
+                <p>{user.role}</p>
+                <p>{user.registrationDate}</p>
+                <p>{user.status}</p>
+                <p>{user.identifier}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

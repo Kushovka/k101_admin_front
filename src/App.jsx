@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignIn from "./features/auth/SignIn";
 import UploadFiles from "./features/account/uploadFiles/UploadFiles";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/protected-route/ProtectedRoute";
 import Users from "./features/account/users/Users";
-import SidebarLayout from "./components/SidebarLayout";
+import SidebarLayout from "./components/sidebar-layout/SidebarLayout";
 import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
 import Search from "./features/account/search/Search";

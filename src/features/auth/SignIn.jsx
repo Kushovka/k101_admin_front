@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
-import Toast from "../../components/Toast";
+import Toast from "../../components/toast/Toast";
 import { login } from "./auth";
 
 export default function SignIn() {
