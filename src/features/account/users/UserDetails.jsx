@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
 import axios from "axios";
 import { IoExitOutline } from "react-icons/io5";
+import Loader from "../../../components/loader/Loader";
 
 const API_URL = "http://192.168.0.45:18001";
 
@@ -23,6 +24,7 @@ const UserDetails = () => {
   }, [id]);
 
   const fetchUser = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/admin/users/${id}`, {
         headers: getHeaders(),
@@ -52,7 +54,7 @@ const UserDetails = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader />;
   if (!user) return <div>User not found</div>;
 
   return (

@@ -50,9 +50,11 @@ export default function Users() {
     } catch (err) {
       console.error("Ошибка при получении пользователей:", err);
       setError(
-        err.response?.status === 500
-          ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+        err.response
+          ? err.response.status === 500
+            ? "Сервер временно недоступен. Попробуйте позже."
+            : "Ошибка при загрузке пользователей"
+          : "Сетевая ошибка или CORS"
       );
     } finally {
       setLoading(false);
