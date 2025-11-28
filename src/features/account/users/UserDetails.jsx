@@ -31,7 +31,7 @@ const UserDetails = () => {
       });
       const u = res.data;
 
-      // Преобразуем поля под UI
+    
       setUser({
         id: u.id,
         nickName: u.username,

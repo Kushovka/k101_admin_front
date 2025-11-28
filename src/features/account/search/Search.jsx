@@ -3,7 +3,7 @@ import clsx from "clsx";
 import axios from "axios";
 import Loader from "../../../components/loader/Loader";
 
-const API_URL = "http://192.168.0.45:18001";
+const API_URL = "http://192.168.0.45:18003";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,

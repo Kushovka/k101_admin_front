@@ -53,16 +53,14 @@ const HealthCheck = () => {
         </div>
       ) : (
         <>
-          <p className="text-gray01 text-[14px]">
-            *Проверка состояния Admin Panel и Gateway.
-          </p>
-          <div className="border flex flex-col gap-5 p-4 rounded-[12px] w-1/3 text-gray01">
-            <p className="flex items-center gap-5">{`status: ${property.status}`}</p>
-            <p className="flex items-center gap-5">{`service: ${property.service}`}</p>
-            <p className="flex items-center gap-5">{`version: ${property.version}`}</p>
-            <p className="flex items-center gap-5">{`gateway - status: ${property.service}`}</p>
-            <p className="flex items-center gap-5">{`url: ${property.service}`}</p>
-            <p className="flex items-center gap-5">{`service: ${property.service}`}</p>
+          <p className="subtitle">*Проверка состояния Admin Panel и Gateway.</p>
+          <div className="border flex flex-col gap-5 p-4 rounded-[12px] w-1/3 text-common">
+            <p className="text-health-system">{`status: ${property.status}`}</p>
+            <p className="text-health-system">{`service: ${property.service}`}</p>
+            <p className="text-health-system">{`version: ${property.version}`}</p>
+            <p className="text-health-system">{`gateway - status: ${property.service}`}</p>
+            <p className="text-health-system">{`url: ${property.service}`}</p>
+            <p className="text-health-system">{`service: ${property.service}`}</p>
           </div>
         </>
       )}

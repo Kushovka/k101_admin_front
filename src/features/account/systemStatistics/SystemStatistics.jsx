@@ -53,13 +53,11 @@ const SystemStatistics = () => {
         </div>
       ) : (
         <>
-          <p className="text-gray01 text-[14px]">
-            *Получение статистики системы.
-          </p>
-          <div className="border flex flex-col gap-3 p-4 rounded-[12px] w-1/3 text-gray01">
-            <p className="flex items-center gap-5">{`gateway status: ${stats.gateway_status}`}</p>
-            <p className="flex items-center gap-5">{`total_files_uploaded: ${stats.total_files_uploaded}`}</p>
-            <p className="flex items-center gap-5">{`total_records_parsed: ${stats.total_records_parsed}`}</p>
+          <p className="subtitle">*Получение статистики системы.</p>
+          <div className="border flex flex-col gap-3 p-4 rounded-[12px] w-1/3 text-common">
+            <p className="text-health-system">{`gateway status: ${stats.gateway_status}`}</p>
+            <p className="text-health-system">{`total_files_uploaded: ${stats.total_files_uploaded}`}</p>
+            <p className="text-health-system">{`total_records_parsed: ${stats.total_records_parsed}`}</p>
           </div>
         </>
       )}

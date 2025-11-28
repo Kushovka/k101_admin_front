@@ -12,6 +12,16 @@ body {
   .title {
     @apply text-[28px] font-medium tracking-wide;
   }
+  .text-common {
+    @apply text-gray01 text-[16px] font-normal tracking-wide;
+  }
+  .subtitle {
+    @apply text-gray01 text-[14px] font-normal tracking-wide;
+  }
+
+  .text-health-system {
+    @apply flex items-center gap-5;
+  }
 }
 
 @layer utils {
