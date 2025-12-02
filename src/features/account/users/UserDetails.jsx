@@ -4,20 +4,20 @@ import clsx from "clsx";
 import axios from "axios";
 import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
-
-const API_URL = "http://192.168.0.45:18001";
-
-const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-  Accept: "application/json",
-  "Content-Type": "application/json",
-});
+import EditableField from "../../../components/editable-field-props/EditableFieldProps";
+import { getUserById, updateUser } from "../../../api/admin";
 
 const UserDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+  });
 
   useEffect(() => {
     fetchUser();
@@ -26,12 +26,7 @@ const UserDetails = () => {
   const fetchUser = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/users/${id}`, {
-        headers: getHeaders(),
-      });
-      const u = res.data;
-
-    
+      const u = await getUserById(id);
       setUser({
         id: u.id,
         nickName: u.username,
@@ -54,6 +49,32 @@ const UserDetails = () => {
     }
   };
 
+  const saveUser = async () => {
+    try {
+      const res = await updateUser(id, formData);
+      setUser((prev) => ({
+        ...prev,
+        name: res.first_name,
+        surname: res.last_name,
+        email: res.email,
+      }));
+      alert("Пользователь успешно обновлен");
+    } catch (err) {
+      console.log(err.response?.data);
+      alert("Произошла ошибка");
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.name || "",
+        last_name: user.surname || "",
+        email: user.email || "",
+      });
+    }
+  }, [user]);
+
   if (loading) return <Loader />;
   if (!user) return <div>User not found</div>;
 
@@ -66,29 +87,32 @@ const UserDetails = () => {
         <div className="border flex flex-col gap-5 p-4 rounded-[12px]">
           <form className="flex flex-col gap-5">
             <div className="flex items-center gap-5">
-              <label className="mb-1 text-gray01 font-medium">Имя:</label>
-              <input
-                type="text"
-                defaultValue={user.name}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              <EditableField
+                label="Имя"
+                value={formData.first_name}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, first_name: val }))
+                }
               />
             </div>
 
             <div className="flex items-center gap-5">
-              <label className="mb-1 text-gray01 font-medium">Фамилия:</label>
-              <input
-                type="text"
-                defaultValue={user.surname}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              <EditableField
+                label="Фаимилия"
+                value={formData.last_name}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, last_name: val }))
+                }
               />
             </div>
 
             <div className="flex items-center gap-5">
-              <label className="mb-1 text-gray01 font-medium">Email:</label>
-              <input
-                type="email"
-                defaultValue={user.email}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              <EditableField
+                label="Email"
+                value={formData.email}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, email: val }))
+                }
               />
             </div>
           </form>
@@ -124,6 +148,12 @@ const UserDetails = () => {
               {user.status}
             </span>
           </p>
+          <button
+            onClick={saveUser}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          >
+            Сохранить изменения
+          </button>
         </div>
         {/* right content */}
         <div className="border flex flex-col gap-5 p-4 rounded-[12px]">

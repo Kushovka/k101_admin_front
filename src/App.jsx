@@ -8,6 +8,7 @@ import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
 import Search from "./features/account/search/Search";
 import UserDetails from "./features/account/users/UserDetails";
+import SearchDetails from "./features/account/search/SearchDetails";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="health-check" element={<HealthCheck />} />
           <Route path="system-stats" element={<SystemStatistics />} />
           <Route path="search" element={<Search />} />
+          <Route path="search/:id" element={<SearchDetails />} />
           <Route index element={<Navigate to="upload-files" replace />} />
         </Route>
 

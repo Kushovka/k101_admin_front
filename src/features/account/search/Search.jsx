@@ -2,8 +2,9 @@ import { useState } from "react";
 import clsx from "clsx";
 import axios from "axios";
 import Loader from "../../../components/loader/Loader";
+import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://192.168.0.45:18003";
+const API_URL = "http://192.168.0.45:18001";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -11,86 +12,86 @@ const getHeaders = () => ({
 });
 
 const Search = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     phone: "",
     person_id: "",
-    page: 1,
-    page_size: 10,
+    email: "",
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState([]);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const [totalPages, setTotalPages] = useState(0);
 
   const chapterTitleSearch = [
     { id: 1, title: "№" },
-    { id: 2, title: "name" },
-    { id: 3, title: "phone" },
-    { id: 4, title: "person_id" },
-    { id: 5, title: "page" },
-    { id: 6, title: "page_size" },
+    { id: 2, title: "Фамилия" },
+    { id: 3, title: "Имя" },
+    { id: 4, title: "Отчество" },
+    { id: 5, title: "Email" },
+    { id: 6, title: "Телефон" },
+    { id: 7, title: "Подробнее..." },
   ];
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, page = 1, isPagination = false) => {
+    if (e) e.preventDefault();
+    if (!isPagination) {
+      setResult([]);
+    }
     setLoading(true);
     setError("");
-    setResult([]);
 
     try {
-      let endpoint = "";
-      let body = {};
+      const params = {
+        name: form.name.trim() || null,
+        phone: form.phone.trim() || null,
+        person_id: form.person_id.trim() || null,
+        email: form.email.trim() || null,
+        page,
+        page_size: pageSize,
+      };
 
-      if (form.name) {
-        endpoint = "by-name";
-        body = { name: form.name, page: form.page, page_size: form.page_size };
-      } else if (form.phone) {
-        endpoint = "by-phone";
-        body = {
-          phone: form.phone,
-          page: form.page,
-          page_size: form.page_size,
-        };
-      } else if (form.person_id) {
-        endpoint = "by-id";
-        body = {
-          person_id: form.person_id,
-          page: form.page,
-          page_size: form.page_size,
-        };
-      } else {
-        setError("Заполните хотя бы одно поле");
-        setLoading(false);
-        return;
-      }
+      const res = await axios.post(`${API_URL}/admin/search`, null, {
+        params,
+        headers: getHeaders(),
+      });
 
-      const res = await axios.post(
-        `${API_URL}/api/v1/search/${endpoint}`,
-        body,
-        {
-          headers: getHeaders(),
-        }
-      );
-
-      setResult(res.data.results || []);
+      setResult(res.data.results || null);
+      setTotalPages(res.data.total_pages || 1);
+      setCurrentPage(page);
     } catch (err) {
       console.error(err);
-      setError("Ошибка поиска");
+      setError(err.response?.data?.detail || "Ошибка поиска");
     } finally {
       setLoading(false);
     }
   };
+
+  const maxVisible = 7;
+  let startPage = Math.max(currentPage - Math.floor(maxVisible / 2), 1);
+  let endPage = startPage + maxVisible - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(endPage - maxVisible + 1, 1);
+  }
+
+  const visiblePages = [];
+  for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
 
   console.log(result);
   return (
     <section className="p-6 flex flex-col gap-10">
       <div className="flex flex-col gap-5">
         <div className="title">Поиск</div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-[250px]">
+        <form onSubmit={handleSubmit} className="flex gap-4 w-[250px]">
           <input
             name="name"
             type="text"
@@ -116,22 +117,17 @@ const Search = () => {
             className="border-2 rounded-[6px] px-3"
           />
           <input
-            name="page"
-            type="number"
-            placeholder="*page"
-            value={form.page}
+            name="email"
+            type="text"
+            placeholder="Email"
+            value={form.email}
             onChange={handleChange}
             className="border-2 rounded-[6px] px-3"
           />
-          <input
-            name="page_size"
-            type="number"
-            placeholder="*page_size"
-            value={form.page_size}
-            onChange={handleChange}
-            className="border-2 rounded-[6px] px-3"
-          />
-          <button className="bg-[#006dd2]/80 text-white rounded py-1 uppercase hover:bg-[#006dd2] transition duration-300">
+          <button
+            className="bg-[#006dd2]/80 text-white rounded py-2 px-3 uppercase hover:bg-[#006dd2]
+          w-full  transition duration-300"
+          >
             найти
           </button>
         </form>
@@ -139,17 +135,17 @@ const Search = () => {
 
       {result.length >= 0 && (
         <div>
-          <div className="grid grid-cols-6 gap-4 text-gray-600 font-medium border-b pb-2">
+          <div className="grid grid-cols-7 gap-4 text-gray-600 font-medium border-b pb-2">
             {chapterTitleSearch.map((chapter) => (
-              <span
+              <div
                 key={chapter.id}
                 className={clsx(
                   "flex items-center justify-center text-[12px]",
                   chapter.id === chapterTitleSearch.length ? "" : "border-r"
                 )}
               >
-                {chapter.title}
-              </span>
+                <p>{chapter.title}</p>
+              </div>
             ))}
           </div>
           {loading && <Loader />}
@@ -158,15 +154,44 @@ const Search = () => {
           {result.map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-6 gap-4 text-gray-600 text-center py-2 border-b"
+              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b"
             >
               <span>{index + 1}</span>
-              <span>{item.name || "-"}</span>
-              <span>{item.phone || "-"}</span>
-              <span>{item.person_id || "-"}</span>
-              <span>{form.page}</span>
-              <span>{form.page_size}</span>
+              <span>{item._source.last_name || "-"}</span>
+              <span>{item._source.first_name || "-"}</span>
+              <span>{item._source.middle_name || "-"}</span>
+              <span>{item._source.email || "-"}</span>
+              <span>{item._source.phone || "-"}</span>
+              <div
+                onClick={() =>
+                  navigate(`/account/search/${item._id}`, {
+                    state: item,
+                  })
+                }
+                className="text-center text-blue-500 underline cursor-pointer"
+              >
+                Подробнее...
+              </div>
             </div>
+          ))}
+        </div>
+      )}
+      {/* pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {visiblePages.map((page) => (
+            <button
+              key={page}
+              onClick={() => handleSubmit(null, page, true)}
+              className={clsx(
+                "px-3 py-1 rounded border",
+                page === currentPage
+                  ? "bg-blue-500 text-white"
+                  : "bg-white hover:bg-gray-100"
+              )}
+            >
+              {page}
+            </button>
           ))}
         </div>
       )}
