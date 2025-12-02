@@ -1,14 +1,6 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import Loader from "../../../components/loader/Loader";
-
-const API_URl = "http://192.168.0.45:18001";
-
-const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-  Accept: "application/json",
-  "Content-Type": "application/json",
-});
+import { healthCheck } from "../../../api/admin.js";
 
 const HealthCheck = () => {
   const [property, setProperty] = useState();
@@ -18,12 +10,9 @@ const HealthCheck = () => {
   const fetchProperty = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URl}/health`, {
-        headers: getHeaders(),
-      });
-      const prop = res.data;
+      const res = await healthCheck();
       setError("");
-      setProperty(prop);
+      setProperty(res);
     } catch (err) {
       console.error("Ошибка при получении пользователей:", err);
       setError(
@@ -43,13 +32,14 @@ const HealthCheck = () => {
   }, []);
 
   return (
-    <section className="p-6 flex flex-col gap-4">
+    <section className="section">
       <div className="title">Health Check</div>
       {loading ? (
         <Loader />
       ) : error ? (
-        <div className="text-red-500 flex items-center justify-center mb-4 font-medium">
+        <div className="flex flex-col items-center justify-center mb-4 text-error">
           {error}
+          <span className="text-[30px]">😡</span>
         </div>
       ) : (
         <>

@@ -88,7 +88,7 @@ const Search = () => {
 
   console.log(result);
   return (
-    <section className="p-6 flex flex-col gap-10">
+    <section className="section">
       <div className="flex flex-col gap-5">
         <div className="title">Поиск</div>
         <form onSubmit={handleSubmit} className="flex gap-4 w-[250px]">
@@ -149,7 +149,12 @@ const Search = () => {
             ))}
           </div>
           {loading && <Loader />}
-          {error && <p className="text-red-500">{error}</p>}
+          {error && (
+            <div className="flex flex-col items-center justify-center mb-4 text-error">
+              {error}
+              <span className="text-[30px]">😡</span>
+            </div>
+          )}
 
           {result.map((item, index) => (
             <div

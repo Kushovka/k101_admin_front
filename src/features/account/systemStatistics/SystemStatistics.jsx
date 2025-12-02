@@ -1,14 +1,6 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import Loader from "../../../components/loader/Loader";
-
-const API_URl = "http://192.168.0.45:18001";
-
-const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-  Accept: "application/json",
-  "Content-Type": "application/json",
-});
+import { systemStatistics } from "../../../api/admin";
 
 const SystemStatistics = () => {
   const [stats, setStats] = useState();
@@ -18,12 +10,9 @@ const SystemStatistics = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URl}/api/stats`, {
-        headers: getHeaders(),
-      });
-      const stat = res.data;
+      const res = await systemStatistics();
       setError("");
-      setStats(stat);
+      setStats(res);
     } catch (err) {
       console.error("Ошибка при получении пользователей:", err);
       setError(
@@ -43,13 +32,14 @@ const SystemStatistics = () => {
   }, []);
 
   return (
-    <section className="p-6 flex flex-col gap-4">
+    <section className="section">
       <div className="title">Системная статистика</div>
       {loading ? (
         <Loader />
       ) : error ? (
-        <div className="text-red-500 flex items-center justify-center mb-4 font-medium">
+        <div className="flex flex-col items-center justify-center mb-4 text-error">
           {error}
+          <span className="text-[30px]">😡</span>
         </div>
       ) : (
         <>

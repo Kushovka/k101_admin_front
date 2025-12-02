@@ -73,7 +73,7 @@ const UploadFiles = () => {
   };
 
   return (
-    <section className="flex flex-col p-5">
+    <section className="section">
       <h1 className="title">Загрузка файлов</h1>
 
       <div

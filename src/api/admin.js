@@ -8,6 +8,16 @@ const getHeaders = () => ({
   "Content-Type": "application/json",
 });
 
+/* USERS */
+export const getUsers = async () => {
+  const res = await axios.get(`${API_URL}/admin/users`, {
+    headers: getHeaders(),
+  });
+  console.log(res.data);
+  return res.data;
+};
+
+/* USER DETAILS */
 export const getUserById = async (id) => {
   const res = await axios.get(`${API_URL}/admin/users/${id}`, {
     headers: getHeaders(),
@@ -22,3 +32,27 @@ export const updateUser = async (id, data) => {
   });
   return res.data;
 };
+
+/* HEALTH CHECK */
+export const healthCheck = async () => {
+  const res = await axios.get(`${API_URL}/health`, {
+    headers: getHeaders(),
+  });
+  return res.data;
+};
+
+/* SYSTEM STATISTICS */
+export const systemStatistics = async () => {
+  const res = await axios.get(`${API_URL}/api/stats`, {
+    headers: getHeaders(),
+  });
+  return res.data;
+};
+
+/* SEARCH */
+// export const searchUsers = async () => {
+//   const res = await axios.get(`${API_URL}/api/stats`, {
+//     headers: getHeaders(),
+//   });
+//   return res.data;
+// };

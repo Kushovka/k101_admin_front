@@ -11,7 +11,7 @@ export default function Toast({ message, type = "error", onClose }) {
   return (
     <div
       className={`fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded shadow-md text-white ${
-        type === "error" ? "bg-red-500" : "bg-green-500"
+        type === "error" ? "bg-red01" : "bg-green-500"
       }`}
       style={{ zIndex: 9999 }}
     >

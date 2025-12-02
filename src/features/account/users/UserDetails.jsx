@@ -19,6 +19,7 @@ const UserDetails = () => {
     email: "",
   });
 
+  /* getUserById */
   useEffect(() => {
     fetchUser();
   }, [id]);
@@ -26,21 +27,21 @@ const UserDetails = () => {
   const fetchUser = async () => {
     setLoading(true);
     try {
-      const u = await getUserById(id);
+      const res = await getUserById(id);
       setUser({
-        id: u.id,
-        nickName: u.username,
-        name: u.first_name,
-        surname: u.last_name,
-        email: u.email,
-        role: u.role === "user" ? "User" : "Admin",
-        registrationDate: new Date(u.registration_date).toLocaleDateString(),
-        status: u.is_blocked ? "Blocked" : "Active",
-        confirmationEmail: u.is_email_verified ? "Yes" : "No",
-        balance: u.balance || 0,
-        freeRequest: u.free_requests_count || 0,
-        allRequest: u.all_requests_count || 0,
-        totalSpend: u.total_spent || 0,
+        id: res.id,
+        nickName: res.username,
+        name: res.first_name,
+        surname: res.last_name,
+        email: res.email,
+        role: res.role === "user" ? "User" : "Admin",
+        registrationDate: new Date(res.registration_date).toLocaleDateString(),
+        status: res.is_blocked ? "Blocked" : "Active",
+        confirmationEmail: res.is_email_verified ? "Yes" : "No",
+        balance: res.balance || 0,
+        freeRequest: res.free_requests_count || 0,
+        allRequest: res.all_requests_count || 0,
+        totalSpend: res.total_spent || 0,
       });
     } catch (err) {
       console.error("Ошибка при получении пользователя:", err);
@@ -49,6 +50,7 @@ const UserDetails = () => {
     }
   };
 
+  /* updateUser */
   const saveUser = async () => {
     try {
       const res = await updateUser(id, formData);
@@ -79,7 +81,7 @@ const UserDetails = () => {
   if (!user) return <div>User not found</div>;
 
   return (
-    <section className="p-6 flex flex-col gap-4">
+    <section className="section">
       <div className="title">Пользователь: {user.name}</div>
 
       <div className="flex gap-10">

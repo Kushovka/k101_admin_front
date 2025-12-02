@@ -38,7 +38,7 @@ const Sidebar = ({ setIsOpen, isOpen }) => {
   return (
     <section
       className={clsx(
-        "h-screen text-white bg-[#03294b] pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
+        "h-screen text-white bg-blue01 pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
         isOpen ? "w-[80px]" : "w-[300px]"
       )}
     >
@@ -63,7 +63,7 @@ const Sidebar = ({ setIsOpen, isOpen }) => {
             className={clsx(
               "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300",
               isActive(link.path)
-                ? "bg-white text-[#03294b]"
+                ? "bg-white text-blue01"
                 : "bg-transparent text-white"
             )}
           >
@@ -96,7 +96,7 @@ const Sidebar = ({ setIsOpen, isOpen }) => {
           navigate("/sign-in", { replace: true });
         }}
         className={clsx(
-          "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300 hover:bg-white hover:text-[#03294b]"
+          "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300 hover:bg-white hover:text-blue01"
         )}
       >
         <IoExitOutline

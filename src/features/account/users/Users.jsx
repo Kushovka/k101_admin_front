@@ -1,16 +1,8 @@
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import Loader from "../../../components/loader/Loader";
-
-const API_URL = "http://192.168.0.45:18001";
-
-const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-  Accept: "application/json",
-  "Content-Type": "application/json",
-});
+import { getUsers } from "../../../api/admin";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -25,12 +17,10 @@ export default function Users() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/users`, {
-        headers: getHeaders(),
-      });
+      const res = await getUsers();
       setError("");
 
-      const formattedUsers = res.data.users.map((u) => ({
+      const formattedUsers = res.users.map((u) => ({
         id: u.id,
         nickName: u.username,
         name: u.first_name,
@@ -74,13 +64,14 @@ export default function Users() {
   ];
 
   return (
-    <section className="px-6 py-4 flex flex-col gap-4">
+    <section className="section">
       <div className="title">Пользователи</div>
       {loading ? (
         <Loader />
       ) : error ? (
-        <div className="text-red-500 flex items-center justify-center mb-4 font-medium">
+        <div className="flex flex-col items-center justify-center mb-4 text-error">
           {error}
+          <span className="text-[30px]">😡</span>
         </div>
       ) : (
         <>
