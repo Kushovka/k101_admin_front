@@ -5,7 +5,7 @@ import axios from "axios";
 import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
-import { getUserById, updateUser } from "../../../api/admin";
+import { getUserById, isBlockedUser, updateUser } from "../../../api/admin";
 
 const UserDetails = () => {
   const { id } = useParams();
@@ -45,6 +45,24 @@ const UserDetails = () => {
       });
     } catch (err) {
       console.error("Ошибка при получении пользователя:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* blocked */
+  const toggleBlocked = async () => {
+    try {
+      setLoading(true);
+      const block = user.status === "Active";
+      const res = await isBlockedUser(id, block);
+      setUser((prev) => ({
+        ...prev,
+        status: res.is_blocked ? "Blocked" : "Active",
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Не удалось изменить статус пользователя");
     } finally {
       setLoading(false);
     }
@@ -150,6 +168,14 @@ const UserDetails = () => {
               {user.status}
             </span>
           </p>
+          <button
+            onClick={toggleBlocked}
+            className="bg-red01/60 text-white px-4 py-2 rounded hover:bg-red01 transition duration-300"
+          >
+            {user.status === "Active"
+              ? "Заблокировать пользователя"
+              : "Разблокировать пользователя"}
+          </button>
           <button
             onClick={saveUser}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
+import Toast from "../../../components/toast/Toast";
 
 const SearchDetails = () => {
   const location = useLocation();
@@ -11,13 +12,37 @@ const SearchDetails = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openModalFull, setOpenModalFull] = useState(false);
 
+  const [notify, setNotify] = useState(false);
+
   if (!user) return <p className="pl-[324px] py-6">Пользователь не найден</p>;
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setNotify(true);
+      setTimeout(() => setNotify(false), 2000);
+    });
+  };
+
+  const capitalize = (str = "") =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
   return (
     <section className="section max-w-full">
+      {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
       {/* title */}
-      <div className="title ">
-        Подробрая информация пользователя: {user._source.first_name}
+      <div
+        onClick={() =>
+          handleCopy(
+            `${capitalize(user._source.last_name)} ${capitalize(
+              user._source.first_name
+            )} ${capitalize(user._source.middle_name)}`
+          )
+        }
+        className="title cursor-copy"
+      >
+        Подробрая информация пользователя: {capitalize(user._source.last_name)}{" "}
+        {capitalize(user._source.first_name)}{" "}
+        {capitalize(user._source.middle_name)}
       </div>
       {/* btn-for-back */}
       <div>
@@ -36,32 +61,82 @@ const SearchDetails = () => {
             <div className="flex items-center justify-center">
               <p className="subtitle text-gray01">Основная информация</p>
             </div>
-
-            <p className="details-text">
-              Имя: <span className="text-black">{user._source.last_name}</span>
-            </p>
-
-            <p className="details-text">
-              Фамилия:{" "}
-              <span className="text-black">{user._source.first_name}</span>
-            </p>
-
-            <p className="details-text">
-              Отчество:{" "}
-              <span className="text-black">{user._source.middle_name}</span>
-            </p>
-            <p className="details-text">
-              Телефон: <span className="text-black">{user._source.phone}</span>
-            </p>
-            <p className="details-text">
-              Email: <span className="text-black">{user._source.email}</span>
-            </p>
-            <p className="details-text">
-              Birthday:{" "}
-              <span className="text-black">
-                {new Date(user._source.birthday).toLocaleDateString()}
-              </span>
-            </p>
+            {/* имя */}
+            {user._source.last_name && (
+              <p className="details-text">
+                Имя:{" "}
+                <span
+                  className="text-black cursor-copy"
+                  onClick={() => handleCopy(`${user._source.last_name}`)}
+                >
+                  {capitalize(user._source.last_name) || ""}
+                </span>
+              </p>
+            )}
+            {/* фамилия */}
+            {user._source.first_name && (
+              <p className="details-text">
+                Фамилия:{" "}
+                <span
+                  onClick={() => handleCopy(`${user._source.first_name}`)}
+                  className="text-black cursor-copy"
+                >
+                  {capitalize(user._source.first_name)}
+                </span>
+              </p>
+            )}
+            {/* отчество */}
+            {user._source.middle_name && (
+              <p className="details-text">
+                Отчество:{" "}
+                <span
+                  onClick={() => handleCopy(`${user._source.middle_name}`)}
+                  className="text-black cursor-copy"
+                >
+                  {capitalize(user._source.middle_name)}
+                </span>
+              </p>
+            )}
+            {/* телефон */}
+            {user._source.phone && (
+              <p className="details-text">
+                Телефон:{" "}
+                <span
+                  onClick={() => handleCopy(`${user._source.phone}`)}
+                  className="text-black cursor-copy"
+                >
+                  {user._source.phone}
+                </span>
+              </p>
+            )}
+            {/* емаил */}
+            {user._source.email && (
+              <p className="details-text">
+                Email:{" "}
+                <span
+                  onClick={() => handleCopy(`${user._source.email}`)}
+                  className="text-black cursor-copy"
+                >
+                  {user._source.email}
+                </span>
+              </p>
+            )}
+            {/* дата рождения */}
+            {user._source.birthday && (
+              <p className="details-text">
+                Дата рождения:{" "}
+                <span
+                  onClick={() =>
+                    handleCopy(
+                      `${new Date(user._source.birthday).toLocaleDateString()}`
+                    )
+                  }
+                  className="text-black cursor-copy"
+                >
+                  {new Date(user._source.birthday).toLocaleDateString()}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -98,20 +173,34 @@ const SearchDetails = () => {
 
                 <p className="details-text">
                   <span className="text-black">
-                    {user._source.last_name} {user._source.first_name}{" "}
-                    {user._source.middle_name} -{" "}
-                    {new Date(user._source.birthday).toLocaleDateString()}
+                    {capitalize(user._source.last_name)}{" "}
+                    {capitalize(user._source.first_name)}{" "}
+                    {capitalize(user._source.middle_name)}{" "}
+                    {user._source.birthday
+                      ? "- " +
+                        new Date(user._source.birthday).toLocaleDateString()
+                      : ""}
                   </span>
                 </p>
                 <p className="details-text">
-                  <span className="text-black">
-                    СНИЛС: {user._source.snils || ""}
-                  </span>
+                  {user._source.snils && (
+                    <span
+                      onClick={() => handleCopy(`${user._source.snils}`)}
+                      className="text-black cursor-copy"
+                    >
+                      СНИЛС: {user._source.snils || ""}
+                    </span>
+                  )}
                 </p>
                 <p className="details-text">
-                  <span className="text-black">
-                    Адрес проживания: {user._source.address || ""}
-                  </span>
+                  {user._source.address && (
+                    <span
+                      onClick={() => handleCopy(`${user._source.address}`)}
+                      className="text-black cursor-copy"
+                    >
+                      Адрес проживания: {user._source.address || ""}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>

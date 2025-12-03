@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "./axios";
 
 const API_URL = "http://192.168.0.45:18001";
 
@@ -10,7 +10,7 @@ const getHeaders = () => ({
 
 /* USERS */
 export const getUsers = async () => {
-  const res = await axios.get(`${API_URL}/admin/users`, {
+  const res = await api.get(`${API_URL}/admin/users`, {
     headers: getHeaders(),
   });
   console.log(res.data);
@@ -19,7 +19,7 @@ export const getUsers = async () => {
 
 /* USER DETAILS */
 export const getUserById = async (id) => {
-  const res = await axios.get(`${API_URL}/admin/users/${id}`, {
+  const res = await api.get(`${API_URL}/admin/users/${id}`, {
     headers: getHeaders(),
   });
   console.log(res.data);
@@ -27,15 +27,27 @@ export const getUserById = async (id) => {
 };
 
 export const updateUser = async (id, data) => {
-  const res = await axios.patch(`${API_URL}/admin/users/${id}`, data, {
+  const res = await api.patch(`${API_URL}/admin/users/${id}`, data, {
     headers: getHeaders(),
   });
   return res.data;
 };
 
+export const isBlockedUser = async (id, block) => {
+  const res = await api.post(
+    `${API_URL}/admin/users/${id}/toggle-active`,
+    { is_blocked: block },
+    {
+      headers: getHeaders(),
+    }
+  );
+  console.log(res.data);
+  return res.data;
+};
+
 /* HEALTH CHECK */
 export const healthCheck = async () => {
-  const res = await axios.get(`${API_URL}/health`, {
+  const res = await api.get(`${API_URL}/health`, {
     headers: getHeaders(),
   });
   return res.data;
@@ -43,7 +55,7 @@ export const healthCheck = async () => {
 
 /* SYSTEM STATISTICS */
 export const systemStatistics = async () => {
-  const res = await axios.get(`${API_URL}/api/stats`, {
+  const res = await api.get(`${API_URL}/api/stats`, {
     headers: getHeaders(),
   });
   return res.data;
@@ -51,7 +63,7 @@ export const systemStatistics = async () => {
 
 /* SEARCH */
 // export const searchUsers = async () => {
-//   const res = await axios.get(`${API_URL}/api/stats`, {
+//   const res = await api.get(`${API_URL}/api/stats`, {
 //     headers: getHeaders(),
 //   });
 //   return res.data;

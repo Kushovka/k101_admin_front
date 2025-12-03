@@ -1,8 +1,8 @@
 import { useState } from "react";
 import clsx from "clsx";
-import axios from "axios";
 import Loader from "../../../components/loader/Loader";
 import { useNavigate } from "react-router-dom";
+import api from "../../../api/axios";
 
 const API_URL = "http://192.168.0.45:18001";
 
@@ -58,7 +58,7 @@ const Search = () => {
         page_size: pageSize,
       };
 
-      const res = await axios.post(`${API_URL}/admin/search`, null, {
+      const res = await api.post(`${API_URL}/admin/search`, null, {
         params,
         headers: getHeaders(),
       });
@@ -68,7 +68,7 @@ const Search = () => {
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.detail || "Ошибка поиска");
+      setError(err.message || "Ошибка поиска");
     } finally {
       setLoading(false);
     }
@@ -159,7 +159,12 @@ const Search = () => {
           {result.map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b"
+              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b hover:bg-gray01/10 cursor-pointer transition duration-300 hover:text-black"
+              onClick={() =>
+                navigate(`/account/search/${item._id}`, {
+                  state: item,
+                })
+              }
             >
               <span>{index + 1}</span>
               <span>{item._source.last_name || "-"}</span>

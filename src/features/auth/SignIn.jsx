@@ -26,11 +26,15 @@ export default function SignIn() {
       navigate("/account/upload-files");
     } catch (err) {
       console.error(err);
+      let message = "Ошибка при входе";
+
+      if (err.response?.status === 401) {
+        message = "Неверный логин или пароль";
+      } else if (err.response?.status === 403) {
+        message = "Ваш аккаунт заблокирован. Доступ запрещен";
+      }
       setNotify({
-        message:
-          err.response?.status === 401
-            ? "Неверный логин или пароль"
-            : "Ошибка при входе",
+        message,
         type: "error",
       });
     }
