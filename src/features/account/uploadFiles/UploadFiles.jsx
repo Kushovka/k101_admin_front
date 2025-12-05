@@ -2,6 +2,8 @@ import clsx from "clsx";
 import { useRef, useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { uploadFileToMinio } from "../../../api/minio";
+import Toast from "../../../components/toast/Toast";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 const UploadFiles = () => {
   const fileInputRef = useRef(null);
@@ -9,6 +11,10 @@ const UploadFiles = () => {
   const [files, setFiles] = useState([]);
   const [progress, setProgress] = useState({});
   const [uploading, setUploading] = useState(false);
+
+  const [notify, setNotify] = useState(null);
+
+  const { isOpen } = useSidebar();
 
   const handleClick = () => fileInputRef.current.click();
 
@@ -49,19 +55,28 @@ const UploadFiles = () => {
         });
       } catch (err) {
         console.error("Ошибка загрузки файла:", file.name, err);
-        alert(`Ошибка загрузки файла: ${file.name}`);
+        setNotify("error_upload");
+        setTimeout(() => setNotify(null), 3000);
+        continue;
       }
     }
 
-    alert("Все файлы успешно загружены!");
+    setNotify("access_upload");
+    setTimeout(() => setNotify(null), 3000);
     setFiles([]);
     setProgress({});
     setUploading(false);
   };
 
   return (
-    <section className="section">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <h1 className="title">Загрузка файлов</h1>
+      {notify === "error_upload" && (
+        <Toast type={"error"} message={`Ошибка загрузки файла`} />
+      )}
+      {notify === "access_upload" && (
+        <Toast type={"access"} message={`Все файлы успешно загружены!`} />
+      )}
 
       <div
         className={clsx(

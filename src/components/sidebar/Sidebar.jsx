@@ -8,10 +8,13 @@ import { GoChevronRight } from "react-icons/go";
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import React from "react";
+import { useSidebar } from "./SidebarContext";
 
-const Sidebar = ({ setIsOpen, isOpen }) => {
+const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { isOpen, setIsOpen } = useSidebar();
 
   const links = [
     { name: "Пользователи", icon: <FaRegCircleUser />, path: "/account/users" },
@@ -38,7 +41,7 @@ const Sidebar = ({ setIsOpen, isOpen }) => {
   return (
     <section
       className={clsx(
-        "h-screen text-white bg-blue01 pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
+        "fixed h-screen text-white bg-blue01 pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
         isOpen ? "w-[80px]" : "w-[300px]"
       )}
     >

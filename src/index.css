@@ -13,21 +13,21 @@ body {
     @apply text-[28px] font-medium tracking-wide;
   }
   .text-common {
-    @apply text-gray01 text-[16px] font-normal tracking-wide;
-  }
-  .subtitle {
     @apply text-gray01 text-[14px] font-normal tracking-wide;
   }
+  .subtitle {
+    @apply text-gray01 text-[16px] font-normal tracking-wide;
+  }
   .text-error {
-    @apply text-red01 font-medium uppercase text-[18px]
+    @apply text-red01 font-medium uppercase text-[18px];
   }
 
   .text-health-system {
     @apply flex items-center gap-5;
   }
 
-    .section {
-    @apply px-9 py-6 flex flex-col w-full gap-4;
+  .section {
+    @apply px-9 py-6 flex flex-col w-full gap-4 transition-all duration-300 ease-in-out;
   }
 }
 

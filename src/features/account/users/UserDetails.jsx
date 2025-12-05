@@ -6,6 +6,7 @@ import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 import { getUserById, isBlockedUser, updateUser } from "../../../api/admin";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 const UserDetails = () => {
   const { id } = useParams();
@@ -18,6 +19,8 @@ const UserDetails = () => {
     last_name: "",
     email: "",
   });
+
+  const { isOpen } = useSidebar();
 
   /* getUserById */
   useEffect(() => {
@@ -99,7 +102,7 @@ const UserDetails = () => {
   if (!user) return <div>User not found</div>;
 
   return (
-    <section className="section">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Пользователь: {user.name}</div>
 
       <div className="flex gap-10">
@@ -168,14 +171,16 @@ const UserDetails = () => {
               {user.status}
             </span>
           </p>
-          <button
-            onClick={toggleBlocked}
-            className="bg-red01/60 text-white px-4 py-2 rounded hover:bg-red01 transition duration-300"
-          >
-            {user.status === "Active"
-              ? "Заблокировать пользователя"
-              : "Разблокировать пользователя"}
-          </button>
+          {user.role === "User" && (
+            <button
+              onClick={toggleBlocked}
+              className="bg-red01/60 text-white px-4 py-2 rounded hover:bg-red01 transition duration-300"
+            >
+              {user.status === "Active"
+                ? "Заблокировать пользователя"
+                : "Разблокировать пользователя"}
+            </button>
+          )}
           <button
             onClick={saveUser}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"

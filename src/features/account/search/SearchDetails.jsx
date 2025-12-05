@@ -1,8 +1,9 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Toast from "../../../components/toast/Toast";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 const SearchDetails = () => {
   const location = useLocation();
@@ -13,6 +14,8 @@ const SearchDetails = () => {
   const [openModalFull, setOpenModalFull] = useState(false);
 
   const [notify, setNotify] = useState(false);
+
+  const { isOpen } = useSidebar();
 
   if (!user) return <p className="pl-[324px] py-6">Пользователь не найден</p>;
 
@@ -27,7 +30,7 @@ const SearchDetails = () => {
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
   return (
-    <section className="section max-w-full">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
       {/* title */}
       <div

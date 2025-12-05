@@ -1,10 +1,13 @@
 import { useState } from "react";
 import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
+import Toast from "../../../components/toast/Toast";
+import { useSearch } from "./SearchContext";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
-const API_URL = "http://192.168.0.45:18001";
+const API_URL = "http://192.168.0.45:18101";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -13,18 +16,26 @@ const getHeaders = () => ({
 
 const Search = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    person_id: "",
-    email: "",
-  });
+  const [notify, setNotify] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState([]);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+
+  const { isOpen } = useSidebar();
+
   const pageSize = 10;
-  const [totalPages, setTotalPages] = useState(0);
+
+  const {
+    form,
+    setForm,
+    result,
+    setResult,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    setTotalPages,
+    res,
+    setRes,
+  } = useSearch();
 
   const chapterTitleSearch = [
     { id: 1, title: "№" },
@@ -42,28 +53,27 @@ const Search = () => {
 
   const handleSubmit = async (e, page = 1, isPagination = false) => {
     if (e) e.preventDefault();
-    if (!isPagination) {
-      setResult([]);
-    }
+    if (!isPagination) setResult([]);
     setLoading(true);
     setError("");
 
     try {
-      const params = {
-        name: form.name.trim() || null,
-        phone: form.phone.trim() || null,
-        person_id: form.person_id.trim() || null,
-        email: form.email.trim() || null,
+      const query = new URLSearchParams({
         page,
         page_size: pageSize,
-      };
+        ...(form.name.trim() && { name: form.name.trim() }),
+        ...(form.phone.trim() && { phone: form.phone.trim() }),
+        ...(form.person_id.trim() && { person_id: form.person_id.trim() }),
+        ...(form.email.trim() && { email: form.email.trim() }),
+      }).toString();
 
-      const res = await api.post(`${API_URL}/admin/search`, null, {
-        params,
+      const res = await api.post(`${API_URL}/admin/search?${query}`, null, {
         headers: getHeaders(),
       });
 
-      setResult(res.data.results || null);
+      console.log(res.data);
+      setRes(res.data);
+      setResult(res.data.results || []);
       setTotalPages(res.data.total_pages || 1);
       setCurrentPage(page);
     } catch (err) {
@@ -72,6 +82,13 @@ const Search = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setNotify(true);
+      setTimeout(() => setNotify(false), 2000);
+    });
   };
 
   const maxVisible = 7;
@@ -88,9 +105,10 @@ const Search = () => {
 
   console.log(result);
   return (
-    <section className="section">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="flex flex-col gap-5">
         <div className="title">Поиск</div>
+        {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
         <form onSubmit={handleSubmit} className="flex gap-4 w-[250px]">
           <input
             name="name"
@@ -124,15 +142,12 @@ const Search = () => {
             onChange={handleChange}
             className="border-2 rounded-[6px] px-3"
           />
-          <button
-            className="bg-[#006dd2]/80 text-white rounded py-2 px-3 uppercase hover:bg-[#006dd2]
-          w-full  transition duration-300"
-          >
+          <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300">
             найти
           </button>
         </form>
       </div>
-
+      <div className="text-common">Найдено: {res.count || 0} результатов</div>
       {result.length >= 0 && (
         <div>
           <div className="grid grid-cols-7 gap-4 text-gray-600 font-medium border-b pb-2">
@@ -159,19 +174,39 @@ const Search = () => {
           {result.map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b hover:bg-gray01/10 cursor-pointer transition duration-300 hover:text-black"
-              onClick={() =>
-                navigate(`/account/search/${item._id}`, {
-                  state: item,
-                })
-              }
+              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b"
             >
-              <span>{index + 1}</span>
-              <span>{item._source.last_name || "-"}</span>
-              <span>{item._source.first_name || "-"}</span>
-              <span>{item._source.middle_name || "-"}</span>
-              <span>{item._source.email || "-"}</span>
-              <span>{item._source.phone || "-"}</span>
+              <span>{(currentPage - 1) * pageSize + index + 1}</span>
+              <span
+                className="cursor-copy"
+                onClick={() => handleCopy(item._source.last_name || "")}
+              >
+                {item._source.last_name || "-"}
+              </span>
+              <span
+                className="cursor-copy"
+                onClick={() => handleCopy(item._source.first_name || "")}
+              >
+                {item._source.first_name || "-"}
+              </span>
+              <span
+                className="cursor-copy"
+                onClick={() => handleCopy(item._source.middle_name || "")}
+              >
+                {item._source.middle_name || "-"}
+              </span>
+              <span
+                className="cursor-copy"
+                onClick={() => handleCopy(item._source.email || "")}
+              >
+                {item._source.email || "-"}
+              </span>
+              <span
+                className="cursor-copy"
+                onClick={() => handleCopy(item._source.phone || "")}
+              >
+                {item._source.phone || "-"}
+              </span>
               <div
                 onClick={() =>
                   navigate(`/account/search/${item._id}`, {

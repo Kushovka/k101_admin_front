@@ -8,6 +8,8 @@ export default function Toast({ message, type = "error", onClose }) {
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  
+
   return (
     <div
       className={`fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded shadow-md text-white ${

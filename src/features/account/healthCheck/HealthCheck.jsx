@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import Loader from "../../../components/loader/Loader";
 import { healthCheck } from "../../../api/admin.js";
+import { useSidebar } from "../../../components/sidebar/SidebarContext.jsx";
+import clsx from "clsx";
 
 const HealthCheck = () => {
   const [property, setProperty] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { isOpen } = useSidebar();
 
   const fetchProperty = async () => {
     setLoading(true);
@@ -32,7 +36,7 @@ const HealthCheck = () => {
   }, []);
 
   return (
-    <section className="section">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Health Check</div>
       {loading ? (
         <Loader />

@@ -3,12 +3,15 @@ import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../../components/loader/Loader";
 import { getUsers } from "../../../api/admin";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 export default function Users() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const { isOpen } = useSidebar();
 
   useEffect(() => {
     fetchUsers();
@@ -52,7 +55,6 @@ export default function Users() {
   };
 
   const chapterTitle = [
-    { id: 1, title: "№" },
     { id: 2, title: "Никнейм" },
     { id: 3, title: "Имя" },
     { id: 4, title: "Фамилия" },
@@ -64,7 +66,7 @@ export default function Users() {
   ];
 
   return (
-    <section className="section">
+    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Пользователи</div>
       {loading ? (
         <Loader />
@@ -75,7 +77,7 @@ export default function Users() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-9 gap-4 text-gray01 font-medium border-b pb-2">
+          <div className="grid grid-cols-8 gap-4 text-gray01 font-medium border-b pb-2">
             {chapterTitle.map((chapter) => (
               <span
                 className={clsx(
@@ -92,10 +94,9 @@ export default function Users() {
             {users.map((user) => (
               <div
                 key={user.id}
-                className="grid grid-cols-9 gap-4 text-gray01 font-medium text-center text-[12px] items-center border-b py-2 hover:bg-gray-100 transition cursor-pointer"
+                className="grid grid-cols-8 gap-4 text-gray01 font-medium text-center text-[12px] items-center border-b py-2 hover:bg-gray-100 transition cursor-pointer"
                 onClick={() => navigate(`/account/users/${user.identifier}`)}
               >
-                <p>{user.id}</p>
                 <p>{user.nickName}</p>
                 <p>{user.name}</p>
                 <p>{user.surname}</p>
