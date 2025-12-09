@@ -18,6 +18,7 @@ import SearchDetails from "./features/account/search/SearchDetails";
 import { SearchProvider } from "./features/account/search/SearchContext";
 import { useState } from "react";
 import { SidebarProvider } from "./components/sidebar/SidebarContext";
+import Plans from "./features/account/plans/Plans";
 
 function App() {
   return (
@@ -35,14 +36,12 @@ function App() {
           }
         >
           <Route path="upload-files" element={<UploadFiles />} />
-          <Route
-            path="users"
-            element={<Users />}
-          />
+          <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />
           <Route path="health-check" element={<HealthCheck />} />
           <Route path="system-stats" element={<SystemStatistics />} />
-          
+          <Route path="plans" element={<Plans />} />
+
           <Route
             path="search/*"
             element={

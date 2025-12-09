@@ -22,7 +22,6 @@ const SearchDetails = () => {
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       setNotify(true);
-      setTimeout(() => setNotify(false), 2000);
     });
   };
 
@@ -31,7 +30,13 @@ const SearchDetails = () => {
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
+      {notify && (
+        <Toast
+          type={"access"}
+          message={"СКОПИРОВАНО!"}
+          onClose={() => setNotify(false)}
+        />
+      )}
       {/* title */}
       <div
         onClick={() =>

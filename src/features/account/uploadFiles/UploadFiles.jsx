@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { useRef, useState } from "react";
 import { IoMdClose } from "react-icons/io";
-import { uploadFileToMinio } from "../../../api/minio";
 import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import axios from "axios";
 
 const UploadFiles = () => {
   const fileInputRef = useRef(null);
@@ -11,8 +11,8 @@ const UploadFiles = () => {
   const [files, setFiles] = useState([]);
   const [progress, setProgress] = useState({});
   const [uploading, setUploading] = useState(false);
-
   const [notify, setNotify] = useState(null);
+  const [error, setError] = useState(null);
 
   const { isOpen } = useSidebar();
 
@@ -28,9 +28,7 @@ const UploadFiles = () => {
     e.preventDefault();
     setDragOver(true);
   };
-
   const handleDragLeave = () => setDragOver(false);
-
   const handleDrop = (e) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
@@ -45,42 +43,64 @@ const UploadFiles = () => {
   const handleUpload = async () => {
     if (!files.length) return;
 
+    setError(null);
     setUploading(true);
     setProgress({});
 
     for (let file of files) {
+      const formData = new FormData();
+      files.forEach((file) => formData.append("files", file));
+
       try {
-        await uploadFileToMinio(file, (percent) => {
-          setProgress((prev) => ({ ...prev, [file.name]: percent }));
+        await axios.post("http://192.168.0.45:18101/admin/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          onUploadProgress: (event) => {
+            if (event.total) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              setProgress((prev) => ({ ...prev, [file.name]: percent }));
+            }
+          },
         });
+        console.log(file);
+        setNotify("access");
       } catch (err) {
         console.error("Ошибка загрузки файла:", file.name, err);
-        setNotify("error_upload");
-        setTimeout(() => setNotify(null), 3000);
+        setError(
+          err.response.status === 400
+            ? `Тип файла ${file.name} не поддерживается.`
+            : "Ошибка при загрузке файла"
+        );
+        setNotify("error");
         continue;
+      } finally {
+        setUploading(false);
       }
     }
-
-    setNotify("access_upload");
-    setTimeout(() => setNotify(null), 3000);
     setFiles([]);
     setProgress({});
-    setUploading(false);
   };
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <h1 className="title">Загрузка файлов</h1>
-      {notify === "error_upload" && (
-        <Toast type={"error"} message={`Ошибка загрузки файла`} />
+
+      {notify === "error" && (
+        <Toast type="error" message={error} onClose={() => setNotify(null)} />
       )}
-      {notify === "access_upload" && (
-        <Toast type={"access"} message={`Все файлы успешно загружены!`} />
+      {notify === "access" && (
+        <Toast
+          type="access"
+          message="Все файлы успешно загружены!"
+          onClose={() => setNotify(null)}
+        />
       )}
 
       <div
         className={clsx(
-          "border-2 border-dashed rounded-[12px] mt-5 p-20 flex flex-col items-center justify-center gap-4 transition-colors duration-300",
+          "relative border-2 border-dashed rounded-[12px] mt-5 p-20 flex flex-col items-center justify-center gap-4 transition-colors duration-300",
           dragOver ? "border-blue-500 bg-blue-50" : "border-gray-400 bg-white"
         )}
         onDragOver={handleDragOver}
@@ -88,7 +108,6 @@ const UploadFiles = () => {
         onDrop={handleDrop}
       >
         <h2 className="text-lg text-gray-700">Перетащите файлы сюда или</h2>
-
         <input
           type="file"
           ref={fileInputRef}
@@ -96,13 +115,22 @@ const UploadFiles = () => {
           onChange={handleFiles}
           multiple
         />
-
         <button
           onClick={handleClick}
           className="bg-[#007bff] px-4 py-2 rounded-[8px] text-white hover:bg-blue-600 transition-colors"
         >
           Выберите файлы
         </button>
+        <div className="absolute bottom-2 ">
+          <p
+            className={clsx("text-common", error && "text-red01 animate-pulse")}
+          >
+            Допустимые типы файлов:{" "}
+            <span>
+              ['.csv', '.xlsx', '.xls', '.json', '.txt', '.pdf', '.html']
+            </span>
+          </p>
+        </div>
       </div>
 
       {files.length > 0 && (

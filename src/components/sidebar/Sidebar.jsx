@@ -4,6 +4,7 @@ import { IoDocumentTextOutline, IoExitOutline } from "react-icons/io5";
 import { IoIosSearch } from "react-icons/io";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { GoChevronRight } from "react-icons/go";
+import { MdAttachMoney } from "react-icons/md";
 
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -32,6 +33,11 @@ const Sidebar = () => {
       name: "Системная статистика",
       icon: <MdOutlineAnalytics />,
       path: "/account/system-stats",
+    },
+    {
+      name: "Тарифы",
+      icon: <MdAttachMoney />,
+      path: "/account/plans",
     },
     { name: "Поиск", icon: <IoIosSearch />, path: "/account/search" },
   ];
