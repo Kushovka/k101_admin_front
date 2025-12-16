@@ -3,6 +3,7 @@ import Loader from "../../../components/loader/Loader";
 import { systemStatistics } from "../../../api/admin";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
+import Toast from "../../../components/toast/Toast";
 
 const SystemStatistics = () => {
   const [stats, setStats] = useState();
@@ -13,9 +14,9 @@ const SystemStatistics = () => {
 
   const fetchStats = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await systemStatistics();
-      setError("");
       setStats(res);
     } catch (err) {
       console.error("Ошибка при получении пользователей:", err);
@@ -38,23 +39,17 @@ const SystemStatistics = () => {
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Системная статистика</div>
-      {loading ? (
-        <Loader />
-      ) : error ? (
-        <div className="flex flex-col items-center justify-center mb-4 text-error">
-          {error}
-          <span className="text-[30px]">😡</span>
-        </div>
-      ) : (
-        <>
-          <p className="subtitle">*Получение статистики системы.</p>
-          <div className="border flex flex-col gap-3 p-4 rounded-[12px] w-1/3 text-common">
-            <p className="text-health-system">{`gateway status: ${stats.gateway_status}`}</p>
-            <p className="text-health-system">{`total_files_uploaded: ${stats.total_files_uploaded}`}</p>
-            <p className="text-health-system">{`total_records_parsed: ${stats.total_records_parsed}`}</p>
-          </div>
-        </>
+      {loading && <Loader />}
+      {error && (
+        <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
+
+      <p className="subtitle">*Получение статистики системы.</p>
+      <div className="border flex flex-col gap-3 p-4 rounded-[12px] w-1/3 text-common">
+        <p className="text-health-system">{`gateway status: ${stats?.gateway_status}`}</p>
+        <p className="text-health-system">{`total_files_uploaded: ${stats?.total_files_uploaded}`}</p>
+        <p className="text-health-system">{`total_records_parsed: ${stats?.total_records_parsed}`}</p>
+      </div>
     </section>
   );
 };

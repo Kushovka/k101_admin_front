@@ -17,6 +17,7 @@ const Sidebar = () => {
 
   const { isOpen, setIsOpen } = useSidebar();
 
+  // links
   const links = [
     { name: "Пользователи", icon: <FaRegCircleUser />, path: "/account/users" },
     {
@@ -51,7 +52,7 @@ const Sidebar = () => {
         isOpen ? "w-[80px]" : "w-[300px]"
       )}
     >
-      {/* Гамбургер */}
+      {/* hamburger */}
       <button
         data-testid="hamburger-button"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -63,7 +64,7 @@ const Sidebar = () => {
         {isOpen ? <GoChevronRight size={36} /> : <RxHamburgerMenu size={30} />}
       </button>
 
-      {/* Ссылки */}
+      {/* links */}
       <div className="flex flex-col gap-4 flex-1">
         {links.map((link) => (
           <button
@@ -97,7 +98,7 @@ const Sidebar = () => {
         ))}
       </div>
 
-      {/* Выход */}
+      {/* exit */}
       <button
         onClick={() => {
           localStorage.removeItem("access_token");

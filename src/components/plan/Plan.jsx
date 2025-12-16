@@ -1,7 +1,21 @@
+import clsx from "clsx";
 import React from "react";
 import CountUp from "react-countup";
+import { FaPen } from "react-icons/fa";
+import { IoMdClose } from "react-icons/io";
+import { MdRestore } from "react-icons/md";
 
-const Plan = ({ name, price, duration }) => {
+const Plan = ({
+  name,
+  price,
+  duration,
+  clicks,
+  type = "month",
+  onClick,
+  onClick_archived,
+  className,
+  archived,
+}) => {
   function getMonth(number) {
     const n = number % 100;
     if (n >= 11 && n <= 14) return "месяцев";
@@ -12,9 +26,14 @@ const Plan = ({ name, price, duration }) => {
   }
   return (
     <>
-      <div className="border flex flex-col items-center gap-9 p-4 rounded-[12px] w-full">
+      <div
+        className={clsx(
+          "relative border flex flex-col items-center gap-9 p-4 rounded-[12px] w-full",
+          className
+        )}
+      >
         <div className="flex items-center justify-center">
-          <p className="subtitle text-gray01 text-[32px]">{name}</p>
+          <p className="subtitle text-gray01 text-[32px] uppercase">{name}</p>
         </div>
 
         <div className=" flex items-end gap-3">
@@ -25,8 +44,10 @@ const Plan = ({ name, price, duration }) => {
 
         <div className="flex flex-col justify-center">
           <p className="details-text text-[24px] flex items-baseline gap-2">
-            <span className="font-bold text-3xl text-blue-500">
-              {`${duration} ${getMonth(duration)}`}
+            <span className="text-3xl text-blue-500 ">
+              {duration !== null
+                ? `${duration} ${getMonth(duration)}`
+                : `${clicks} кликов`}
             </span>
           </p>
         </div>
@@ -35,6 +56,23 @@ const Plan = ({ name, price, duration }) => {
             выбрать
           </button>
         </div>
+        {archived ? (
+          <div className="absolute top-3 right-3 flex items-center justify-center gap-2">
+            <FaPen onClick={onClick} className="w-4 h-4  cursor-pointer" />
+
+            <IoMdClose
+              onClick={onClick_archived}
+              className="w-6 h-6  cursor-pointer"
+            />
+          </div>
+        ) : (
+          <div className="absolute top-3 right-3 flex items-center justify-center gap-2">
+            <MdRestore
+              onClick={onClick_archived}
+              className="w-6 h-6  cursor-pointer"
+            />
+          </div>
+        )}
       </div>
     </>
   );

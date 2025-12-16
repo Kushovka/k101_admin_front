@@ -5,7 +5,12 @@ import axios from "axios";
 import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
-import { getUserById, isBlockedUser, updateUser } from "../../../api/admin";
+import {
+  getUserById,
+  isBlockedUser,
+  postDeposit,
+  updateUser,
+} from "../../../api/admin";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 const UserDetails = () => {
@@ -13,6 +18,11 @@ const UserDetails = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [notify, setNotify] = useState(null);
+  const [payInput, setPayInput] = useState("100");
+  const [openModal, setOpenModal] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -66,6 +76,48 @@ const UserDetails = () => {
     } catch (err) {
       console.error(err);
       alert("Не удалось изменить статус пользователя");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* deposit users */
+  const handleDeposit = async () => {
+    try {
+      if (payInput < 100) {
+        setNotify("error_pay");
+        setTimeout(() => setNotify(null), 3000);
+        return;
+      }
+      setLoading(true);
+      const res = await postDeposit(payInput);
+
+      const updatedUserRaw = await getUserById(id);
+      setUser({
+        id: updatedUserRaw.id,
+        nickName: updatedUserRaw.username,
+        name: updatedUserRaw.first_name,
+        surname: updatedUserRaw.last_name,
+        email: updatedUserRaw.email,
+        role: updatedUserRaw.role === "user" ? "User" : "Admin",
+        registrationDate: new Date(
+          updatedUserRaw.registration_date
+        ).toLocaleDateString(),
+        status: updatedUserRaw.is_blocked ? "Blocked" : "Active",
+        confirmationEmail: updatedUserRaw.is_email_verified ? "Yes" : "No",
+        balance: updatedUserRaw.balance || 0,
+        freeRequest: updatedUserRaw.free_requests_count || 0,
+        allRequest: updatedUserRaw.all_requests_count || 0,
+        totalSpend: updatedUserRaw.total_spent || 0,
+      });
+
+      setOpenModal(false);
+      setPayInput("100");
+      setNotify("access_pay");
+      setTimeout(() => setNotify(null), 3000);
+    } catch (err) {
+      console.error("Ошибка при пополнении баланса:", err);
+      setError("Ошибка при пополнении баланса");
     } finally {
       setLoading(false);
     }
@@ -205,8 +257,81 @@ const UserDetails = () => {
             Всего потрачено:{" "}
             <span className="text-black">{user.totalSpend}</span>
           </p>
+          <button
+            onClick={() => setOpenModal(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          >
+            Добавить баланс
+          </button>
         </div>
       </div>
+      {/* modal */}
+      {openModal && (
+        <div
+          onClick={() => {
+            setOpenModal(false);
+            setPayInput("100");
+          }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white p-6 rounded-lg w-80 flex flex-col gap-4"
+          >
+            <p className="text-lg font-semibold mb-4 text-center">Оплата</p>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="amount">Введите сумму</label>
+              <input
+                id="amount"
+                type="number"
+                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setPayInput(e.target.value)}
+                value={payInput}
+                placeholder="*введите сумму от 100₽"
+              />
+              {payInput < 0 || payInput === "" ? (
+                <span className="text-error">*введите корректную сумму</span>
+              ) : null}
+              {payInput < 100 ? (
+                <span className="text-error">*пополнение от 100₽</span>
+              ) : null}
+            </div>
+
+            <p className="text-gray01 text-[12px]">
+              *или выберете из предложенных
+            </p>
+
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setPayInput((prev) => Number(prev) + 100)}
+                className="pay-btn"
+              >
+                +100₽
+              </button>
+              <button
+                onClick={() => setPayInput((prev) => Number(prev) + 500)}
+                className="pay-btn"
+              >
+                +500₽
+              </button>
+              <button
+                onClick={() => setPayInput((prev) => Number(prev) + 1000)}
+                className="pay-btn"
+              >
+                +1000₽
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDeposit}
+              className="uppercase border px-2 py-1 rounded text-black font-medium hover:bg-green-500/70 transition duration-300 w-full"
+            >
+              оплатить
+            </button>
+          </div>
+        </div>
+      )}
       <div>
         <button
           onClick={() => navigate("/account/users")}

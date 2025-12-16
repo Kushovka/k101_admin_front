@@ -1,7 +1,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import Toast from "../../../components/toast/Toast";
 import { useSearch } from "./SearchContext";
@@ -78,7 +78,13 @@ const Search = () => {
       setCurrentPage(page);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Ошибка поиска");
+      setError(
+        err.response
+          ? err.response.status === 500
+            ? "Сервер временно недоступен. Попробуйте позже."
+            : "Ошибка при загрузке пользователей"
+          : "Сетевая ошибка или CORS"
+      );
     } finally {
       setLoading(false);
     }
@@ -142,7 +148,10 @@ const Search = () => {
             onChange={handleChange}
             className="border-2 rounded-[6px] px-3"
           />
-          <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300">
+          <button
+            data-tooltip-id="add_plans-tooltip"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
+          >
             найти
           </button>
         </form>
@@ -165,10 +174,11 @@ const Search = () => {
           </div>
           {loading && <Loader />}
           {error && (
-            <div className="flex flex-col items-center justify-center mb-4 text-error">
-              {error}
-              <span className="text-[30px]">😡</span>
-            </div>
+            <Toast
+              message={error}
+              type="error"
+              onClose={() => setError(null)}
+            />
           )}
 
           {result.map((item, index) => (
