@@ -6,6 +6,7 @@ import { addUsers, getUsers } from "../../../api/admin";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { IoClose } from "react-icons/io5";
+import { Tooltip } from "react-tooltip";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -154,11 +155,21 @@ export default function Users() {
           </div>
 
           {/* add button */}
+
+
           <div
+            data-tooltip-id="add_plans-tooltip"
             onClick={() => setOpenCreateModal((prev) => !prev)}
-            className="absolute bottom-8 right-8 hover:bottom-4 hover:right-4 border rounded-full p-4 group cursor-pointer hover:bg-green-300/50 transition-all duration-300 "
+            className="fixed z-50 bg-gray01/40 bottom-8 right-8 hover:bottom-7 hover:right-7 border rounded-full p-4 group cursor-pointer hover:bg-green-300/50 transition-all duration-200 "
           >
-            <IoClose className="group-hover:w-16 group-hover:h-16 w-8 h-8 rotate-45 transition-all duration-300 cursor-pointer" />
+            <IoClose className="group-hover:w-10 group-hover:h-10 w-8 h-8 rotate-45 transition-all duration-200 cursor-pointer" />
+            <Tooltip
+              place="left"
+              effect="float"
+              delayShow={400}
+              content="Добавить нового пользователя"
+              id="add_plans-tooltip"
+            />
           </div>
 
           {openCreateModal && (

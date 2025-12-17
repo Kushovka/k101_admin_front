@@ -6,8 +6,11 @@ import api from "../../../api/axios";
 import Toast from "../../../components/toast/Toast";
 import { useSearch } from "./SearchContext";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import { IoIosArrowDown } from "react-icons/io";
+import { motion } from "framer-motion";
 
-const API_URL = "http://192.168.0.45:18101";
+// const API_URL = "http://192.168.0.45:18000/search/dynamic";
+const API_URL = "http://192.168.0.45:18101/admin/search";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -19,7 +22,8 @@ const Search = () => {
   const [notify, setNotify] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [seeSearch, setSeeSearch] = useState(false);
+  const [additionalOption, setAdditionalOption] = useState(false);
   const { isOpen } = useSidebar();
 
   const pageSize = 10;
@@ -53,11 +57,20 @@ const Search = () => {
 
   const handleSubmit = async (e, page = 1, isPagination = false) => {
     if (e) e.preventDefault();
+
+    if (!form.name && !form.phone && !form.person_id && !form.email) {
+      setError("Введите хотя бы одно поле для поиска");
+      return;
+    }
+
     if (!isPagination) setResult([]);
     setLoading(true);
     setError("");
 
+    setSeeSearch(false);
+
     try {
+      // Формируем query string
       const query = new URLSearchParams({
         page,
         page_size: pageSize,
@@ -67,11 +80,10 @@ const Search = () => {
         ...(form.email.trim() && { email: form.email.trim() }),
       }).toString();
 
-      const res = await api.post(`${API_URL}/admin/search?${query}`, null, {
+      const res = await api.post(`${API_URL}?${query}`, null, {
         headers: getHeaders(),
       });
-
-      console.log(res.data);
+      setSeeSearch(true);
       setRes(res.data);
       setResult(res.data.results || []);
       setTotalPages(res.data.total_pages || 1);
@@ -89,6 +101,8 @@ const Search = () => {
       setLoading(false);
     }
   };
+
+  console.log(result);
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -108,55 +122,117 @@ const Search = () => {
 
   const visiblePages = [];
   for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
-
-  console.log(result);
+  console.log(res.count);
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="flex flex-col gap-5">
         <div className="title">Поиск</div>
         {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
-        <form onSubmit={handleSubmit} className="flex gap-4 w-[250px]">
-          <input
-            name="name"
-            type="text"
-            placeholder="*name"
-            value={form.name}
-            onChange={handleChange}
-            className="border-2 rounded-[6px] px-3"
-          />
-          <input
-            name="phone"
-            type="text"
-            placeholder="*phone"
-            value={form.phone}
-            onChange={handleChange}
-            className="border-2 rounded-[6px] px-3"
-          />
-          <input
-            name="person_id"
-            type="text"
-            placeholder="*person_id"
-            value={form.person_id}
-            onChange={handleChange}
-            className="border-2 rounded-[6px] px-3"
-          />
-          <input
-            name="email"
-            type="text"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="border-2 rounded-[6px] px-3"
-          />
+        <div className="flex items-center justify-center">
+          <form onSubmit={handleSubmit} className="flex gap-4">
+            <input
+              name="name"
+              type="text"
+              placeholder="ФИО"
+              value={form.name}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <input
+              name="phone"
+              type="text"
+              placeholder="телефон"
+              value={form.phone}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <input
+              name="person_id"
+              type="text"
+              placeholder="person_id"
+              value={form.person_id}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <input
+              name="email"
+              type="text"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <button
+              data-tooltip-id="add_plans-tooltip"
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
+            >
+              найти
+            </button>
+          </form>
           <button
-            data-tooltip-id="add_plans-tooltip"
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
+            className="w-full flex items-center justify-center gap-1 text-common text-[16px]"
+            onClick={() => setAdditionalOption((prev) => !prev)}
           >
-            найти
+            Дополнительные параметры поиска{" "}
+            {additionalOption ? (
+              <IoIosArrowDown className="w-6 h-6 rotate-180 transition-all duration-300" />
+            ) : (
+              <IoIosArrowDown className="w-6 h-6 transition-all duration-300" />
+            )}
           </button>
-        </form>
+        </div>
+        {additionalOption && (
+          <motion.form
+            initial={{ opacity: 0 }}
+            animate={{opacity: 1}}
+            transition={{duration: 0.6}}
+            onSubmit={handleSubmit}
+            className="flex gap-4"
+          >
+            <input
+              name="name"
+              type="text"
+              placeholder="ФИО"
+              value={form.name}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3 py-2"
+            />
+            <input
+              name="phone"
+              type="text"
+              placeholder="телефон"
+              value={form.phone}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <input
+              name="person_id"
+              type="text"
+              placeholder="person_id"
+              value={form.person_id}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+            <input
+              name="email"
+              type="text"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              className="border-2 rounded-[6px] px-3"
+            />
+          </motion.form>
+        )}
       </div>
-      <div className="text-common">Найдено: {res.count || 0} результатов</div>
+
+      {seeSearch && (
+        <div className="text-common">
+          Найдено:{" "}
+          {res.count === 10
+            ? "Очень много совпадений, введите дополнительные параметры"
+            : `${res.count} результатов`}
+        </div>
+      )}
       {result.length >= 0 && (
         <div>
           <div className="grid grid-cols-7 gap-4 text-gray-600 font-medium border-b pb-2">
@@ -184,42 +260,42 @@ const Search = () => {
           {result.map((item, index) => (
             <div
               key={index}
-              className="grid grid-cols-7 gap-4 text-gray-600 text-center py-2 border-b"
+              className="grid grid-cols-7 gap-4 text-[13px] text-gray-600 text-center py-2 border-b"
             >
               <span>{(currentPage - 1) * pageSize + index + 1}</span>
               <span
                 className="cursor-copy"
-                onClick={() => handleCopy(item._source.last_name || "")}
+                onClick={() => handleCopy(item.last_name || "")}
               >
-                {item._source.last_name || "-"}
+                {item.last_name || "-"}
               </span>
               <span
                 className="cursor-copy"
-                onClick={() => handleCopy(item._source.first_name || "")}
+                onClick={() => handleCopy(item.first_name || "")}
               >
-                {item._source.first_name || "-"}
+                {item.first_name || "-"}
               </span>
               <span
                 className="cursor-copy"
-                onClick={() => handleCopy(item._source.middle_name || "")}
+                onClick={() => handleCopy(item.middle_name || "")}
               >
-                {item._source.middle_name || "-"}
+                {item.middle_name || "-"}
               </span>
               <span
                 className="cursor-copy"
-                onClick={() => handleCopy(item._source.email || "")}
+                onClick={() => handleCopy(item.emails[0] || "")}
               >
-                {item._source.email || "-"}
+                {item.emails[0] || "-"}
               </span>
               <span
                 className="cursor-copy"
-                onClick={() => handleCopy(item._source.phone || "")}
+                onClick={() => handleCopy(item.phones[0] || "")}
               >
-                {item._source.phone || "-"}
+                {item.phones[0] || "-"}
               </span>
               <div
                 onClick={() =>
-                  navigate(`/account/search/${item._id}`, {
+                  navigate(`/account/search/${item.entity_id}`, {
                     state: item,
                   })
                 }

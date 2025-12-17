@@ -1,17 +1,19 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import { IoIosArrowDown } from "react-icons/io";
 
 const SearchDetails = () => {
   const location = useLocation();
   const user = location.state;
   const navigate = useNavigate();
 
-  const [openModal, setOpenModal] = useState(false);
+  const [openDossier, setOpenDossier] = useState(false);
   const [openModalFull, setOpenModalFull] = useState(false);
+  const [basicInfo, setBasicInfo] = useState(false);
 
   const [notify, setNotify] = useState(false);
 
@@ -41,16 +43,15 @@ const SearchDetails = () => {
       <div
         onClick={() =>
           handleCopy(
-            `${capitalize(user._source.last_name)} ${capitalize(
-              user._source.first_name
-            )} ${capitalize(user._source.middle_name)}`
+            `${capitalize(user.last_name)} ${capitalize(
+              user.first_name
+            )} ${capitalize(user.middle_name)}`
           )
         }
         className="title cursor-copy"
       >
-        Подробрая информация пользователя: {capitalize(user._source.last_name)}{" "}
-        {capitalize(user._source.first_name)}{" "}
-        {capitalize(user._source.middle_name)}
+        Подробрая информация пользователя: {capitalize(user.last_name)}{" "}
+        {capitalize(user.first_name)} {capitalize(user.middle_name)}
       </div>
       {/* btn-for-back */}
       <div>
@@ -62,182 +63,253 @@ const SearchDetails = () => {
           Назад
         </button>
       </div>
-      <div className="flex justify-between gap-5 w-full">
-        {/* info */}
-        <div className="flex gap-10 w-1/3 h-full">
-          <div className="border flex flex-col gap-5 p-4 rounded-[12px] w-full">
-            <div className="flex items-center justify-center">
-              <p className="subtitle text-gray01">Основная информация</p>
+
+      <div className="flex flex-col justify-between gap-5 w-full">
+        {/* основная информация */}
+        <div className="flex flex-col">
+          <div
+            className="flex gap-10 w-full h-full cursor-pointer select-none"
+            onClick={() => setBasicInfo((prev) => !prev)}
+          >
+            <div
+              className={clsx(
+                "border flex flex-col gap-5 p-4 rounded-[12px] w-full",
+                basicInfo ? "rounded-b-none border-b-0" : ""
+              )}
+            >
+              <div className="flex items-center justify-center">
+                <p className="subtitle text-gray01 flex items-center justify-center gap-2">
+                  Основная информация{" "}
+                  <IoIosArrowDown
+                    className={clsx(
+                      "w-6 h-6 transition-all duration-300",
+                      basicInfo ? "rotate-180" : ""
+                    )}
+                  />
+                </p>
+              </div>
             </div>
-            {/* имя */}
-            {user._source.last_name && (
-              <p className="details-text">
-                Имя:{" "}
-                <span
-                  className="text-black cursor-copy"
-                  onClick={() => handleCopy(`${user._source.last_name}`)}
-                >
-                  {capitalize(user._source.last_name) || ""}
-                </span>
-              </p>
-            )}
-            {/* фамилия */}
-            {user._source.first_name && (
-              <p className="details-text">
-                Фамилия:{" "}
-                <span
-                  onClick={() => handleCopy(`${user._source.first_name}`)}
-                  className="text-black cursor-copy"
-                >
-                  {capitalize(user._source.first_name)}
-                </span>
-              </p>
-            )}
-            {/* отчество */}
-            {user._source.middle_name && (
-              <p className="details-text">
-                Отчество:{" "}
-                <span
-                  onClick={() => handleCopy(`${user._source.middle_name}`)}
-                  className="text-black cursor-copy"
-                >
-                  {capitalize(user._source.middle_name)}
-                </span>
-              </p>
-            )}
-            {/* телефон */}
-            {user._source.phone && (
-              <p className="details-text">
-                Телефон:{" "}
-                <span
-                  onClick={() => handleCopy(`${user._source.phone}`)}
-                  className="text-black cursor-copy"
-                >
-                  {user._source.phone}
-                </span>
-              </p>
-            )}
-            {/* емаил */}
-            {user._source.email && (
-              <p className="details-text">
-                Email:{" "}
-                <span
-                  onClick={() => handleCopy(`${user._source.email}`)}
-                  className="text-black cursor-copy"
-                >
-                  {user._source.email}
-                </span>
-              </p>
-            )}
-            {/* дата рождения */}
-            {user._source.birthday && (
-              <p className="details-text">
-                Дата рождения:{" "}
-                <span
-                  onClick={() =>
-                    handleCopy(
-                      `${new Date(user._source.birthday).toLocaleDateString()}`
-                    )
-                  }
-                  className="text-black cursor-copy"
-                >
-                  {new Date(user._source.birthday).toLocaleDateString()}
-                </span>
-              </p>
-            )}
           </div>
+
+          {basicInfo && (
+            <div
+              className="flex gap-10 w-full h-full -space-y-5"
+              
+            >
+              <div className="border-x border-b rounded-t-none flex flex-col gap-5 p-4 rounded-[12px] w-full">
+                {/* <div className="flex items-center justify-center">
+                <p className="subtitle text-gray01">Основная информация</p>
+              </div> */}
+                {/* фамилия */}
+                {user.last_name && (
+                  <p className="details-text">
+                    Фамилия:{" "}
+                    <span
+                      className="text-black cursor-copy"
+                      onClick={() => handleCopy(`${user.last_name}`)}
+                    >
+                      {capitalize(user.last_name) || ""}
+                    </span>
+                  </p>
+                )}
+                {/* имя */}
+                {user.first_name && (
+                  <p className="details-text">
+                    Имя:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.first_name}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {capitalize(user.first_name)}
+                    </span>
+                  </p>
+                )}
+                {/* отчество */}
+                {user.middle_name && (
+                  <p className="details-text">
+                    Отчество:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.middle_name}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {capitalize(user.middle_name)}
+                    </span>
+                  </p>
+                )}
+                {/* телефон */}
+                {user.phones[0] && (
+                  <p className="details-text">
+                    Телефон:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.phones[0]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.phones[0]}
+                    </span>
+                  </p>
+                )}
+                {/* емаил */}
+                {user.emails[0] && (
+                  <p className="details-text">
+                    Email:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.emails[0]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.emails[0]}
+                    </span>
+                  </p>
+                )}
+                {/* дата рождения */}
+                {user.birthday && (
+                  <p className="details-text">
+                    Дата рождения:{" "}
+                    <span
+                      onClick={() =>
+                        handleCopy(
+                          `${new Date(user.birthday).toLocaleDateString()}`
+                        )
+                      }
+                      className="text-black cursor-copy"
+                    >
+                      {new Date(user.birthday).toLocaleDateString()}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col w-full gap-5">
-          {/* info-full */}
-          {!openModalFull && (
-            <button
-              onClick={() => setOpenModalFull((prev) => !prev)}
-              className=" text-black border px-3 py-2 rounded cursor-pointer z-50"
+        {/* подробная информация  */}
+        <div>
+          <div
+            className="flex gap-10 w-full h-full cursor-pointer select-none"
+            onClick={() => setOpenModalFull((prev) => !prev)}
+          >
+            <div
+              className={clsx(
+                "border flex flex-col gap-5 p-4 rounded-[12px] w-full",
+                openModalFull ? "rounded-b-none border-b-0" : ""
+              )}
             >
-              показать подробную информацию
-            </button>
-          )}
+              <div className="flex items-center justify-center">
+                <p className="subtitle text-gray01 flex items-center justify-center gap-2">
+                  Подробная информация{" "}
+                  <IoIosArrowDown
+                    className={clsx(
+                      "w-6 h-6 transition-all duration-300",
+                      openModalFull ? "rotate-180" : ""
+                    )}
+                  />
+                </p>
+              </div>
+            </div>
+          </div>
 
           {openModalFull && (
-            <div className="relative flex gap-10 w-full">
-              {!openModalFull && (
-                <div className="absolute w-full h-full rounded-[12px] bg-black/50 top-0 left-0">
-                  {" "}
-                </div>
-              )}
+            <div className="relative flex gap-10 w-full -space-y-5">
               <div
                 className={clsx(
                   "border flex flex-col gap-5 p-4 rounded-[12px] w-full",
-                  !openModalFull && "blur-sm"
+                  openModalFull ? "border-t-0 rounded-t-none" : ""
                 )}
               >
-                <div
-                  onClick={() => setOpenModalFull((prev) => !prev)}
-                  className="flex items-center justify-center"
-                >
-                  <p className="subtitle text-gray01">Подробная информация</p>
-                </div>
-
                 <p className="details-text">
                   <span className="text-black">
-                    {capitalize(user._source.last_name)}{" "}
-                    {capitalize(user._source.first_name)}{" "}
-                    {capitalize(user._source.middle_name)}{" "}
-                    {user._source.birthday
-                      ? "- " +
-                        new Date(user._source.birthday).toLocaleDateString()
+                    {capitalize(user.last_name)} {capitalize(user.first_name)}{" "}
+                    {capitalize(user.middle_name)}{" "}
+                    {user.birthday
+                      ? "- " + new Date(user.birthday).toLocaleDateString()
                       : ""}
                   </span>
                 </p>
+                {/* snils */}
                 <p className="details-text">
-                  {user._source.snils && (
+                  {user.snils[0] && (
                     <span
-                      onClick={() => handleCopy(`${user._source.snils}`)}
+                      onClick={() => handleCopy(`${user.snils[0]}`)}
                       className="text-black cursor-copy"
                     >
-                      СНИЛС: {user._source.snils || ""}
+                      СНИЛС: {user.snils[0] || ""}
                     </span>
                   )}
                 </p>
+                {/* address */}
                 <p className="details-text">
-                  {user._source.address && (
+                  {user.addresses[0] && (
                     <span
-                      onClick={() => handleCopy(`${user._source.address}`)}
+                      onClick={() => handleCopy(`${user.addresses[0]}`)}
                       className="text-black cursor-copy"
                     >
-                      Адрес проживания: {user._source.address || ""}
+                      Адрес проживания: {user.addresses[0] || ""}
+                    </span>
+                  )}
+                </p>
+                {/* pasport */}
+                <p className="details-text flex gap-2">
+                  {user.additional_data.serial?.value && (
+                    <span
+                      onClick={() =>
+                        handleCopy(`${user.additional_data.serial?.value}`)
+                      }
+                      className="text-black cursor-copy"
+                    >
+                      Серия: {user.additional_data.serial?.value || ""}
+                    </span>
+                  )}
+                  {user.additional_data.number?.value && (
+                    <span
+                      onClick={() =>
+                        handleCopy(`${user.additional_data.number?.value}`)
+                      }
+                      className="text-black cursor-copy"
+                    >
+                      Номер: {user.additional_data.number?.value || ""}
                     </span>
                   )}
                 </p>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Dossie */}
-          {!openModal && (
-            <button
-              onClick={() => setOpenModal((prev) => !prev)}
-              className=" text-black border px-3 py-2 rounded cursor-pointer z-50"
-            >
-              показать досье
-            </button>
-          )}
-          {openModal && (
-            <div className="relative flex gap-10 w-full">
-              {!openModal && (
-                <div className="absolute w-full h-full rounded-[12px] bg-black/50 top-0 left-0">
-                  {" "}
-                </div>
+        {/* Досье */}
+        <div>
+          <div
+            className="flex gap-5 w-full h-full cursor-pointer select-none"
+            onClick={() => setOpenDossier((prev) => !prev)}
+          >
+            <div
+              className={clsx(
+                "border flex flex-col gap-5 p-4 rounded-[12px] w-full",
+                openDossier ? "rounded-b-none border-b-0" : ""
               )}
+            >
+              <div className="flex items-center justify-center">
+                <p className="subtitle text-gray01 flex items-center justify-center gap-2">
+                  Досье{" "}
+                  <IoIosArrowDown
+                    className={clsx(
+                      "w-6 h-6 transition-all duration-300",
+                      openDossier ? "rotate-180" : ""
+                    )}
+                  />
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {openDossier && (
+            <div className="relative flex gap-5 w-full -space-y-5">
               <div
                 className={clsx(
                   "border flex flex-col gap-5 p-4 rounded-[12px] w-full",
-                  !openModal && "blur-sm"
+                  openDossier && "border-t-0 rounded-t-none"
                 )}
               >
                 <div
-                  onClick={() => setOpenModal((prev) => !prev)}
+                  onClick={() => setOpenDossier((prev) => !prev)}
                   className="flex items-center justify-center"
                 >
                   <p className="subtitle text-gray01">Досье</p>
