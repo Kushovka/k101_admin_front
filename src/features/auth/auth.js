@@ -9,6 +9,8 @@ export const login = async (username, password) => {
   localStorage.setItem("refresh_token", res.data.refresh_token);
   console.log(res.data.access_token);
   console.log(res.data.refresh_token);
+  console.log(res.data);
+  console.log(res);
   return res.data;
 };
 

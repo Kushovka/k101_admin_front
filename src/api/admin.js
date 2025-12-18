@@ -36,6 +36,38 @@ export const addUsers = async (
   return res.data;
 };
 
+export const getCurrentUser = async () => {
+  const token = localStorage.getItem("access_token");
+  if (!token) throw new Error("Нет токена");
+
+  const res = await api.get(`${API_URL_users}/api/v1/users/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  console.log(res.data);
+  return res.data;
+};
+
+// update profile
+export const updateProfile = async ({ email, first_name, last_name }) => {
+  const token = localStorage.getItem("access_token");
+  if (!token) throw new Error("Нет токена");
+
+  const res = await api.put(
+    `${API_URL_users}/api/v1/users/profile`,
+    { email, first_name, last_name },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  console.log(res.data);
+  return res.data;
+};
+
 /* USER DETAILS */
 export const getUserById = async (id) => {
   const res = await api.get(`${API_URL}/admin/users/${id}`, {
@@ -147,6 +179,7 @@ export const unarchivedPlans = async (id) => {
 };
 
 // BALANCE
+
 // balance
 export const postDeposit = async (amount) => {
   const token = localStorage.getItem("access_token");

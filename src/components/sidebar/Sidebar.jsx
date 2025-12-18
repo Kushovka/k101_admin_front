@@ -5,6 +5,7 @@ import { IoIosSearch } from "react-icons/io";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { GoChevronRight } from "react-icons/go";
 import { MdAttachMoney } from "react-icons/md";
+import { FaUsers } from "react-icons/fa";
 
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,7 +20,8 @@ const Sidebar = () => {
 
   // links
   const links = [
-    { name: "Пользователи", icon: <FaRegCircleUser />, path: "/account/users" },
+    { name: "Профиль", icon: <FaRegCircleUser />, path: "/account/profile" },
+    { name: "Пользователи", icon: <FaUsers />, path: "/account/users" },
     {
       name: "Загрузка",
       icon: <MdDownloading />,

@@ -16,9 +16,9 @@ import Search from "./features/account/search/Search";
 import UserDetails from "./features/account/users/UserDetails";
 import SearchDetails from "./features/account/search/SearchDetails";
 import { SearchProvider } from "./features/account/search/SearchContext";
-import { useState } from "react";
 import { SidebarProvider } from "./components/sidebar/SidebarContext";
 import Plans from "./features/account/plans/Plans";
+import Profile from "./features/account/profile/Profile";
 
 function App() {
   return (
@@ -36,6 +36,7 @@ function App() {
           }
         >
           <Route path="upload-files" element={<UploadFiles />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />
           <Route path="health-check" element={<HealthCheck />} />

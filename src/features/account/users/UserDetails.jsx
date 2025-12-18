@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
-import axios from "axios";
+
 import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
