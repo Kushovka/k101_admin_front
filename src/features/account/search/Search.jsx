@@ -122,7 +122,6 @@ const Search = () => {
 
   const visiblePages = [];
   for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
-  console.log(res.count);
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="flex flex-col gap-5">

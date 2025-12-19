@@ -6,6 +6,7 @@ import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 import {
+  addUsers,
   getUserById,
   isBlockedUser,
   postDeposit,
@@ -19,6 +20,8 @@ const UserDetails = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+
 
   const [notify, setNotify] = useState(null);
   const [payInput, setPayInput] = useState("100");
@@ -36,6 +39,7 @@ const UserDetails = () => {
   useEffect(() => {
     fetchUser();
   }, [id]);
+
 
   const fetchUser = async () => {
     setLoading(true);

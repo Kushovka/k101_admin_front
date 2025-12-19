@@ -201,7 +201,10 @@ const UploadFiles = () => {
           </p>
         </div>
       </div>
-      <div className="flex justify-between">
+      <div
+        className="flex justify-between"
+        onClick={() => setOpenUploadFiles(false)}
+      >
         <div className="w-1/2">
           {files.length > 0 && (
             <div className="mt-5">
@@ -243,9 +246,16 @@ const UploadFiles = () => {
             </div>
           )}
         </div>
-        <div className="flex w-1/2 gap-3 flex-col">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          className="flex w-1/2 gap-3 flex-col"
+        >
           <div
-            onClick={() => setOpenUploadFiles((prev) => !prev)}
+            onClick={() => {
+              setOpenUploadFiles((prev) => !prev);
+            }}
             className="flex items-center justify-center gap-2 border w-full text-center rounded py-4 uppercase text-common text-[18px] cursor-pointer select-none"
           >
             <h1>Загруженные файлы</h1>
@@ -255,51 +265,61 @@ const UploadFiles = () => {
               <IoIosArrowDown className="w-6 h-6 transition-all duration-300" />
             )}
           </div>
-          {openUploadFiles && (
-            <>
-              <div className="grid grid-cols-3 text-center">
-                <p>название</p>
-                <p>дата загрузки</p>
-                <p>статус</p>
-              </div>
-              <div className="max-h-[300px] overflow-y-auto pr-2">
-                <div className="flex flex-col gap-0">
-                  {allFiles
-                    .filter((item) => currentId.id === item.uploaded_by_user_id)
-                    .map((item, idx) => (
-                      <div
-                        key={idx}
-                        data-tooltip-id={`error-${item.id}`}
-                        className={clsx(
-                          "border-b last:border-b-0 py-2 grid grid-cols-3 text-center",
-                          item.processing_status === "failed"
-                            ? "bg-red01/30 cursor-pointer"
-                            : "bg-green-400/40"
-                        )}
-                      >
-                        <p>{item.display_name}</p>
-                        <p>{new Date(item.created_at).toLocaleDateString()}</p>
-                        <p className="cursor-pointer">
-                          {item.processing_status === "failed"
-                            ? "Ошибка"
-                            : "Выполнено"}
-                        </p>
-                        {item.processing_status === "failed" &&
-                          item.error_message && (
-                            <Tooltip
-                              place="left"
-                              effect="float"
-                              delayShow={400}
-                              content={`Неподдерживаемый тип файла - (.${item.file_type})`}
-                              id={`error-${item.id}`}
-                            />
-                          )}
-                      </div>
-                    ))}
+          <div>
+            {openUploadFiles && (
+              <>
+                <div className="grid grid-cols-3 text-center">
+                  <p>название</p>
+                  <p>дата загрузки</p>
+                  <p>статус</p>
                 </div>
-              </div>
-            </>
-          )}
+                <div className="max-h-[300px] overflow-y-auto pr-2">
+                  <div className="flex flex-col gap-0">
+                    {allFiles
+                      .filter(
+                        (item) => currentId.id === item.uploaded_by_user_id
+                      )
+                      .map((item, idx) => (
+                        <div
+                          key={idx}
+                          data-tooltip-id={`error-${item.id}`}
+                          className={clsx(
+                            "border-b last:border-b-0 py-2 grid grid-cols-3 text-center",
+                            item.processing_status === "failed"
+                              ? "bg-red01/30 cursor-pointer"
+                              : item.processing_status === "pending"
+                              ? "bg-orange-400/60"
+                              : item.processing_status === "extracted"
+                              ? "bg-green-400/40"
+                              : "bg-orange-400/60"
+                          )}
+                        >
+                          <p>{item.display_name}</p>
+                          <p>
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="cursor-pointer">
+                            {item.processing_status === "failed"
+                              ? "Ошибка"
+                              : "Выполнено"}
+                          </p>
+                          {item.processing_status === "failed" &&
+                            item.error_message && (
+                              <Tooltip
+                                place="left"
+                                effect="float"
+                                delayShow={400}
+                                content={`Неподдерживаемый тип файла - (.${item.file_type})`}
+                                id={`error-${item.id}`}
+                              />
+                            )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>

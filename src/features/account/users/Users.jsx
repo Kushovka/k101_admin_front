@@ -7,6 +7,8 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { IoClose } from "react-icons/io5";
 import { Tooltip } from "react-tooltip";
+import { CgDanger } from "react-icons/cg";
+import { MdContentCopy } from "react-icons/md";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -18,11 +20,15 @@ export default function Users() {
   const [last_name, setLastName] = useState("");
   const [role, setRole] = useState("user");
   const [username, setUsername] = useState("");
+  const [dataAddUser, setDataAddUser] = useState("");
+  const [showDataNewUser, setShowDataNewUser] = useState(false);
+  const [notify, setNotify] = useState(null);
 
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
   const { isOpen } = useSidebar();
 
+  /* все пользователи */
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -64,6 +70,7 @@ export default function Users() {
     }
   };
 
+  /* добавление пользователя */
   const addUser = async () => {
     if (!email || !first_name || !last_name || !username) {
       setError("Заполните все поля");
@@ -71,9 +78,13 @@ export default function Users() {
     }
     setLoading(true);
     try {
-      await addUsers(email, first_name, last_name, role, username);
+      const res = await addUsers(email, first_name, last_name, role, username);
       await fetchUsers();
       setOpenCreateModal(false);
+      setNotify("user_create");
+      setShowDataNewUser(true);
+      setDataAddUser(res);
+      console.log(res);
       setEmail("");
       setFirstName("");
       setLastName("");
@@ -92,6 +103,7 @@ export default function Users() {
     }
   };
 
+  /* названия столбцов */
   const chapterTitle = [
     { id: 2, title: "Никнейм" },
     { id: 3, title: "Имя" },
@@ -103,6 +115,25 @@ export default function Users() {
     { id: 9, title: "Идентификатор" },
   ];
 
+  /* функция длдя копирования */
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setNotify("access_copy");
+    });
+  };
+
+  /* toast кофиг */
+  const toastConfig = {
+    user_create: {
+      message: `Пользователь "${dataAddUser.username}" успешно создан !`,
+    },
+    access_copy: {
+      message: "СКОПИРОВАНО !",
+    },
+  };
+  console.log(toastConfig);
+  console.log(dataAddUser);
+
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Пользователи</div>
@@ -113,6 +144,7 @@ export default function Users() {
         <Loader />
       ) : (
         <>
+          {/* названия столбцов */}
           <div className="grid grid-cols-8 gap-4 text-gray01 font-medium border-b pb-2">
             {chapterTitle.map((chapter) => (
               <span
@@ -126,6 +158,8 @@ export default function Users() {
               </span>
             ))}
           </div>
+
+          {/* все пользователи */}
           <div className="flex flex-col">
             {users.map((user) => (
               <div
@@ -155,8 +189,6 @@ export default function Users() {
           </div>
 
           {/* add button */}
-
-
           <div
             data-tooltip-id="add_plans-tooltip"
             onClick={() => setOpenCreateModal((prev) => !prev)}
@@ -238,6 +270,77 @@ export default function Users() {
                 </button>
               </div>
             </div>
+          )}
+          {/* модалка с данными созданного пользователя */}
+          {showDataNewUser && (
+            <div
+              onClick={() => setShowDataNewUser(false)}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white p-6 rounded-xl w-[420px] flex flex-col gap-6 shadow-xl"
+              >
+                <p className="text-lg font-semibold text-center">
+                  Данные для входа
+                </p>
+
+                {/* Логин */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-500">Логин</span>
+                  <div className="bg-gray-100 relative rounded-lg px-4 py-3 text-center text-lg font-mono">
+                    <p>{dataAddUser.username}</p>
+                    <span
+                      onClick={() => handleCopy(`${dataAddUser.username}`)}
+                      className="absolute top-1/2 -translate-y-1/2 right-3 shadow-sm p-1 rounded hover:shadow-lg transition-all duration-300 scale-100 hover:scale-105"
+                    >
+                      <MdContentCopy className="w-6 h-6" />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Пароль */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-gray-500">Пароль</span>
+                  <div className="bg-gray-100 relative rounded-lg px-4 py-3 text-center text-lg font-mono">
+                    <p>{dataAddUser.temporary_password}</p>
+                    <span
+                      onClick={() =>
+                        handleCopy(`${dataAddUser.temporary_password}`)
+                      }
+                      className="absolute top-1/2 -translate-y-1/2 right-3 shadow-sm p-1 rounded hover:shadow-lg transition-all duration-300 scale-100 hover:scale-105"
+                    >
+                      <MdContentCopy className="w-6 h-6" />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Warning */}
+                <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                  <CgDanger className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">
+                    Сохраните эти данные. После закрытия окна пароль больше не
+                    будет доступен.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <button
+                  onClick={() => setShowDataNewUser(false)}
+                  className="w-full border rounded-lg py-2 hover:bg-green-500/70 transition"
+                >
+                  Понятно
+                </button>
+              </div>
+            </div>
+          )}
+
+          {notify && toastConfig[notify] && (
+            <Toast
+              type="access"
+              message={toastConfig[notify].message}
+              onClose={() => setNotify(null)}
+            />
           )}
         </>
       )}

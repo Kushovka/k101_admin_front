@@ -8,6 +8,7 @@ export const SearchProvider = ({ children }) => {
     phone: "",
     person_id: "",
     email: "",
+    age: "",
   });
   const [result, setResult] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
