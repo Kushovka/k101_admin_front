@@ -16,6 +16,7 @@
     "@aws-sdk/lib-storage": "^3.943.0",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
+    "event-source-polyfill": "^1.0.31",
     "framer-motion": "^12.23.25",
     "react": "^19.2.0",
     "react-countup": "^6.5.3",

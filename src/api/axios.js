@@ -2,7 +2,7 @@ import axios from "axios";
 
 /* редирект на SignIn, если токен исчерпан */
 const api = axios.create({
-  baseURL: "http://192.168.0.45:18001",
+  baseURL: "http://192.168.0.45:18101",
 });
 
 
