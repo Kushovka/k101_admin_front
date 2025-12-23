@@ -18,7 +18,9 @@ import {
 } from "react-icons/pi";
 import { TbJson } from "react-icons/tb";
 import { CgDanger } from "react-icons/cg";
-import { EventSourcePolyfill } from "event-source-polyfill";
+import FilePreviewModal from "../../../components/filePreviewModal/FilePreviewModal";
+import { FaPlay, FaStop } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
 const UploadFiles = () => {
   const fileInputRef = useRef(null);
@@ -29,6 +31,7 @@ const UploadFiles = () => {
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const [notify, setNotify] = useState(null);
   const [error, setError] = useState(null);
@@ -39,14 +42,17 @@ const UploadFiles = () => {
 
   /* ---------------- helpers ---------------- */
 
+  const token = localStorage.getItem("access_token");
+
   const getFileIcon = (name) => {
-    if (name.endsWith(".xlsx")) return <PiMicrosoftExcelLogoBold />;
-    if (name.endsWith(".xls")) return <PiFileXlsBold />;
-    if (name.endsWith(".txt")) return <PiFileTxtBold />;
-    if (name.endsWith(".json")) return <TbJson />;
-    if (name.endsWith(".html")) return <PiFileHtmlBold />;
-    if (name.endsWith(".pdf")) return <PiFilePdfBold />;
-    if (name.endsWith(".csv")) return <PiFileCsvBold />;
+    if (name.endsWith(".xlsx"))
+      return <PiMicrosoftExcelLogoBold className="w-10 h-10" />;
+    if (name.endsWith(".xls")) return <PiFileXlsBold className="w-10 h-10" />;
+    if (name.endsWith(".txt")) return <PiFileTxtBold className="w-10 h-10" />;
+    if (name.endsWith(".json")) return <TbJson className="w-10 h-10" />;
+    if (name.endsWith(".html")) return <PiFileHtmlBold className="w-10 h-10" />;
+    if (name.endsWith(".pdf")) return <PiFilePdfBold className="w-10 h-10" />;
+    if (name.endsWith(".csv")) return <PiFileCsvBold className="w-10 h-10" />;
     return <CgDanger className="w-6 h-6 text-red01/70" />;
   };
 
@@ -93,8 +99,9 @@ const UploadFiles = () => {
       setAllFiles(res.data.files);
       setNotify("access");
       setFiles([]);
-    } catch {
+    } catch (e) {
       setError("Ошибка при загрузке файлов");
+      console.error(e);
     } finally {
       setUploading(false);
     }
@@ -117,65 +124,144 @@ const UploadFiles = () => {
     getCurrentUser().then(setCurrentUser);
   }, []);
 
-  /* ---------------- SSE ---------------- */
+  /* ---------------- queue api ---------------- */
 
-  const token = localStorage.getItem("access_token");
+  const queueApi = {
+    pause: (id) =>
+      api.post(
+        `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/pause`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+
+    resume: (id) =>
+      api.post(
+        `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/resume`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+
+    cancel: (id) =>
+      api.post(
+        `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+  };
+
+  // /* ---------------- uploadChunked ---------------- */
+  // const uploadChunked = async (file) => {
+  //   const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+  //   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+  //   // 1️⃣ init
+  //   const initRes = await api.post(
+  //     "http://192.168.0.45:18100/api/v1/upload/chunked/init",
+  //     {
+  //       filename: file.name,
+  //       file_size: file.size, // ⚠️ строго по swagger
+  //       chunk_size: CHUNK_SIZE, // ⚠️ строго по swagger
+  //       total_chunks: totalChunks, // ⚠️ строго по swagger
+  //     },
+  //     {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     }
+  //   );
+
+  //   const { upload_id } = initRes.data;
+
+  //   let uploaded = 0;
+  //   let chunkIndex = 0;
+
+  //   // 2️⃣ upload chunks
+  //   while (uploaded < file.size) {
+  //     const chunk = file.slice(uploaded, uploaded + CHUNK_SIZE);
+
+  //     const formData = new FormData();
+  //     formData.append("file", chunk); // ⚠️ UploadFile → file
+  //     formData.append("chunk_index", chunkIndex); // ⚠️ индекс чанка
+
+  //     await api.post(
+  //       `http://192.168.0.45:18100/api/v1/upload/chunked/${upload_id}/chunk`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     uploaded += CHUNK_SIZE;
+  //     chunkIndex++;
+
+  //     setProgress((p) => ({
+  //       ...p,
+  //       [file.name]: Math.min(100, Math.round((uploaded / file.size) * 100)),
+  //     }));
+  //   }
+
+  //   // 3️⃣ complete
+  //   await api.post(
+  //     `http://192.168.0.45:18100/api/v1/upload/chunked/${upload_id}/complete`,
+  //     {},
+  //     {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     }
+  //   );
+  // };
+
+  /* ---------------- SSE ---------------- */
 
   useEffect(() => {
     if (!currentUser) return;
 
-    const activeFile = allFiles.find(
+    const activeFiles = allFiles.filter(
       (f) =>
         f.uploaded_by_user_id === currentUser.id &&
         !["extracted", "failed"].includes(f.processing_status)
     );
 
-    if (!activeFile) return;
+    activeFiles.forEach((file) => {
+      if (sseSourcesRef.current[file.id]) return;
 
-    if (sseSourcesRef.current[activeFile.id]) return;
+      console.log("[SSE START]", file.id);
 
-    console.log("[SSE START]", activeFile.id);
-
-    const source = new EventSource(
-      `http://192.168.0.45:18001/api/sse/file-status/${activeFile.id}?token=${token}&interval=2`
-    );
-
-    sseSourcesRef.current[activeFile.id] = source;
-
-    source.onopen = () => {
-      console.log("[SSE OPEN]", activeFile.id);
-    };
-
-    source.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      console.log("[SSE MSG]", data.processing_status, data.progress_percent);
-
-      setAllFiles((prev) =>
-        prev.map((f) =>
-          f.id === data.file_id
-            ? {
-                ...f,
-                processing_status: data.processing_status,
-                progress_percent: data.progress_percent,
-                error_message: data.error_message,
-              }
-            : f
-        )
+      const source = new EventSource(
+        `http://192.168.0.45:18001/api/sse/file-status/${file.id}?token=${token}&interval=10`
       );
 
-      if (["extracted", "failed"].includes(data.processing_status)) {
-        console.log("[SSE CLOSE]", activeFile.id);
-        source.close();
-        delete sseSourcesRef.current[activeFile.id];
-      }
-    };
+      sseSourcesRef.current[file.id] = source;
 
-    source.onerror = (err) => {
-      console.log("[SSE ERROR]", err);
-      source.close();
-      delete sseSourcesRef.current[activeFile.id];
-    };
-  }, [allFiles, currentUser]);
+      source.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        setAllFiles((prev) =>
+          prev.map((f) =>
+            f.id === data.file_id
+              ? {
+                  ...f,
+                  processing_status: data.processing_status,
+                  progress_percent: data.progress_percent,
+                  error_message: data.error_message,
+                }
+              : f
+          )
+        );
+
+        if (["extracted", "failed"].includes(data.processing_status)) {
+          source.close();
+          delete sseSourcesRef.current[file.id];
+          console.log("[SSE CLOSE]", file.id);
+        }
+      };
+
+      source.onerror = () => {
+        source.close();
+        delete sseSourcesRef.current[file.id];
+        console.log("[SSE ERROR CLOSE]", file.id);
+      };
+    });
+  }, [allFiles, currentUser, token]);
 
   /* ---------------- render ---------------- */
 
@@ -228,27 +314,40 @@ const UploadFiles = () => {
           Выбрать файлы
         </button>
       </div>
-      <div className="flex justify-between">
-        <div>
-          {/* selected files */}
+      <div className="flex gap-10">
+        {/* selected files */}
+        <div className="min-w-0 flex-1">
           {files.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-6 ">
               <ul className="flex flex-col gap-2">
                 {files.map((file, i) => (
                   <li
                     key={i}
-                    className="flex justify-between items-center gap-4"
+                    className="flex items-center justify-between gap-4 min-w-0"
                   >
-                    <div className="flex items-center gap-2">
-                      {getFileIcon(file.name)}
-                      <span>{file.name}</span>
+                    <div
+                      data-tooltip-id="see_file_name-tooltip"
+                      className="flex items-center gap-2 min-w-0 cursor-pointer"
+                    >
+                      <div className="w-6 h-6 text-gray-700 flex items-center justify-center shrink-0">
+                        {getFileIcon(file.name)}
+                      </div>
+                      <span className="truncate max-w-full">{file.name}</span>
                     </div>
+                    <Tooltip
+                      place="top"
+                      effect="float"
+                      delayShow={400}
+                      content={file.name}
+                      id="see_file_name-tooltip"
+                    />
 
-                    {uploading && progress[file.name] && (
-                      <span>{progress[file.name]}%</span>
+                    {uploading && progress[file.name] !== undefined && (
+                      <span className="shrink-0">{progress[file.name]}%</span>
                     )}
 
                     <button
+                      className="shrink-0"
                       onClick={() => setFiles(files.filter((_, x) => x !== i))}
                     >
                       <IoMdClose />
@@ -268,9 +367,9 @@ const UploadFiles = () => {
           )}
         </div>
         {/* uploaded files */}
-        <div className="mt-10 w-1/2">
+        <div className="mt-10 min-w-0 w-1/2">
           <div
-            className="flex justify-center items-center gap-2 border py-4 cursor-pointer"
+            className="flex justify-center items-center gap-2 border select-none py-4 cursor-pointer"
             onClick={() => setOpenUploadFiles((p) => !p)}
           >
             <h2>Загруженные файлы</h2>
@@ -290,32 +389,66 @@ const UploadFiles = () => {
                   return (
                     <div
                       key={file.id}
-                      className="border-b py-3 grid grid-cols-3 gap-4"
+                      className="border-b py-3 grid grid-cols-3 items-center gap-4 min-w-0"
                     >
-                      <div>
-                        <p>{file.display_name}</p>
+                      <div className="flex items-center justify-between gap-2 text-common">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">
+                            {file.display_name}
+                          </p>
+                        </div>
 
                         {["uploaded", "extracting"].includes(
                           file.processing_status
                         ) && (
-                          <div className="w-full bg-gray-200 h-2 rounded mt-1">
-                            <div
-                              className="bg-blue-500 h-2 rounded transition-all"
-                              style={{
-                                width: `${percent}%`,
-                              }}
-                            />
+                          <div className="flex items-center gap-3 relative z-40">
+                            <button
+                              onClick={() => queueApi.resume(file.id)}
+                              className="p-1 hover:text-blue-500 transition-all duration-300"
+                            >
+                              <FaPlay className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => queueApi.pause(file.id)}
+                              className="p-1 hover:text-yellow-500 transition-all duration-300"
+                            >
+                              <FaStop className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => queueApi.cancel(file.id)}
+                              className="p-1 hover:text-red-500 transition-all duration-300"
+                            >
+                              <MdDelete className="w-6 h-6" />
+                            </button>
                           </div>
                         )}
+                        {file.processing_status === "extracted" && (
+                          <button
+                            className="text-blue-600 underline"
+                            onClick={() => setPreviewFile(file)}
+                          >
+                            Просмотр
+                          </button>
+                        )}
                       </div>
-                      <p className="text-center">
+                      <p className="text-center text-common">
                         {new Date(file.created_at).toLocaleDateString()}
                       </p>
 
-                      <p className="text-right">
-                        {file.processing_status === "uploaded" && "Загружен"}
-                        {file.processing_status === "extracting" &&
-                          "Обработка..."}
+                      <p className="text-right text-common">
+                        {file.processing_status === "uploaded" && "Загрузка..."}
+                        {file.processing_status === "extracting" && (
+                          <>
+                            <p>Обработка...</p>
+
+                            <div className="w-full bg-gray-200 h-2 rounded overflow-hidden">
+                              <div
+                                className="bg-blue-500 h-full transition-all duration-300"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                          </>
+                        )}
                         {file.processing_status === "extracted" && "Выполнено"}
                         {file.processing_status === "failed" && "Ошибка"}
                       </p>
@@ -334,6 +467,12 @@ const UploadFiles = () => {
           )}
         </div>
       </div>
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </section>
   );
 };
