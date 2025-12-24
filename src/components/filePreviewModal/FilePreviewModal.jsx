@@ -35,6 +35,18 @@ const FilePreviewModal = ({ file, onClose }) => {
       })
       .finally(() => setLoading(false));
   }, [file]);
+  console.log(rows);
+
+  useEffect(() => {
+    // сохранить текущее состояние
+    const originalOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   /* ---------------- aliases ---------------- */
 
@@ -131,6 +143,16 @@ const FilePreviewModal = ({ file, onClose }) => {
     }
   };
 
+  const renderCellValue = (value) => {
+    if (value === null || value === undefined) return "";
+
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  };
+
   /* ---------------- render ---------------- */
 
   const columns =
@@ -138,7 +160,7 @@ const FilePreviewModal = ({ file, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[90%] max-w-6xl">
+      <div className="bg-white rounded-lg p-6 w-[90%]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">
             Предпросмотр: {file.display_name}
@@ -157,7 +179,7 @@ const FilePreviewModal = ({ file, onClose }) => {
         )}
 
         {!loading && rows.length > 0 && (
-          <div className="overflow-auto max-h-[60vh] border">
+          <div className="overflow-auto max-h-[80vh] border overscroll-contain">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
@@ -180,8 +202,8 @@ const FilePreviewModal = ({ file, onClose }) => {
                 {rows.map((row, i) => (
                   <tr key={i}>
                     {columns.map((col) => (
-                      <td key={col} className="border px-2 py-1">
-                        {row[col]}
+                      <td key={col} className="border px-2 py-1 text-common">
+                        {renderCellValue(row[col])}
                       </td>
                     ))}
                   </tr>

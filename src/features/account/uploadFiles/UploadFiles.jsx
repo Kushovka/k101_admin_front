@@ -27,6 +27,11 @@ const UploadFiles = () => {
   const sseSourcesRef = useRef({});
   const { isOpen } = useSidebar();
 
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
   const [files, setFiles] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [progress, setProgress] = useState({});
@@ -40,9 +45,16 @@ const UploadFiles = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [openUploadFiles, setOpenUploadFiles] = useState(true);
 
-  /* ---------------- helpers ---------------- */
-
   const token = localStorage.getItem("access_token");
+
+  /* ---------------- user ---------------- */
+
+  // FIX: вернуть загрузку текущего пользователя
+  useEffect(() => {
+    getCurrentUser().then(setCurrentUser);
+  }, []);
+
+  /* ---------------- helpers ---------------- */
 
   const getFileIcon = (name) => {
     if (name.endsWith(".xlsx"))
@@ -55,6 +67,41 @@ const UploadFiles = () => {
     if (name.endsWith(".csv")) return <PiFileCsvBold className="w-10 h-10" />;
     return <CgDanger className="w-6 h-6 text-red01/70" />;
   };
+
+  /* ---------------- pagination ---------------- */
+
+  const loadFiles = async (pageToLoad = 1, replace = false) => {
+    if (loadingFiles) return;
+
+    setLoadingFiles(true);
+
+    try {
+      const res = await api.get("http://192.168.0.45:18003/api/v1/files", {
+        params: { page: pageToLoad, page_size: pageSize },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const newFiles = res.data.files || [];
+
+      setAllFiles((prev) => (replace ? newFiles : [...prev, ...newFiles]));
+
+      if (newFiles.length < pageSize) {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  /* ---------------- initial load ---------------- */
+
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    loadFiles(1, true);
+  }, []);
 
   /* ---------------- upload ---------------- */
 
@@ -75,7 +122,7 @@ const UploadFiles = () => {
           formData,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+              Authorization: `Bearer ${token}`,
             },
             onUploadProgress: (e) => {
               if (e.total) {
@@ -90,15 +137,13 @@ const UploadFiles = () => {
         );
       }
 
-      const res = await api.get("http://192.168.0.45:18003/api/v1/files", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
-      console.log(res);
-      setAllFiles(res.data.files);
+      // FIX: НЕ затираем allFiles напрямую
       setNotify("access");
       setFiles([]);
+
+      setPage(1);
+      setHasMore(true);
+      loadFiles(1, true);
     } catch (e) {
       setError("Ошибка при загрузке файлов");
       console.error(e);
@@ -106,23 +151,6 @@ const UploadFiles = () => {
       setUploading(false);
     }
   };
-
-  /* ---------------- initial load ---------------- */
-
-  useEffect(() => {
-    api
-      .get("http://192.168.0.45:18003/api/v1/files", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      })
-      .then((res) => setAllFiles(res.data.files))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    getCurrentUser().then(setCurrentUser);
-  }, []);
 
   /* ---------------- queue api ---------------- */
 
@@ -133,14 +161,12 @@ const UploadFiles = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       ),
-
     resume: (id) =>
       api.post(
         `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/resume`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       ),
-
     cancel: (id) =>
       api.post(
         `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/cancel`,
@@ -148,67 +174,6 @@ const UploadFiles = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       ),
   };
-
-  // /* ---------------- uploadChunked ---------------- */
-  // const uploadChunked = async (file) => {
-  //   const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-  //   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-  //   // 1️⃣ init
-  //   const initRes = await api.post(
-  //     "http://192.168.0.45:18100/api/v1/upload/chunked/init",
-  //     {
-  //       filename: file.name,
-  //       file_size: file.size, // ⚠️ строго по swagger
-  //       chunk_size: CHUNK_SIZE, // ⚠️ строго по swagger
-  //       total_chunks: totalChunks, // ⚠️ строго по swagger
-  //     },
-  //     {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     }
-  //   );
-
-  //   const { upload_id } = initRes.data;
-
-  //   let uploaded = 0;
-  //   let chunkIndex = 0;
-
-  //   // 2️⃣ upload chunks
-  //   while (uploaded < file.size) {
-  //     const chunk = file.slice(uploaded, uploaded + CHUNK_SIZE);
-
-  //     const formData = new FormData();
-  //     formData.append("file", chunk); // ⚠️ UploadFile → file
-  //     formData.append("chunk_index", chunkIndex); // ⚠️ индекс чанка
-
-  //     await api.post(
-  //       `http://192.168.0.45:18100/api/v1/upload/chunked/${upload_id}/chunk`,
-  //       formData,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     uploaded += CHUNK_SIZE;
-  //     chunkIndex++;
-
-  //     setProgress((p) => ({
-  //       ...p,
-  //       [file.name]: Math.min(100, Math.round((uploaded / file.size) * 100)),
-  //     }));
-  //   }
-
-  //   // 3️⃣ complete
-  //   await api.post(
-  //     `http://192.168.0.45:18100/api/v1/upload/chunked/${upload_id}/complete`,
-  //     {},
-  //     {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     }
-  //   );
-  // };
 
   /* ---------------- SSE ---------------- */
 
@@ -224,8 +189,6 @@ const UploadFiles = () => {
     activeFiles.forEach((file) => {
       if (sseSourcesRef.current[file.id]) return;
 
-      console.log("[SSE START]", file.id);
-
       const source = new EventSource(
         `http://192.168.0.45:18001/api/sse/file-status/${file.id}?token=${token}&interval=10`
       );
@@ -236,39 +199,27 @@ const UploadFiles = () => {
         const data = JSON.parse(e.data);
 
         setAllFiles((prev) =>
-          prev.map((f) =>
-            f.id === data.file_id
-              ? {
-                  ...f,
-                  processing_status: data.processing_status,
-                  progress_percent: data.progress_percent,
-                  error_message: data.error_message,
-                }
-              : f
-          )
+          prev.map((f) => (f.id === data.file_id ? { ...f, ...data } : f))
         );
 
         if (["extracted", "failed"].includes(data.processing_status)) {
           source.close();
           delete sseSourcesRef.current[file.id];
-          console.log("[SSE CLOSE]", file.id);
         }
       };
 
       source.onerror = () => {
         source.close();
         delete sseSourcesRef.current[file.id];
-        console.log("[SSE ERROR CLOSE]", file.id);
       };
     });
   }, [allFiles, currentUser, token]);
 
-  /* ---------------- render ---------------- */
+  /* ---------------- рендер ---------------- */
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <h1 className="title">Загрузка файлов</h1>
-
       {error && (
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
@@ -280,7 +231,8 @@ const UploadFiles = () => {
         />
       )}
 
-      {/* upload area */}
+      {/* ---------------- форма загрузки ---------------- */}
+
       <div
         className={clsx(
           "border-2 border-dashed rounded-xl p-20 mt-5 flex flex-col items-center gap-4",
@@ -314,6 +266,9 @@ const UploadFiles = () => {
           Выбрать файлы
         </button>
       </div>
+
+      {/* ---------------- нижний контент ---------------- */}
+
       <div className="flex gap-10">
         {/* selected files */}
         <div className="min-w-0 flex-1">
@@ -377,15 +332,15 @@ const UploadFiles = () => {
           </div>
 
           {openUploadFiles && (
-            <div className="mt-4 max-h-[300px] overflow-y-auto">
+            <div className="mt-4 h-[300px] overflow-y-auto">
               {allFiles
                 .filter((f) => f.uploaded_by_user_id === currentUser?.id)
                 .map((file) => {
                   const percent =
                     typeof file.progress_percent === "number"
                       ? file.progress_percent
-                      : 5; // минимальный индикатор жизни
-
+                      : 2; // минимальный индикатор жизни
+                  console.log(file);
                   return (
                     <div
                       key={file.id}
@@ -465,8 +420,24 @@ const UploadFiles = () => {
                 })}
             </div>
           )}
+          {hasMore && (
+            <div className="flex justify-center mt-3">
+              <button
+                disabled={loadingFiles}
+                onClick={() => {
+                  const nextPage = page + 1;
+                  setPage(nextPage);
+                  loadFiles(nextPage);
+                }}
+                className="px-4 py-2 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
+              >
+                {loadingFiles ? "Загрузка..." : "Загрузить ещё"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
+      {/* превью файла */}
       {previewFile && (
         <FilePreviewModal
           file={previewFile}
