@@ -4,41 +4,38 @@ import api from "../../api/axios";
 import { Tooltip } from "react-tooltip";
 import Toast from "../toast/Toast";
 import clsx from "clsx";
-import { CgDanger } from "react-icons/cg";
-import { HiOutlineQuestionMarkCircle } from "react-icons/hi";
-import { MdOutlineQuestionMark } from "react-icons/md";
+import { FaPen } from "react-icons/fa";
+import { useFileAlias } from "../../hooks/useFileAlias";
+import { useFilePreview } from "../../hooks/useFilePreview";
 
-const FilePreviewModal = ({ file, onClose }) => {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
+  const token = localStorage.getItem("access_token");
   const [error, setError] = useState(null);
   const [limit, setLimit] = useState(10);
   const [activeBtn, setActiveBtn] = useState("10");
+  const [notify, setNotify] = useState(null);
 
   const [aliases, setAliases] = useState({});
   const [editingField, setEditingField] = useState(null);
   const [aliasValue, setAliasValue] = useState("");
 
-  const token = localStorage.getItem("access_token");
+  const {
+    fileAlias,
+    setFileAlias,
+    editingFileAlias,
+    setEditingFileAlias,
+    saveFileAlias,
+  } = useFileAlias({
+    file,
+    token,
+    onNotify: setNotify,
+    onError: setError,
+    onUpdateFile,
+  });
+
+  const { rows, loading } = useFilePreview({ file, limit, token });
 
   /* ---------------- preview ---------------- */
-
-  useEffect(() => {
-    if (!file) return;
-
-    setLoading(true);
-
-    api
-      .get(`http://192.168.0.45:18100/api/v1/files/${file.id}/preview`, {
-        params: { limit },
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        const records = res.data?.preview_records;
-        setRows(Array.isArray(records) ? records : []);
-      })
-      .finally(() => setLoading(false));
-  }, [file, token, limit]);
 
   /* ---------------- lock scroll ---------------- */
 
@@ -50,8 +47,8 @@ const FilePreviewModal = ({ file, onClose }) => {
     };
   }, []);
 
-  /* ---------------- aliases ---------------- */
-
+  /* ---------------- field aliases ---------------- */
+  console.log(file);
   useEffect(() => {
     if (!file) return;
 
@@ -83,7 +80,7 @@ const FilePreviewModal = ({ file, onClose }) => {
             display_name: m.display_name,
           };
         });
-
+        console.log(map);
         setAliases(map);
       } catch {
         setAliases({});
@@ -93,14 +90,14 @@ const FilePreviewModal = ({ file, onClose }) => {
     loadAliases();
   }, [file, token]);
 
-  /* ---------------- save alias ---------------- */
+  /* ---------------- save field alias  ---------------- */
 
   const saveAlias = async () => {
     if (!editingField || !aliasValue.trim()) return;
 
     const existing = aliases[editingField];
     setError(null);
-
+    setNotify(null);
     try {
       if (existing?.id) {
         await api.patch(
@@ -128,13 +125,17 @@ const FilePreviewModal = ({ file, onClose }) => {
           display_name: aliasValue.trim(),
         },
       }));
-
+      setNotify("save_alias-field");
       setEditingField(null);
       setAliasValue("");
     } catch {
       setError("Не удалось сохранить алиас");
     }
   };
+
+  /* ---------------- alias  ---------------- */
+
+  /* ---------------- save alias  ---------------- */
 
   /* ---------------- helpers ---------------- */
 
@@ -167,15 +168,68 @@ const FilePreviewModal = ({ file, onClose }) => {
   );
 
   /* ---------------- render ---------------- */
-
+  console.log(columns);
+  console.log(aliases);
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg px-6 py-6 w-[90%] max-w-[1200px]">
+      {notify && (
+        <Toast
+          type="access"
+          message="Алиас успешно добавлен!"
+          onClose={() => setNotify(null)}
+        />
+      )}
+
+      <div className="bg-white rounded-lg px-6 py-6 w-[90%] max-w-[1800px]">
         {/* header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">
-            Предпросмотр: {file.display_name}
-          </h2>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          {!editingFileAlias ? (
+            <div className="flex items-center gap-3 subtitle">
+              <h2>Предпросмотр:</h2>
+              <div
+                onClick={() => setEditingFileAlias(true)}
+                data-tooltip-id="file_alias-tooltip"
+                className="flex items-center gap-1 group cursor-pointer select-none font-semibold"
+              >
+                <span className="px-2 py-1 cursor-pointer ">
+                  {fileAlias || file.display_name || file.file_name}
+                </span>
+
+                <FaPen className="group-hover:scale-125 transition duration-300  w-[14px] h-[14px]" />
+              </div>
+              <Tooltip
+                place="top"
+                effect="float"
+                delayShow={400}
+                id="file_alias-tooltip"
+                content="Кликните, чтобы задать алиас"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                className="border rounded px-2 py-1"
+                value={fileAlias}
+                onChange={(e) => setFileAlias(e.target.value)}
+                placeholder="добавьте алиас"
+              />
+              <button
+                className="px-2 py-1 bg-blue-600 text-white rounded"
+                onClick={saveFileAlias}
+              >
+                Сохранить
+              </button>
+              <button
+                className="px-2 py-1 border rounded"
+                onClick={() => {
+                  setEditingFileAlias(false);
+                  setFileAlias(file.file_description ?? "");
+                }}
+              >
+                Отмена
+              </button>
+            </div>
+          )}
           <button onClick={onClose}>
             <IoMdClose size={22} />
           </button>
@@ -278,12 +332,11 @@ const FilePreviewModal = ({ file, onClose }) => {
               effect="float"
               delayShow={400}
               id="file_limit-tooltip"
-              content="Количество строк"
+              content="Количество отображаемых строк"
             />
             {[10, 30, 50].map((n) => (
-              <>
+              <div key={n}>
                 <button
-                  key={n}
                   onClick={() => {
                     setLimit(n);
                     setActiveBtn(String(n));
@@ -296,7 +349,7 @@ const FilePreviewModal = ({ file, onClose }) => {
                 >
                   {n}
                 </button>
-              </>
+              </div>
             ))}
           </div>
         </div>

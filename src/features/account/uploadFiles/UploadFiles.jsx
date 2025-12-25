@@ -69,6 +69,22 @@ const UploadFiles = () => {
     return <CgDanger className="w-6 h-6 text-red01/70" />;
   };
 
+  const updatedFileDesc = (fileId, alias) => {
+    setAllFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, file_description: alias, display_name: alias }
+          : f
+      )
+    );
+
+    setPreviewFile((prev) =>
+      prev && prev.id === fileId
+        ? { ...prev, file_description: alias, display_name: alias }
+        : prev
+    );
+  };
+
   /* ---------------- пагинация ---------------- */
 
   const loadFiles = async (pageToLoad = 1, replace = false) => {
@@ -216,40 +232,40 @@ const UploadFiles = () => {
   // реальном времени через SSE или подключать WEB-SOCKET
   //  и двухсторонне общаться с бэком
 
-  // useEffect(() => {
-  //   if (!currentUser) return;
-  //   setError(null);
-  //   const active = allFiles.filter(
-  //     (f) =>
-  //       f.uploaded_by_user_id === currentUser.id &&
-  //       ["queued", "extracting", "uploaded"].includes(f.processing_status)
-  //   );
-  //   if (!active.length) return;
+  useEffect(() => {
+    if (!currentUser) return;
+    setError(null);
+    const active = allFiles.filter(
+      (f) =>
+        f.uploaded_by_user_id === currentUser.id &&
+        ["queued", "extracting", "uploaded"].includes(f.processing_status)
+    );
+    if (!active.length) return;
 
-  //   const interval = setInterval(async () => {
-  //     try {
-  //       const updates = await Promise.all(
-  //         active.map((f) =>
-  //           api.get(`http://192.168.0.45:18100/api/v1/files/${f.id}/status`, {
-  //             headers: { Authorization: `Bearer ${token}` },
-  //           })
-  //         )
-  //       );
-  //       console.log(updates);
-  //       setAllFiles((prev) =>
-  //         prev.map((file) => {
-  //           const fresh = updates.find((u) => u.data.file_id === file.id)?.data;
-  //           return fresh ? { ...file, ...fresh } : file;
-  //         })
-  //       );
-  //     } catch (err) {
-  //       console.error("Status polling error", err);
-  //       setError("Ошибка попробуйте позже.");
-  //     }
-  //   }, 2000);
+    const interval = setInterval(async () => {
+      try {
+        const updates = await Promise.all(
+          active.map((f) =>
+            api.get(`http://192.168.0.45:18100/api/v1/files/${f.id}/status`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          )
+        );
+        console.log(updates);
+        setAllFiles((prev) =>
+          prev.map((file) => {
+            const fresh = updates.find((u) => u.data.file_id === file.id)?.data;
+            return fresh ? { ...file, ...fresh } : file;
+          })
+        );
+      } catch (err) {
+        console.error("Status polling error", err);
+        setError("Ошибка попробуйте позже.");
+      }
+    }, 2000);
 
-  //   return () => clearInterval(interval);
-  // }, [allFiles, currentUser, token]);
+    return () => clearInterval(interval);
+  }, [allFiles, currentUser, token]);
 
   /* ---------------- рендер ---------------- */
 
@@ -520,6 +536,7 @@ const UploadFiles = () => {
         <FilePreviewModal
           file={previewFile}
           onClose={() => setPreviewFile(null)}
+          onUpdateFile={updatedFileDesc}
         />
       )}
       {/* ---------------- модалка подтверждения удаления файла ---------------- */}
