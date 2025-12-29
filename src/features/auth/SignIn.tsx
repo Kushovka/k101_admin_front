@@ -1,37 +1,52 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 
 import Toast from "../../components/toast/Toast";
 import { login } from "./auth";
+import axios from "axios";
+
+interface SignInFormValues {
+  username: string;
+  password: string;
+}
+
+interface NotifyState {
+  message: string;
+  type: "error" | "success";
+}
 
 export default function SignIn() {
-  const isAuth = !!localStorage.getItem("access_token");
+  const isAuth = Boolean(localStorage.getItem("access_token"));
   if (isAuth) return <Navigate to="/account/upload-files" replace />;
 
   const {
     register,
     handleSubmit,
     formState: { errors, touchedFields },
-  } = useForm();
+  } = useForm<SignInFormValues>();
 
   const navigate = useNavigate();
-  const [notify, setNotify] = useState("");
+  const [notify, setNotify] = useState<NotifyState | null>(null);
 
-  const onSubmit = async (data) => {
+  const onSubmit: SubmitHandler<SignInFormValues> = async (data) => {
     try {
       await login(data.username, data.password);
-      setNotify();
+      setNotify(null);
 
       navigate("/account/upload-files");
     } catch (err) {
       console.error(err);
       let message = "Ошибка при входе";
 
-      if (err.response?.status === 401) {
-        message = "Неверный логин или пароль";
-      } else if (err.response?.status === 403) {
-        message = "Ваш аккаунт заблокирован. Доступ запрещен";
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+
+        if (status === 401) {
+          message = "Неверный логин или пароль";
+        } else if (status === 403) {
+          message = "Ваш аккаунт заблокирован. Доступ запрещен";
+        }
       }
       setNotify({
         message,

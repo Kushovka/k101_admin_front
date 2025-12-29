@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 
-
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
 import { getCurrentUser, postDeposit, updateProfile } from "../../../api/admin";

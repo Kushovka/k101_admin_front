@@ -1,5 +1,20 @@
-import React, { useEffect, useState } from "react";
-import api from "../api/axios";
+import { useEffect, useState } from "react";
+import api from "../../api/axios";
+
+type FileLike = {
+  id: string;
+  file_description?: string | null;
+};
+
+type UseFilePreviewArgs = {
+  file: FileLike | null;
+  token: string;
+
+  onNotify?: (message: string) => void;
+  onError?: (message: string) => void;
+
+  onUpdateFile?: (fileId: string, alias: string) => void;
+};
 
 export const useFileAlias = ({
   file,
@@ -7,17 +22,17 @@ export const useFileAlias = ({
   onNotify,
   onError,
   onUpdateFile,
-}) => {
-  const [fileAlias, setFileAlias] = useState("");
-  const [editingFileAlias, setEditingFileAlias] = useState(false);
+}: UseFilePreviewArgs) => {
+  const [fileAlias, setFileAlias] = useState<string>("");
+  const [editingFileAlias, setEditingFileAlias] = useState<boolean>(false);
 
   useEffect(() => {
     if (!file || editingFileAlias) return;
     setFileAlias(file.file_description ?? "");
   }, [file, editingFileAlias]);
 
-  const saveFileAlias = async () => {
-    if (!fileAlias.trim()) return;
+  const saveFileAlias = async (): Promise<void> => {
+    if (!file || !fileAlias.trim()) return;
 
     try {
       await api.patch(

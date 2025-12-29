@@ -1,15 +1,40 @@
-import React, { useEffect, useState } from "react";
-import api from "../api/axios";
+import { useEffect, useState } from "react";
+import api from "../../api/axios";
 
-export const useFieldAliases = ({ file, token, onNotify, onError }) => {
-  const [aliases, setAliases] = useState({});
-  const [editingField, setEditingField] = useState(null);
-  const [aliasValue, setAliasValue] = useState("");
+
+type FileLike = {
+  id: string;
+};
+
+type FieldAlias = {
+  id?: string;
+  display_name: string;
+};
+
+type FieldAliasesMap = Record<string, FieldAlias>;
+
+type UseFilePreviewArgs = {
+  file: FileLike | null;
+  token: string;
+
+  onNotify?: (message: string) => void;
+  onError?: (message: string) => void;
+};
+
+export const useFieldAliases = ({
+  file,
+  token,
+  onNotify,
+  onError,
+}: UseFilePreviewArgs) => {
+  const [aliases, setAliases] = useState<FieldAliasesMap>({});
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [aliasValue, setAliasValue] = useState<string>("");
 
   useEffect(() => {
     if (!file) return;
 
-    const loadAliases = async () => {
+    const loadAliases = async (): Promise<void> => {
       try {
         const [fileRes, globalRes] = await Promise.all([
           api.get("http://192.168.0.45:18100/api/v1/field-mappings", {
@@ -22,12 +47,12 @@ export const useFieldAliases = ({ file, token, onNotify, onError }) => {
           }),
         ]);
 
-        const map = {};
+        const map: FieldAliasesMap = {};
 
         [
           ...(globalRes.data?.mappings ?? []),
           ...(fileRes.data?.mappings ?? []),
-        ].forEach((m) => {
+        ].forEach((m: any) => {
           map[m.original_field_name] = {
             id: m.id,
             display_name: m.display_name,
@@ -44,8 +69,8 @@ export const useFieldAliases = ({ file, token, onNotify, onError }) => {
 
   /* ---------------- save ---------------- */
 
-  const saveAlias = async () => {
-    if (!editingField || !aliasValue.trim()) return;
+  const saveAlias = async (): Promise<void> => {
+    if (!file || !editingField || !aliasValue.trim()) return;
 
     const existing = aliases[editingField];
 

@@ -1,23 +1,39 @@
 import { useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
-import api from "../../api/axios";
 import { Tooltip } from "react-tooltip";
-import Toast from "../toast/Toast";
+import Toast from "../../../../components/toast/Toast";
 import clsx from "clsx";
 import { FaPen } from "react-icons/fa";
-import { useFileAlias } from "../../hooks/useFileAlias";
-import { useFilePreview } from "../../hooks/useFilePreview";
+import { useFileAlias } from "../../../../hooks/uploadFiles/useFileAlias";
+import { useFilePreview } from "../../../../hooks/uploadFiles/useFilePreview";
+import { useFieldAliases } from "../../../../hooks/uploadFiles/useFieldAliases";
 
-const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
-  const token = localStorage.getItem("access_token");
-  const [error, setError] = useState(null);
-  const [limit, setLimit] = useState(10);
-  const [activeBtn, setActiveBtn] = useState("10");
-  const [notify, setNotify] = useState(null);
 
-  const [aliases, setAliases] = useState({});
-  const [editingField, setEditingField] = useState(null);
-  const [aliasValue, setAliasValue] = useState("");
+type FileLike = {
+  id: string;
+  display_name?: string;
+  file_name?: string;
+  file_description?: string | null;
+};
+
+type FilePreviewModalProps = {
+  file: FileLike;
+  onClose: () => void;
+  onUpdateFile: (fileId: string, alias: string) => void;
+};
+
+type PreviewRow = Record<string, unknown>;
+
+const FilePreviewModal = ({
+  file,
+  onClose,
+  onUpdateFile,
+}: FilePreviewModalProps) => {
+  const token = localStorage.getItem("access_token") ?? "";
+  const [error, setError] = useState<string | null>(null);
+  const [limit, setLimit] = useState<number>(10);
+  const [activeBtn, setActiveBtn] = useState<string>("10");
+  const [notify, setNotify] = useState<string | null>(null);
 
   const {
     fileAlias,
@@ -34,8 +50,16 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
   });
 
   const { rows, loading } = useFilePreview({ file, limit, token });
+  const typedRows = rows as PreviewRow[];
 
-  /* ---------------- preview ---------------- */
+  const {
+    aliases,
+    editingField,
+    setEditingField,
+    aliasValue,
+    setAliasValue,
+    saveAlias,
+  } = useFieldAliases({ file, token, onNotify: setNotify, onError: setError });
 
   /* ---------------- lock scroll ---------------- */
 
@@ -47,106 +71,16 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
     };
   }, []);
 
-  /* ---------------- field aliases ---------------- */
-  console.log(file);
-  useEffect(() => {
-    if (!file) return;
-
-    const loadAliases = async () => {
-      try {
-        const [fileRes, globalRes] = await Promise.all([
-          api.get("http://192.168.0.45:18100/api/v1/field-mappings", {
-            params: { raw_file_id: file.id },
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          api.get("http://192.168.0.45:18100/api/v1/field-mappings", {
-            params: { is_global: true },
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        const map = {};
-
-        (globalRes.data?.mappings ?? []).forEach((m) => {
-          map[m.original_field_name] = {
-            id: m.id,
-            display_name: m.display_name,
-          };
-        });
-
-        (fileRes.data?.mappings ?? []).forEach((m) => {
-          map[m.original_field_name] = {
-            id: m.id,
-            display_name: m.display_name,
-          };
-        });
-        console.log(map);
-        setAliases(map);
-      } catch {
-        setAliases({});
-      }
-    };
-
-    loadAliases();
-  }, [file, token]);
-
-  /* ---------------- save field alias  ---------------- */
-
-  const saveAlias = async () => {
-    if (!editingField || !aliasValue.trim()) return;
-
-    const existing = aliases[editingField];
-    setError(null);
-    setNotify(null);
-    try {
-      if (existing?.id) {
-        await api.patch(
-          `http://192.168.0.45:18100/api/v1/field-mappings/${existing.id}`,
-          { display_name: aliasValue.trim() },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        await api.post(
-          "http://192.168.0.45:18100/api/v1/field-mappings",
-          {
-            original_field_name: editingField,
-            display_name: aliasValue.trim(),
-            is_global: false,
-            raw_file_id: file.id,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      setAliases((prev) => ({
-        ...prev,
-        [editingField]: {
-          ...prev[editingField],
-          display_name: aliasValue.trim(),
-        },
-      }));
-      setNotify("save_alias-field");
-      setEditingField(null);
-      setAliasValue("");
-    } catch {
-      setError("Не удалось сохранить алиас");
-    }
-  };
-
-  /* ---------------- alias  ---------------- */
-
-  /* ---------------- save alias  ---------------- */
-
   /* ---------------- helpers ---------------- */
 
-  const renderCellValue = (value) => {
+  const renderCellValue = (value: unknown): string => {
     if (value === null || value === undefined) return "";
     if (typeof value === "object") return JSON.stringify(value);
     return String(value);
   };
 
   const columns =
-    Array.isArray(rows) && rows.length > 0 ? Object.keys(rows[0]) : [];
+    Array.isArray(rows) && rows.length > 0 ? Object.keys(typedRows[0]) : [];
 
   /* ---------------- skeleton ---------------- */
 
@@ -168,8 +102,6 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
   );
 
   /* ---------------- render ---------------- */
-  console.log(columns);
-  console.log(aliases);
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       {notify && (
@@ -199,7 +131,6 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
               </div>
               <Tooltip
                 place="top"
-                effect="float"
                 delayShow={400}
                 id="file_alias-tooltip"
                 content="Кликните, чтобы задать алиас"
@@ -250,14 +181,14 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
           )}
 
           {!loading && rows.length > 0 && (
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full table-fixed border-collapse text-sm overflow-y-hidden">
               <thead>
                 <tr>
                   {columns.map((col) => (
                     <th
                       key={col}
                       data-tooltip-id="alias-file_tooltip"
-                      className="border px-2 py-1 bg-gray-100 cursor-pointer hover:bg-blue-50"
+                      className="border px-2 py-1 bg-gray-100 cursor-pointer  hover:bg-blue-50"
                       onClick={() => {
                         setEditingField(col);
                         setAliasValue(aliases[col]?.display_name ?? "");
@@ -275,11 +206,31 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i}>
+                {typedRows.map((row, i) => (
+                  <tr key={i} className="truncate">
                     {columns.map((col) => (
-                      <td key={col} className="border px-2 py-1">
+                      <td
+                        key={col}
+                        className={clsx(
+                          "border px-2 py-1 truncate",
+                          col === "additional_data" && "cursor-pointer"
+                        )}
+                        data-tooltip-id={`cell-tooltip-${i}-${col}`}
+                      >
                         {renderCellValue(row[col])}
+                        {col === "additional_data" && row[col] != null && (
+                          <Tooltip
+                            id={`cell-tooltip-${i}-${col}`}
+                            place="top"
+                            delayShow={400}
+                            className="max-w-[500px] whitespace-normal break-words"
+                            render={() => (
+                              <pre className="whitespace-pre-wrap text-xs">
+                                {JSON.stringify(row[col], null, 2)}
+                              </pre>
+                            )}
+                          />
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -329,7 +280,6 @@ const FilePreviewModal = ({ file, onClose, onUpdateFile }) => {
             </div>
             <Tooltip
               place="top"
-              effect="float"
               delayShow={400}
               id="file_limit-tooltip"
               content="Количество отображаемых строк"

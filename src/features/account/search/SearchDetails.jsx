@@ -64,6 +64,7 @@ const SearchDetails = () => {
         </button>
       </div>
 
+      {/* основная информация */}
       <div className="flex flex-col justify-between gap-5 w-full">
         {/* основная информация */}
         <div className="flex flex-col">
@@ -92,10 +93,7 @@ const SearchDetails = () => {
           </div>
 
           {basicInfo && (
-            <div
-              className="flex gap-10 w-full h-full -space-y-5"
-              
-            >
+            <div className="flex gap-10 w-full h-full -space-y-5">
               <div className="border-x border-b rounded-t-none flex flex-col gap-5 p-4 rounded-[12px] w-full">
                 {/* <div className="flex items-center justify-center">
                 <p className="subtitle text-gray01">Основная информация</p>
@@ -136,6 +134,18 @@ const SearchDetails = () => {
                     </span>
                   </p>
                 )}
+                {/* дата рождения */}
+                {user.birthdays[0] && (
+                  <p className="details-text">
+                    Дата рождения:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.birthdays[0]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.birthdays[0]}
+                    </span>
+                  </p>
+                )}
                 {/* телефон */}
                 {user.phones[0] && (
                   <p className="details-text">
@@ -148,10 +158,10 @@ const SearchDetails = () => {
                     </span>
                   </p>
                 )}
-                {/* емаил */}
+                {/* емаилы */}
                 {user.emails[0] && (
                   <p className="details-text">
-                    Email:{" "}
+                    Email №1:{" "}
                     <span
                       onClick={() => handleCopy(`${user.emails[0]}`)}
                       className="text-black cursor-copy"
@@ -160,19 +170,74 @@ const SearchDetails = () => {
                     </span>
                   </p>
                 )}
-                {/* дата рождения */}
-                {user.birthday && (
+                {user.emails[1] && (
                   <p className="details-text">
-                    Дата рождения:{" "}
+                    Email №2:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.emails[1]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.emails[1]}
+                    </span>
+                  </p>
+                )}
+                {/* регион */}
+                {user.additional_data?.Регион?.value && (
+                  <p className="details-text">
+                    Регион:{" "}
                     <span
                       onClick={() =>
-                        handleCopy(
-                          `${new Date(user.birthday).toLocaleDateString()}`
-                        )
+                        handleCopy(`${user.additional_data?.Регион?.value}`)
                       }
                       className="text-black cursor-copy"
                     >
-                      {new Date(user.birthday).toLocaleDateString()}
+                      {user.additional_data?.Регион?.value}
+                    </span>
+                  </p>
+                )}
+                {/* город проживания */}
+                {user.cities[0] && (
+                  <p className="details-text">
+                    Город:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.cities[0]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.cities[0]}
+                    </span>
+                  </p>
+                )}
+                {/* адреса */}
+                {user.addresses[0] && (
+                  <p className="details-text">
+                    Адрес №1:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.addresses[0]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.addresses[0]}
+                    </span>
+                  </p>
+                )}
+                {user.addresses[1] && (
+                  <p className="details-text">
+                    Адрес №2:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.addresses[1]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.addresses[1]}
+                    </span>
+                  </p>
+                )}
+                {user.addresses[2] && (
+                  <p className="details-text">
+                    Адрес №3:{" "}
+                    <span
+                      onClick={() => handleCopy(`${user.addresses[2]}`)}
+                      className="text-black cursor-copy"
+                    >
+                      {user.addresses[2]}
                     </span>
                   </p>
                 )}
@@ -232,17 +297,6 @@ const SearchDetails = () => {
                       className="text-black cursor-copy"
                     >
                       СНИЛС: {user.snils[0] || ""}
-                    </span>
-                  )}
-                </p>
-                {/* address */}
-                <p className="details-text">
-                  {user.addresses[0] && (
-                    <span
-                      onClick={() => handleCopy(`${user.addresses[0]}`)}
-                      className="text-black cursor-copy"
-                    >
-                      Адрес проживания: {user.addresses[0] || ""}
                     </span>
                   )}
                 </p>

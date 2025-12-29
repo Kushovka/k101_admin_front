@@ -10,36 +10,50 @@ import { Tooltip } from "react-tooltip";
 import { CgDanger } from "react-icons/cg";
 import { MdContentCopy } from "react-icons/md";
 
+import type {
+  ApiUser,
+  UsersResponse,
+  CreatedUserResponse,
+  TableUser,
+} from "../../../types/user";
+
+type NotifyType = "user_create" | "access_copy";
+
 export default function Users() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [email, setEmail] = useState("");
-  const [first_name, setFirstName] = useState("");
-  const [last_name, setLastName] = useState("");
-  const [role, setRole] = useState("user");
-  const [username, setUsername] = useState("");
-  const [dataAddUser, setDataAddUser] = useState("");
-  const [showDataNewUser, setShowDataNewUser] = useState(false);
-  const [notify, setNotify] = useState(null);
-
-  const [openCreateModal, setOpenCreateModal] = useState(false);
-
   const { isOpen } = useSidebar();
+
+  const [users, setUsers] = useState<TableUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [email, setEmail] = useState<string>("");
+  const [first_name, setFirstName] = useState<string>("");
+  const [last_name, setLastName] = useState<string>("");
+  const [role, setRole] = useState<"user" | "admin">("user");
+  const [username, setUsername] = useState<string>("");
+
+  const [dataAddUser, setDataAddUser] = useState<CreatedUserResponse | null>(
+    null
+  );
+  const [showDataNewUser, setShowDataNewUser] = useState<boolean>(false);
+  const [notify, setNotify] = useState<NotifyType | null>(null);
+
+  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   /* все пользователи */
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (): Promise<void> => {
     setLoading(true);
-    try {
-      const res = await getUsers();
-      setError("");
+    setError(null);
 
-      const formattedUsers = res.users.map((u) => ({
+    try {
+      const res: UsersResponse = await getUsers();
+
+      const formattedUsers: TableUser[] = res.users.map((u: ApiUser) => ({
         id: u.id,
         nickName: u.username,
         name: u.first_name,
@@ -50,13 +64,14 @@ export default function Users() {
         status: u.is_blocked ? "Blocked" : "Active",
         confirmationEmail: u.is_email_verified ? "Yes" : "No",
         identifier: u.id,
-        balance: u.balance || 0,
-        freeRequest: u.free_requests_count || 0,
-        allRequest: u.all_requests_count || 0,
-        totalSpend: u.total_spent || 0,
+        balance: u.balance ?? 0,
+        freeRequest: u.free_requests_count ?? 0,
+        allRequest: u.all_requests_count ?? 0,
+        totalSpend: u.total_spent ?? 0,
       }));
+
       setUsers(formattedUsers);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Ошибка при получении пользователей:", err);
       setError(
         err.response
@@ -71,26 +86,36 @@ export default function Users() {
   };
 
   /* добавление пользователя */
-  const addUser = async () => {
+  const addUser = async (): Promise<void> => {
     if (!email || !first_name || !last_name || !username) {
       setError("Заполните все поля");
       return;
     }
+
     setLoading(true);
     try {
-      const res = await addUsers(email, first_name, last_name, role, username);
+      const res: CreatedUserResponse = await addUsers(
+        email,
+        first_name,
+        last_name,
+        role,
+        username
+      );
       await fetchUsers();
-      setOpenCreateModal(false);
-      setNotify("user_create");
-      setShowDataNewUser(true);
+
       setDataAddUser(res);
+      setShowDataNewUser(true);
+      setNotify("user_create");
+      setOpenCreateModal(false);
+
       console.log(res);
+
       setEmail("");
       setFirstName("");
       setLastName("");
       setUsername("");
       setRole("user");
-    } catch (err) {
+    } catch (err: any) {
       setError(
         err.response
           ? err.response.status === 500
@@ -113,10 +138,10 @@ export default function Users() {
     { id: 7, title: "Дата регистрации" },
     { id: 8, title: "Статус" },
     { id: 9, title: "Идентификатор" },
-  ];
+  ] as const;
 
   /* функция длдя копирования */
-  const handleCopy = (text) => {
+  const handleCopy = (text: string): void => {
     navigator.clipboard.writeText(text).then(() => {
       setNotify("access_copy");
     });
@@ -125,12 +150,13 @@ export default function Users() {
   /* toast кофиг */
   const toastConfig = {
     user_create: {
-      message: `Пользователь "${dataAddUser.username}" успешно создан !`,
+      message: `Пользователь "${dataAddUser?.username}" успешно создан !`,
     },
     access_copy: {
       message: "СКОПИРОВАНО !",
     },
   };
+
   console.log(toastConfig);
   console.log(dataAddUser);
 
@@ -144,7 +170,7 @@ export default function Users() {
         <Loader />
       ) : (
         <>
-          {/* названия столбцов */}
+          {/* ---------------- названия столбцов ---------------- */}
           <div className="grid grid-cols-8 gap-4 text-gray01 font-medium border-b pb-2">
             {chapterTitle.map((chapter) => (
               <span
@@ -159,7 +185,7 @@ export default function Users() {
             ))}
           </div>
 
-          {/* все пользователи */}
+          {/* ---------------- все пользователи ---------------- */}
           <div className="flex flex-col">
             {users.map((user) => (
               <div
@@ -188,7 +214,7 @@ export default function Users() {
             ))}
           </div>
 
-          {/* add button */}
+          {/* ---------------- кнопка добавления ---------------- */}
           <div
             data-tooltip-id="add_plans-tooltip"
             onClick={() => setOpenCreateModal((prev) => !prev)}
@@ -197,13 +223,13 @@ export default function Users() {
             <IoClose className="group-hover:w-10 group-hover:h-10 w-8 h-8 rotate-45 transition-all duration-200 cursor-pointer" />
             <Tooltip
               place="left"
-              effect="float"
               delayShow={400}
               content="Добавить нового пользователя"
               id="add_plans-tooltip"
             />
           </div>
 
+          {/* ---------------- модалка создания нового пользователя ---------------- */}
           {openCreateModal && (
             <div
               onClick={() => setOpenCreateModal(false)}
@@ -271,7 +297,8 @@ export default function Users() {
               </div>
             </div>
           )}
-          {/* модалка с данными созданного пользователя */}
+
+          {/* ---------------- модалка с данными созданного пользователя ---------------- */}
           {showDataNewUser && (
             <div
               onClick={() => setShowDataNewUser(false)}
@@ -289,9 +316,9 @@ export default function Users() {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-gray-500">Логин</span>
                   <div className="bg-gray-100 relative rounded-lg px-4 py-3 text-center text-lg font-mono">
-                    <p>{dataAddUser.username}</p>
+                    <p>{dataAddUser?.username}</p>
                     <span
-                      onClick={() => handleCopy(`${dataAddUser.username}`)}
+                      onClick={() => handleCopy(`${dataAddUser?.username}`)}
                       className="absolute top-1/2 -translate-y-1/2 right-3 shadow-sm p-1 rounded hover:shadow-lg transition-all duration-300 scale-100 hover:scale-105"
                     >
                       <MdContentCopy className="w-6 h-6" />
@@ -303,10 +330,10 @@ export default function Users() {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-gray-500">Пароль</span>
                   <div className="bg-gray-100 relative rounded-lg px-4 py-3 text-center text-lg font-mono">
-                    <p>{dataAddUser.temporary_password}</p>
+                    <p>{dataAddUser?.temporary_password}</p>
                     <span
                       onClick={() =>
-                        handleCopy(`${dataAddUser.temporary_password}`)
+                        handleCopy(`${dataAddUser?.temporary_password}`)
                       }
                       className="absolute top-1/2 -translate-y-1/2 right-3 shadow-sm p-1 rounded hover:shadow-lg transition-all duration-300 scale-100 hover:scale-105"
                     >

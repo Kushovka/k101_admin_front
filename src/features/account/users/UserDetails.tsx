@@ -6,7 +6,6 @@ import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 import {
-  addUsers,
   getUserById,
   isBlockedUser,
   postDeposit,
@@ -14,72 +13,76 @@ import {
 } from "../../../api/admin";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
+import type {
+  UserDetailsApi,
+  UserDetailsUI,
+  UpdateUserPayload,
+} from "../../../types/user";
+
+const mapUser = (u: UserDetailsApi): UserDetailsUI => ({
+  id: u.id,
+  nickName: u.username,
+  name: u.first_name,
+  surname: u.last_name,
+  email: u.email,
+  role: u.role === "user" ? "User" : "Admin",
+  registrationDate: new Date(u.registration_date).toLocaleDateString(),
+  status: u.is_blocked ? "Blocked" : "Active",
+  confirmationEmail: u.is_email_verified ? "Yes" : "No",
+  balance: u.balance ?? 0,
+  freeRequest: u.free_requests_count ?? 0,
+  allRequest: u.all_requests_count ?? 0,
+  totalSpend: u.total_spent ?? 0,
+});
+
 const UserDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { isOpen } = useSidebar();
 
+  const [user, setUser] = useState<UserDetailsUI | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const [notify, setNotify] = useState<string | null>(null);
+  const [payInput, setPayInput] = useState<number>(100);
+  const [openModal, setOpenModal] = useState<boolean>(false);
 
-  const [notify, setNotify] = useState(null);
-  const [payInput, setPayInput] = useState("100");
-  const [openModal, setOpenModal] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UpdateUserPayload>({
     first_name: "",
     last_name: "",
     email: "",
   });
 
-  const { isOpen } = useSidebar();
-
   /* getUserById */
   useEffect(() => {
-    fetchUser();
+    if (!id) return;
+
+    (async () => {
+      setLoading(true);
+      try {
+        const res: UserDetailsApi = await getUserById(id);
+        const mapped = mapUser(res);
+        setUser(mapped);
+
+        setFormData({
+          first_name: mapped.name,
+          last_name: mapped.surname,
+          email: mapped.email,
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id]);
-
-
-  const fetchUser = async () => {
-    setLoading(true);
-    try {
-      const res = await getUserById(id);
-      setUser({
-        id: res.id,
-        nickName: res.username,
-        name: res.first_name,
-        surname: res.last_name,
-        email: res.email,
-        role: res.role === "user" ? "User" : "Admin",
-        registrationDate: new Date(res.registration_date).toLocaleDateString(),
-        status: res.is_blocked ? "Blocked" : "Active",
-        confirmationEmail: res.is_email_verified ? "Yes" : "No",
-        balance: res.balance || 0,
-        freeRequest: res.free_requests_count || 0,
-        allRequest: res.all_requests_count || 0,
-        totalSpend: res.total_spent || 0,
-      });
-    } catch (err) {
-      console.error("Ошибка при получении пользователя:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   /* blocked */
   const toggleBlocked = async () => {
+    if (!user || !id) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const block = user.status === "Active";
-      const res = await isBlockedUser(id, block);
-      setUser((prev) => ({
-        ...prev,
-        status: res.is_blocked ? "Blocked" : "Active",
-      }));
-    } catch (err) {
-      console.error(err);
-      alert("Не удалось изменить статус пользователя");
+      const res = await isBlockedUser(id, user.status === "Active");
+      setUser({ ...user, status: res.is_blocked ? "Blocked" : "Active" });
     } finally {
       setLoading(false);
     }
@@ -87,36 +90,21 @@ const UserDetails = () => {
 
   /* deposit users */
   const handleDeposit = async () => {
-    try {
-      if (payInput < 100) {
-        setNotify("error_pay");
-        setTimeout(() => setNotify(null), 3000);
-        return;
-      }
-      setLoading(true);
-      const res = await postDeposit(payInput);
+    if (!id) return;
 
-      const updatedUserRaw = await getUserById(id);
-      setUser({
-        id: updatedUserRaw.id,
-        nickName: updatedUserRaw.username,
-        name: updatedUserRaw.first_name,
-        surname: updatedUserRaw.last_name,
-        email: updatedUserRaw.email,
-        role: updatedUserRaw.role === "user" ? "User" : "Admin",
-        registrationDate: new Date(
-          updatedUserRaw.registration_date
-        ).toLocaleDateString(),
-        status: updatedUserRaw.is_blocked ? "Blocked" : "Active",
-        confirmationEmail: updatedUserRaw.is_email_verified ? "Yes" : "No",
-        balance: updatedUserRaw.balance || 0,
-        freeRequest: updatedUserRaw.free_requests_count || 0,
-        allRequest: updatedUserRaw.all_requests_count || 0,
-        totalSpend: updatedUserRaw.total_spent || 0,
-      });
+    if (payInput < 100) {
+      setNotify("error_pay");
+      setTimeout(() => setNotify(null), 3000);
+      return;
+    }
+    setLoading(true);
+    try {
+      await postDeposit(payInput);
+      const updated: UserDetailsApi = await getUserById(id);
+      setUser(mapUser(updated));
 
       setOpenModal(false);
-      setPayInput("100");
+      setPayInput(100);
       setNotify("access_pay");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
@@ -129,18 +117,18 @@ const UserDetails = () => {
 
   /* updateUser */
   const saveUser = async () => {
+    if (!id || !user) return;
+
     try {
       const res = await updateUser(id, formData);
-      setUser((prev) => ({
-        ...prev,
+      setUser({
+        ...user,
         name: res.first_name,
         surname: res.last_name,
         email: res.email,
-      }));
-      alert("Пользователь успешно обновлен");
+      });
     } catch (err) {
-      console.log(err.response?.data);
-      alert("Произошла ошибка");
+      console.log(err);
     }
   };
 
@@ -169,7 +157,7 @@ const UserDetails = () => {
               <EditableField
                 label="Имя"
                 value={formData.first_name}
-                onChange={(val) =>
+                onChange={(val: string) =>
                   setFormData((prev) => ({ ...prev, first_name: val }))
                 }
               />
@@ -177,9 +165,9 @@ const UserDetails = () => {
 
             <div className="flex items-center gap-5">
               <EditableField
-                label="Фаимилия"
+                label="Фамилия"
                 value={formData.last_name}
-                onChange={(val) =>
+                onChange={(val: string) =>
                   setFormData((prev) => ({ ...prev, last_name: val }))
                 }
               />
@@ -189,7 +177,7 @@ const UserDetails = () => {
               <EditableField
                 label="Email"
                 value={formData.email}
-                onChange={(val) =>
+                onChange={(val: string) =>
                   setFormData((prev) => ({ ...prev, email: val }))
                 }
               />
@@ -274,7 +262,7 @@ const UserDetails = () => {
         <div
           onClick={() => {
             setOpenModal(false);
-            setPayInput("100");
+            setPayInput(100);
           }}
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
         >
@@ -289,11 +277,11 @@ const UserDetails = () => {
                 id="amount"
                 type="number"
                 className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => setPayInput(e.target.value)}
+                onChange={(e) => setPayInput(Number(e.target.value))}
                 value={payInput}
                 placeholder="*введите сумму от 100₽"
               />
-              {payInput < 0 || payInput === "" ? (
+              {payInput <= 0 ? (
                 <span className="text-error">*введите корректную сумму</span>
               ) : null}
               {payInput < 100 ? (

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
@@ -17,36 +17,45 @@ import {
 } from "react-icons/pi";
 import { TbJson } from "react-icons/tb";
 import { CgDanger } from "react-icons/cg";
-import FilePreviewModal from "../../../components/filePreviewModal/FilePreviewModal";
+import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
 import { FaPlay, FaStop } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import UploadDropzone from "./UploadDropzone";
+import DeleteModal from "../../../components/deleteModal/DeleteModal";
+import type { FileItem } from "../../../types/file";
+
+type User = {
+  id: string;
+};
+
+const ACTIVE_STATUSES = ["uploaded", "extracting"] as const;
+
+type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
 
 const UploadFiles = () => {
-  const fileInputRef = useRef(null);
-  // const sseSourcesRef = useRef({});
   const { isOpen } = useSidebar();
 
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize] = useState<number>(20);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingFiles, setLoadingFiles] = useState<boolean>(false);
 
-  const [files, setFiles] = useState([]);
-  const [dragOver, setDragOver] = useState(false);
-  const [progress, setProgress] = useState({});
-  const [uploading, setUploading] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [deleteFile, setDeleteFile] = useState(null);
-  const [toastFile, setToastFile] = useState(null);
+  const [files, setFiles] = useState<File[]>([]);
 
-  const [notify, setNotify] = useState(null);
-  const [error, setError] = useState(null);
+  const [progress, setProgress] = useState<Record<string, number>>({});
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [deleteFile, setDeleteFile] = useState<string | null>(null);
+  const [toastFile, setToastFile] = useState<FileItem | null>(null);
 
-  const [allFiles, setAllFiles] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [openUploadFiles, setOpenUploadFiles] = useState(true);
+  const [notify, setNotify] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const token = localStorage.getItem("access_token");
+  const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [openUploadFiles, setOpenUploadFiles] = useState<boolean>(true);
+
+  const token = localStorage.getItem("access_token") ?? "";
 
   /* ---------------- user ---------------- */
 
@@ -57,7 +66,7 @@ const UploadFiles = () => {
 
   /* ---------------- helpers ---------------- */
 
-  const getFileIcon = (name) => {
+  const getFileIcon = (name: string): JSX.Element => {
     if (name.endsWith(".xlsx"))
       return <PiMicrosoftExcelLogoBold className="w-10 h-10" />;
     if (name.endsWith(".xls")) return <PiFileXlsBold className="w-10 h-10" />;
@@ -69,7 +78,7 @@ const UploadFiles = () => {
     return <CgDanger className="w-6 h-6 text-red01/70" />;
   };
 
-  const updatedFileDesc = (fileId, alias) => {
+  const updatedFileDesc = (fileId: string, alias: string): void => {
     setAllFiles((prev) =>
       prev.map((f) =>
         f.id === fileId
@@ -85,9 +94,17 @@ const UploadFiles = () => {
     );
   };
 
+  const isActiveStatus = (
+    status?: FileItem["processing_status"]
+  ): status is ActiveStatus => {
+    return (
+      status !== undefined && ACTIVE_STATUSES.includes(status as ActiveStatus)
+    );
+  };
+
   /* ---------------- пагинация ---------------- */
 
-  const loadFiles = async (pageToLoad = 1, replace = false) => {
+  const loadFiles = async (pageToLoad = 1, replace = false): Promise<void> => {
     if (loadingFiles) return;
 
     setLoadingFiles(true);
@@ -99,7 +116,7 @@ const UploadFiles = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const newFiles = res.data.files || [];
+      const newFiles: FileItem[] = res.data.files || [];
       console.log(res);
       setAllFiles((prev) => (replace ? newFiles : [...prev, ...newFiles]));
 
@@ -171,43 +188,22 @@ const UploadFiles = () => {
     }
   };
 
-  /* ---------------- удаление ---------------- */
-
-  const handleDelete = async (id) => {
-    setNotify(null);
-    setError(null);
-    try {
-      await api.delete(`http://192.168.0.45:18003/api/v1/files/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const deleted = allFiles.find((f) => f.id === id);
-
-      setToastFile(deleted);
-      setNotify("delete_file");
-      setAllFiles((prev) => prev.filter((f) => f.id !== id));
-    } catch (err) {
-      setError("Не удалось найти файл");
-    }
-  };
-
   /* ---------------- queue api ---------------- */
 
   const queueApi = {
-    pause: (id) =>
+    pause: (id: string) =>
       api.post(
         `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/pause`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       ),
-    resume: (id) =>
+    resume: (id: string) =>
       api.post(
         `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/resume`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       ),
-    cancel: (id) =>
+    cancel: (id: string) =>
       api.post(
         `http://192.168.0.45:18100/api/v1/parsing-queue/${id}/cancel`,
         {},
@@ -217,8 +213,8 @@ const UploadFiles = () => {
 
   /* ---------------- форматер размера файла ---------------- */
 
-  const formatFileSize = (bytes) => {
-    if (!bytes && bytes !== 0) return "-";
+  const formatFileSize = (bytes?: number): string => {
+    if (bytes === undefined || bytes === null) return "-";
 
     const kb = bytes / 1024;
     if (kb < 1024) return `${kb.toFixed(1)} КБ`;
@@ -238,6 +234,7 @@ const UploadFiles = () => {
     const active = allFiles.filter(
       (f) =>
         f.uploaded_by_user_id === currentUser.id &&
+        f.processing_status !== undefined &&
         ["queued", "extracting", "uploaded"].includes(f.processing_status)
     );
     if (!active.length) return;
@@ -271,9 +268,10 @@ const UploadFiles = () => {
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      {/* title */}
+      {/* ---------------- title ---------------- */}
       <h1 className="title">Загрузка файлов</h1>
-      {/* toast */}
+
+      {/* ---------------- toasts ---------------- */}
       {error && (
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
@@ -287,47 +285,17 @@ const UploadFiles = () => {
       {notify === "delete_file" && (
         <Toast
           type="access"
-          message={`Файл ${toastFile.display_name} успешно удален `}
+          message={`Файл ${toastFile?.display_name ?? ""} успешно удален `}
           onClose={() => setNotify(null)}
         />
       )}
 
       {/* ---------------- форма загрузки ---------------- */}
-      <div
-        className={clsx(
-          "border-2 border-dashed rounded-xl p-20 mt-5 flex flex-col items-center gap-4",
-          dragOver ? "border-blue-500 bg-blue-50" : "border-gray-400"
-        )}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
-          setDragOver(false);
-        }}
-      >
-        <p>Перетащите файлы сюда или</p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          hidden
-          multiple
-          onChange={(e) =>
-            setFiles((prev) => [...prev, ...Array.from(e.target.files)])
-          }
-        />
-        <button
-          onClick={() => fileInputRef.current.click()}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Выбрать файлы
-        </button>
-      </div>
+
+      <UploadDropzone setFiles={setFiles} />
 
       {/* ---------------- нижний контент ---------------- */}
+
       <div className="flex gap-10">
         {/* выбранные файлы */}
         <div className="min-w-0 flex-1">
@@ -350,7 +318,6 @@ const UploadFiles = () => {
                     </div>
                     <Tooltip
                       place="top"
-                      effect="float"
                       delayShow={400}
                       content={file.name}
                       id="see_file_name-tooltip"
@@ -418,7 +385,6 @@ const UploadFiles = () => {
                           </p>
                           <Tooltip
                             place="top"
-                            effect="float"
                             delayShow={400}
                             id={`name-file_${file.id}`}
                             content={file.display_name}
@@ -436,9 +402,7 @@ const UploadFiles = () => {
                           </div>
                         </div>
 
-                        {["uploaded", "extracting"].includes(
-                          file.processing_status
-                        ) && (
+                        {isActiveStatus(file.processing_status) && (
                           <div className="flex items-center gap-3 relative z-40">
                             <button
                               onClick={() => queueApi.resume(file.id)}
@@ -462,7 +426,9 @@ const UploadFiles = () => {
                         )}
                       </div>
                       <p className="text-center text-common">
-                        {new Date(file.created_at).toLocaleDateString()}
+                        {file.created_at
+                          ? new Date(file.created_at).toLocaleDateString()
+                          : "-"}
                       </p>
 
                       <div className="text-right text-common flex justify-end items-center gap-2">
@@ -494,7 +460,6 @@ const UploadFiles = () => {
                         </button>
                         <Tooltip
                           place="top"
-                          effect="float"
                           delayShow={400}
                           id="delete-file_tooltip"
                           content="Удалить файл"
@@ -532,6 +497,7 @@ const UploadFiles = () => {
       </div>
 
       {/* ---------------- модалка превью файла ---------------- */}
+
       {previewFile && (
         <FilePreviewModal
           file={previewFile}
@@ -539,45 +505,22 @@ const UploadFiles = () => {
           onUpdateFile={updatedFileDesc}
         />
       )}
+
       {/* ---------------- модалка подтверждения удаления файла ---------------- */}
+
       {deleteFile && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setDeleteFile(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white p-6 rounded-xl w-[420px] flex flex-col gap-6 shadow-xl"
-          >
-            <p className="text-lg font-semibold text-center">Удалить файл?</p>
-
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-3">
-              <CgDanger className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">
-                Файл будет удалён без возможности восстановления.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-cetner gap-5 ">
-              <button
-                onClick={() => {
-                  handleDelete(deleteFile);
-                  setDeleteFile(null);
-                }}
-                className="w-full border rounded-lg py-2 hover:bg-red01 hover:text-white transition"
-              >
-                Удалить
-              </button>
-              <button
-                onClick={() => setDeleteFile(null)}
-                className="w-full border rounded-lg py-2 hover:bg-gray-100 transition"
-              >
-                Oтмена
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteModal
+          setDeleteFile={setDeleteFile}
+          deleteFile={deleteFile}
+          setError={setError}
+          setNotify={setNotify}
+          setToastFile={setToastFile}
+          setAllFiles={setAllFiles}
+          allFiles={allFiles}
+          token={token}
+          title={"Удалить файл?"}
+          description={"Файл будет удалён без возможности восстановления."}
+        />
       )}
     </section>
   );
