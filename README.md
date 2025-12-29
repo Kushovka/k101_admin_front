@@ -23,8 +23,8 @@ npm run build
 // копирование проекта из локалки в ubunutu powershell
 
 ```bash
-scp -r "C:\путь\к\проекту\k101_user_front" kirill@192.168.0.45:~/projects/
-scp -r "C:\путь\к\проекту\k101_admin_front" kirill@192.168.0.45:~/projects/
+scp -r "C:\путь\к\проекту\k101_user_front" username@192.168.0.45:~/projects/
+scp -r "C:\путь\к\проекту\k101_admin_front" username@192.168.0.45:~/projects/
 ```
 
 // пересборка образа на сервере
