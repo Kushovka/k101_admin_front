@@ -47,14 +47,14 @@ docker run -d -p 4300:80 --name k101_user_front_react k101_user_front_react
 docker run -d -p 4301:80 --name k101_admin_front_react k101_admin_front_react
 ```
 
-// на всякий фикс ошибки с vite
+// на всякий фикс ошибки с vite (на примере с k101_user_front)
 
 ```bash
-kirill@devops:~/projects/k101_user_front$ ls -la node_modules/.bin/vite
+username@devops:~/projects/k101_user_front$ ls -la node_modules/.bin/vite
 
--rw-rw-r-- 1 kirill kirill 381 Dec  5 16:55 node_modules/.bin/vite
+-rw-rw-r-- 1 username username 381 Dec  5 16:55 node_modules/.bin/vite
 
-kirill@devops:~/projects/k101_user_front$ chmod +x node_modules/.bin/vite
+username@devops:~/projects/k101_user_front$ chmod +x node_modules/.bin/vite
 
 ```
 
