@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,12 @@ import { useSearch } from "./SearchContext";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { IoIosArrowDown } from "react-icons/io";
 import { motion } from "framer-motion";
+
+import {
+  SearchForm,
+  SearchResultItem,
+  SearchResponse,
+} from "../../../types/search";
 
 // const API_URL = "http://192.168.0.45:18000/search/dynamic";
 const API_URL = "http://192.168.0.45:18101/admin/search";
@@ -19,9 +25,9 @@ const getHeaders = () => ({
 
 const Search = () => {
   const navigate = useNavigate();
-  const [notify, setNotify] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [notify, setNotify] = useState<null | string>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
   const [additionalOption, setAdditionalOption] = useState(false);
   const { isOpen } = useSidebar();
@@ -39,7 +45,18 @@ const Search = () => {
     setTotalPages,
     res,
     setRes,
-  } = useSearch();
+  } = useSearch() as {
+    form: SearchForm;
+    setForm: React.Dispatch<React.SetStateAction<SearchForm>>;
+    result: SearchResultItem[];
+    setResult: React.Dispatch<React.SetStateAction<SearchResultItem[]>>;
+    currentPage: number;
+    setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+    totalPages: number;
+    setTotalPages: React.Dispatch<React.SetStateAction<number>>;
+    res: SearchResponse;
+    setRes: React.Dispatch<React.SetStateAction<SearchResponse>>;
+  };
 
   const chapterTitleSearch = [
     { id: 1, title: "№" },
@@ -51,11 +68,16 @@ const Search = () => {
     { id: 7, title: "Подробнее..." },
   ];
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e, page = 1, isPagination = false) => {
+  const handleSubmit = async (
+    e?: React.FormEvent,
+    page: number = 1,
+    isPagination: boolean = false
+  ): Promise<void> => {
     if (e) e.preventDefault();
 
     if (!form.name && !form.phone && !form.person_id && !form.email) {
@@ -72,31 +94,40 @@ const Search = () => {
     try {
       // Формируем query string
       const query = new URLSearchParams({
-        page,
-        page_size: pageSize,
+        page: String(page),
+        page_size: String(pageSize),
         ...(form.name.trim() && { name: form.name.trim() }),
         ...(form.phone.trim() && { phone: form.phone.trim() }),
         ...(form.person_id.trim() && { person_id: form.person_id.trim() }),
         ...(form.email.trim() && { email: form.email.trim() }),
       }).toString();
 
-      const res = await api.post(`${API_URL}?${query}`, null, {
-        headers: getHeaders(),
-      });
+      const response = await api.post<SearchResponse>(
+        `${API_URL}?${query}`,
+        null,
+        {
+          headers: getHeaders(),
+        }
+      );
       setSeeSearch(true);
-      setRes(res.data);
-      setResult(res.data.results || []);
-      setTotalPages(res.data.total_pages || 1);
+      setRes(response.data);
+      setResult(response.data.results ?? []);
+      setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(
-        err.response
-          ? err.response.status === 500
+      if (typeof err === "object" && err !== null && "responce" in err) {
+        const status = (err as { response?: { status?: number } }).response
+          ?.status;
+
+        setError(
+          status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
             : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
-      );
+        );
+      } else {
+        setError("Сетевая ошибка или CORS");
+      }
     } finally {
       setLoading(false);
     }
@@ -104,10 +135,10 @@ const Search = () => {
 
   console.log(result);
 
-  const handleCopy = (text) => {
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      setNotify(true);
-      setTimeout(() => setNotify(false), 2000);
+      setNotify("");
+      setTimeout(() => setNotify(null), 2000);
     });
   };
 
@@ -126,7 +157,13 @@ const Search = () => {
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="flex flex-col gap-5">
         <div className="title">Поиск</div>
-        {notify && <Toast type={"access"} message={"СКОПИРОВАНО!"} />}
+        {notify && (
+          <Toast
+            type={"access"}
+            message={"СКОПИРОВАНО!"}
+            onClose={() => setNotify(null)}
+          />
+        )}
         <div className="flex items-center justify-center">
           <form onSubmit={handleSubmit} className="flex gap-4">
             <input
@@ -258,7 +295,7 @@ const Search = () => {
 
           {result.map((item, index) => (
             <div
-              key={index}
+              key={item.entity_id}
               className="grid grid-cols-7 gap-4 text-[13px] text-gray-600 text-center py-2 border-b"
             >
               <span>{(currentPage - 1) * pageSize + index + 1}</span>
@@ -312,7 +349,7 @@ const Search = () => {
           {visiblePages.map((page) => (
             <button
               key={page}
-              onClick={() => handleSubmit(null, page, true)}
+              onClick={() => handleSubmit(undefined, page, true)}
               className={clsx(
                 "px-3 py-1 rounded border",
                 page === currentPage

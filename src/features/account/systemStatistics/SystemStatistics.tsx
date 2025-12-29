@@ -5,28 +5,37 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
 import Toast from "../../../components/toast/Toast";
 
+interface SystemStatisticsResponse {
+  gateway_status: string;
+  total_files_uploaded: number;
+  total_records_parsed: number;
+}
+
 const SystemStatistics = () => {
-  const [stats, setStats] = useState();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [stats, setStats] = useState<SystemStatisticsResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { isOpen } = useSidebar();
 
-  const fetchStats = async () => {
+  const fetchStats = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
       const res = await systemStatistics();
       setStats(res);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Ошибка при получении пользователей:", err);
-      setError(
-        err.response
-          ? err.response.status === 500
+      if (typeof err === "object" && err !== null && "response" in err) {
+        const response = (err as { response?: { status?: number } }).response;
+        setError(
+          response?.status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
             : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
-      );
+        );
+      } else {
+        setError("Сетевая ошибка или CORS");
+      }
     } finally {
       setLoading(false);
     }
