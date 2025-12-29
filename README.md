@@ -20,11 +20,41 @@ npm run build
 
 ## Launching production via Docker + Nginx
 
-```bash
-docker build -t k101_admin_front .
-docker stop k101_admin_front
-docker rm k101_admin_front
-docker run -d -p 4302:81 --name k101_admin_front k101_admin_front
+// копирование проекта из локалки в ubunutu powershell
 
-(http://192.168.0.79:4302 or http://localhost:4302)
+```bash
+scp -r "C:\путь\к\проекту\k101_user_front" kirill@192.168.0.45:~/projects/
+scp -r "C:\путь\к\проекту\k101_admin_front" kirill@192.168.0.45:~/projects/
 ```
+
+// пересборка образа на сервере
+
+```bash
+cd ~/projects/k101_user_front
+docker build --no-cache -t k101_user_front_react .
+
+cd ~/projects/k101_admin_front
+docker build --no-cache -t k101_admin_front_react .
+```
+
+// перезпуск контейнеров
+
+```bash
+docker rm -f k101_user_front_react
+docker rm -f k101_admin_front_react
+
+docker run -d -p 4300:80 --name k101_user_front_react k101_user_front_react
+docker run -d -p 4301:80 --name k101_admin_front_react k101_admin_front_react
+```
+
+// на всякий фикс ошибки с vite
+
+```bash
+kirill@devops:~/projects/k101_user_front$ ls -la node_modules/.bin/vite
+
+-rw-rw-r-- 1 kirill kirill 381 Dec  5 16:55 node_modules/.bin/vite
+
+kirill@devops:~/projects/k101_user_front$ chmod +x node_modules/.bin/vite
+
+```
+
