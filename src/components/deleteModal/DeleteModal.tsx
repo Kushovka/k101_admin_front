@@ -1,5 +1,5 @@
 import { CgDanger } from "react-icons/cg";
-import api from "../../api/axios";
+import api from "../../api/adminApi";
 import type { FileItem } from "../../types/file";
 
 type DeleteModalProps = {

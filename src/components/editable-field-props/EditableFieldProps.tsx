@@ -1,21 +1,31 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaPen } from "react-icons/fa";
 import { IoMdCheckmark, IoMdClose } from "react-icons/io";
 
-const EditableField = ({ label, value, onChange }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempValue, setTempValue] = useState(value);
+interface EditableFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const EditableField: React.FC<EditableFieldProps> = ({
+  label,
+  value,
+  onChange,
+}) => {
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [tempValue, setTempValue] = useState<string>(value);
 
   useEffect(() => {
     setTempValue(value);
   }, [value]);
 
-  const save = () => {
+  const save = (): void => {
     onChange(tempValue);
     setIsEditing(false);
   };
 
-  const cancel = () => {
+  const cancel = (): void => {
     setTempValue(value);
     setIsEditing(false);
   };

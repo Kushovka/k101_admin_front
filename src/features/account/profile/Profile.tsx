@@ -3,17 +3,21 @@ import EditableField from "../../../components/editable-field-props/EditableFiel
 
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
-import { getCurrentUser, postDeposit, updateProfile } from "../../../api/admin";
+import { getCurrentUser, postDeposit } from "../../../api/users";
+import { updateProfile } from "../../../api/profile";
 import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
+import { ApiUser } from "types/user";
+
+type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [openModal, setOpenModal] = useState(false);
-  const [payInput, setPayInput] = useState("100");
+  const [payInput, setPayInput] = useState<number>(100);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [notify, setNotify] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notify, setNotify] = useState<NotifyType | null>(null);
 
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
@@ -23,24 +27,18 @@ const Profile = () => {
 
   /* fetch api */
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUser = async (): Promise<void> => {
       setLoading(true);
       setError(null);
+
       try {
-        const data = await getCurrentUser();
+        const data: ApiUser = await getCurrentUser();
         setUser(data);
-        setName(data.first_name || "");
-        setSurname(data.last_name || "");
-        setEmail(data.email);
+        setName(data.first_name ?? "");
+        setSurname(data.last_name ?? "");
+        setEmail(data.email ?? "");
       } catch (err) {
-        console.error("Ошибка при загрузке пользователя:", err);
-        setError(
-          err.response
-            ? err.response.status === 500
-              ? "Сервер временно недоступен. Попробуйте позже."
-              : "Ошибка при загрузке пользователей !"
-            : "Сетевая ошибка или CORS"
-        );
+        setError("Ошибка при загрузке пользователя");
       } finally {
         setLoading(false);
       }
@@ -49,21 +47,20 @@ const Profile = () => {
   }, []);
 
   /* save profile */
-  const saveProfile = async () => {
+  const saveProfile = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
-      const res = await updateProfile({
+
+      await updateProfile({
         email,
         first_name: name,
         last_name: surname,
       });
-      console.log("Ответ сервера:", res);
-      const updatedUser = await getCurrentUser();
-      setName(updatedUser.first_name || "");
-      setSurname(updatedUser.last_name || "");
-      setEmail(updatedUser.email || "");
+
+      const updatedUser: ApiUser = await getCurrentUser();
       setUser(updatedUser);
+
       setNotify("access_save");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
@@ -77,19 +74,21 @@ const Profile = () => {
 
   /* deposit function */
   const handleDeposit = async () => {
-    try {
-      if (payInput < 100) {
-        setNotify("error_pay");
-        setTimeout(() => setNotify(null), 3000);
-        return;
-      }
-      setLoading(true);
-      const res = await postDeposit(payInput);
+    if (payInput < 100) {
+      setNotify("error_pay");
+      setTimeout(() => setNotify(null), 3000);
+      return;
+    }
+    setLoading(true);
 
-      const updatedUser = await getCurrentUser();
+    try {
+      await postDeposit(payInput);
+
+      const updatedUser: ApiUser = await getCurrentUser();
       setUser(updatedUser);
+
       setOpenModal(false);
-      setPayInput("100");
+      setPayInput(100);
       setNotify("access_pay");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
@@ -101,7 +100,10 @@ const Profile = () => {
   };
 
   /* toast data */
-  const toastConfig = {
+  const toastConfig: Record<
+    NotifyType,
+    { type: "access" | "error"; message: string }
+  > = {
     access_pay: {
       type: "access",
       message: `Баланс успешно пополнен! Текущий баланс: ${user?.balance} ₽`,
@@ -126,6 +128,7 @@ const Profile = () => {
         <Toast
           type={toastConfig[notify].type}
           message={toastConfig[notify].message}
+          onClose={() => setNotify(null)}
         />
       )}
       {loading && <Loader />}
@@ -166,7 +169,9 @@ const Profile = () => {
             <p className="details-text">
               Дата регистрации:{" "}
               <span className="text-black">
-                {new Date(user?.registration_date).toLocaleDateString()}
+                {user?.registration_date
+                  ? new Date(user.registration_date).toLocaleDateString()
+                  : "-"}
               </span>
             </p>
             <button
@@ -207,7 +212,7 @@ const Profile = () => {
             <div
               onClick={() => {
                 setOpenModal(false);
-                setPayInput("100");
+                setPayInput(100);
               }}
               className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
             >
@@ -222,11 +227,11 @@ const Profile = () => {
                     id="amount"
                     type="number"
                     className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onChange={(e) => setPayInput(e.target.value)}
+                    onChange={(e) => setPayInput(Number(e.target.value))}
                     value={payInput}
                     placeholder="*введите сумму от 100₽"
                   />
-                  {payInput < 0 || payInput === "" ? (
+                  {payInput < 0 || payInput === null ? (
                     <span className="text-error">
                       *введите корректную сумму
                     </span>
@@ -273,7 +278,7 @@ const Profile = () => {
           )}
         </div>
       ) : (
-        <Toast message={error} type="error" />
+        <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
     </section>
   );

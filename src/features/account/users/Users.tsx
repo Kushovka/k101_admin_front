@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../../components/loader/Loader";
-import { addUsers, getUsers } from "../../../api/admin";
+import { addUsers, getUsers } from "../../../api/users";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { IoClose } from "react-icons/io5";
@@ -51,9 +51,9 @@ export default function Users() {
     setError(null);
 
     try {
-      const res: UsersResponse = await getUsers();
-
-      const formattedUsers: TableUser[] = res.users.map((u: ApiUser) => ({
+      const res = await getUsers();
+      console.log("getUsers res:", res);
+      const formattedUsers: TableUser[] = res.map((u) => ({
         id: u.id,
         nickName: u.username,
         name: u.first_name,
@@ -94,13 +94,13 @@ export default function Users() {
 
     setLoading(true);
     try {
-      const res: CreatedUserResponse = await addUsers(
+      const res: CreatedUserResponse = await addUsers({
         email,
         first_name,
         last_name,
         role,
-        username
-      );
+        username,
+      });
       await fetchUsers();
 
       setDataAddUser(res);

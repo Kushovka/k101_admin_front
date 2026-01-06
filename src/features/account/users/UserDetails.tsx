@@ -10,7 +10,7 @@ import {
   isBlockedUser,
   postDeposit,
   updateUser,
-} from "../../../api/admin";
+} from "../../../api/users";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
 import type {

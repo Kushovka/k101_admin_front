@@ -79,3 +79,7 @@ export interface UpdateUserPayload {
   last_name: string;
   email: string;
 }
+
+export interface DepositPayload {
+  amount: number;
+}

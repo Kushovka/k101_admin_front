@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
 import Loader from "../../../components/loader/Loader";
-import { systemStatistics } from "../../../api/admin";
+import { systemStatistics } from "../../../api/systemStatistics";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
 import Toast from "../../../components/toast/Toast";
 
-interface SystemStatisticsResponse {
-  gateway_status: string;
-  total_files_uploaded: number;
-  total_records_parsed: number;
-}
+import type { SystemStatisticsResponse } from "../../../types/systemStatistics";
 
 const SystemStatistics = () => {
   const [stats, setStats] = useState<SystemStatisticsResponse | null>(null);

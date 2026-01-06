@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
 import { useNavigate } from "react-router-dom";
-import api from "../../../api/axios";
+import adminApi from "../../../api/adminApi";
 import Toast from "../../../components/toast/Toast";
 import { useSearch } from "./SearchContext";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
@@ -102,8 +102,8 @@ const Search = () => {
         ...(form.email.trim() && { email: form.email.trim() }),
       }).toString();
 
-      const response = await api.post<SearchResponse>(
-        `${API_URL}?${query}`,
+      const response = await adminApi.post<SearchResponse>(
+        `/admin/search?${query}`,
         null,
         {
           headers: getHeaders(),

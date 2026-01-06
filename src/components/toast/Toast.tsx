@@ -1,7 +1,10 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 
-export default function Toast({ message, type = "error", onClose }) {
+import type { ToastProps } from "../../types/toast.types";
+
+const Toast: React.FC<ToastProps> = ({ message, type = "error", onClose }) => {
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -22,4 +25,6 @@ export default function Toast({ message, type = "error", onClose }) {
       {message}
     </motion.div>
   );
-}
+};
+
+export default Toast;

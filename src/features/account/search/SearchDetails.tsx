@@ -1,33 +1,34 @@
 import clsx from "clsx";
-import { useState } from "react";
+import React, { useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
 import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { IoIosArrowDown } from "react-icons/io";
 
-const SearchDetails = () => {
+import type { SearchUser } from "../../../types/searchDetails.types";
+
+const SearchDetails: React.FC = () => {
   const location = useLocation();
-  const user = location.state;
   const navigate = useNavigate();
-
-  const [openDossier, setOpenDossier] = useState(false);
-  const [openModalFull, setOpenModalFull] = useState(false);
-  const [basicInfo, setBasicInfo] = useState(false);
-
-  const [notify, setNotify] = useState(false);
-
   const { isOpen } = useSidebar();
+
+  const user = location.state as SearchUser | null;
+
+  const [openDossier, setOpenDossier] = useState<boolean>(false);
+  const [openModalFull, setOpenModalFull] = useState<boolean>(false);
+  const [basicInfo, setBasicInfo] = useState<boolean>(false);
+  const [notify, setNotify] = useState<boolean>(false);
 
   if (!user) return <p className="pl-[324px] py-6">Пользователь не найден</p>;
 
-  const handleCopy = (text) => {
+  const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setNotify(true);
     });
   };
 
-  const capitalize = (str = "") =>
+  const capitalize = (str = ""): string =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
   return (
@@ -135,11 +136,11 @@ const SearchDetails = () => {
                   </p>
                 )}
                 {/* дата рождения */}
-                {user.birthdays[0] && (
+                {user.birthdays?.[0] && (
                   <p className="details-text">
                     Дата рождения:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.birthdays[0]}`)}
+                      onClick={() => handleCopy(`${user.birthdays![0]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.birthdays[0]}
@@ -147,11 +148,11 @@ const SearchDetails = () => {
                   </p>
                 )}
                 {/* телефон */}
-                {user.phones[0] && (
+                {user.phones?.[0] && (
                   <p className="details-text">
                     Телефон:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.phones[0]}`)}
+                      onClick={() => handleCopy(`${user.phones![0]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.phones[0]}
@@ -159,22 +160,22 @@ const SearchDetails = () => {
                   </p>
                 )}
                 {/* емаилы */}
-                {user.emails[0] && (
+                {user.emails?.[0] && (
                   <p className="details-text">
                     Email №1:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.emails[0]}`)}
+                      onClick={() => handleCopy(`${user.emails![0]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.emails[0]}
                     </span>
                   </p>
                 )}
-                {user.emails[1] && (
+                {user.emails?.[1] && (
                   <p className="details-text">
                     Email №2:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.emails[1]}`)}
+                      onClick={() => handleCopy(`${user.emails![1]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.emails[1]}
@@ -196,11 +197,11 @@ const SearchDetails = () => {
                   </p>
                 )}
                 {/* город проживания */}
-                {user.cities[0] && (
+                {user.cities?.[0] && (
                   <p className="details-text">
                     Город:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.cities[0]}`)}
+                      onClick={() => handleCopy(`${user.cities![0]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.cities[0]}
@@ -208,33 +209,33 @@ const SearchDetails = () => {
                   </p>
                 )}
                 {/* адреса */}
-                {user.addresses[0] && (
+                {user.addresses?.[0] && (
                   <p className="details-text">
                     Адрес №1:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.addresses[0]}`)}
+                      onClick={() => handleCopy(`${user.addresses![0]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.addresses[0]}
                     </span>
                   </p>
                 )}
-                {user.addresses[1] && (
+                {user.addresses?.[1] && (
                   <p className="details-text">
                     Адрес №2:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.addresses[1]}`)}
+                      onClick={() => handleCopy(`${user.addresses![1]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.addresses[1]}
                     </span>
                   </p>
                 )}
-                {user.addresses[2] && (
+                {user.addresses?.[2] && (
                   <p className="details-text">
                     Адрес №3:{" "}
                     <span
-                      onClick={() => handleCopy(`${user.addresses[2]}`)}
+                      onClick={() => handleCopy(`${user.addresses![2]}`)}
                       className="text-black cursor-copy"
                     >
                       {user.addresses[2]}
@@ -291,9 +292,9 @@ const SearchDetails = () => {
                 </p>
                 {/* snils */}
                 <p className="details-text">
-                  {user.snils[0] && (
+                  {user.snils?.[0] && (
                     <span
-                      onClick={() => handleCopy(`${user.snils[0]}`)}
+                      onClick={() => handleCopy(`${user.snils![0]}`)}
                       className="text-black cursor-copy"
                     >
                       СНИЛС: {user.snils[0] || ""}
@@ -302,20 +303,20 @@ const SearchDetails = () => {
                 </p>
                 {/* pasport */}
                 <p className="details-text flex gap-2">
-                  {user.additional_data.serial?.value && (
+                  {user.additional_data?.serial?.value && (
                     <span
                       onClick={() =>
-                        handleCopy(`${user.additional_data.serial?.value}`)
+                        handleCopy(`${user.additional_data?.serial?.value}`)
                       }
                       className="text-black cursor-copy"
                     >
                       Серия: {user.additional_data.serial?.value || ""}
                     </span>
                   )}
-                  {user.additional_data.number?.value && (
+                  {user.additional_data?.number?.value && (
                     <span
                       onClick={() =>
-                        handleCopy(`${user.additional_data.number?.value}`)
+                        handleCopy(`${user.additional_data?.number?.value}`)
                       }
                       className="text-black cursor-copy"
                     >

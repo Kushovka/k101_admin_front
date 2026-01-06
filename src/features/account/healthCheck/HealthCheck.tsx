@@ -1,26 +1,33 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Loader from "../../../components/loader/Loader";
-import { healthCheck } from "../../../api/admin.js";
+import { healthCheck } from "../../../api/healthCheck";
 import { useSidebar } from "../../../components/sidebar/SidebarContext.jsx";
 import clsx from "clsx";
 import Toast from "../../../components/toast/Toast.jsx";
 
-const HealthCheck = () => {
-  const [property, setProperty] = useState();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+import type { HealthCheckResponse } from "../../../types/healthCheck";
+
+interface SubtitleItem {
+  title: string;
+  text?: string;
+}
+
+const HealthCheck: React.FC = () => {
+  const [property, setProperty] = useState<HealthCheckResponse | null>();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { isOpen } = useSidebar();
 
   // function api
-  const fetchProperty = async () => {
+  const fetchProperty = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      const res = await healthCheck();
+      const res: HealthCheckResponse = await healthCheck();
       setProperty(res);
       console.log(res);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Ошибка при получении пользователей:", err);
       setError(
         err.response
@@ -38,7 +45,7 @@ const HealthCheck = () => {
     fetchProperty();
   }, []);
 
-  const subtitle = [
+  const subtitle: SubtitleItem[] = [
     {
       title: "status",
       text: property?.status,
@@ -68,7 +75,9 @@ const HealthCheck = () => {
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title">Health Check</div>
-      {error && <Toast message={error} type="error" onClose={() => setError(null)} />}
+      {error && (
+        <Toast message={error} type="error" onClose={() => setError(null)} />
+      )}
       {loading ? (
         <Loader />
       ) : (

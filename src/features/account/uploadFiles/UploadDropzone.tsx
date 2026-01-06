@@ -11,7 +11,7 @@ const UploadDropzone = ({ setFiles }: UploadDropzoneProps) => {
   return (
     <div
       className={clsx(
-        "border-2 border-dashed rounded-xl p-20 mt-5 flex flex-col items-center gap-4",
+        "border-2 border-dashed rounded-xl p-20 mt-5 flex flex-col items-center gap-4 w-1/2",
         dragOver ? "border-blue-500 bg-blue-50" : "border-gray-400"
       )}
       onDragOver={(e) => {

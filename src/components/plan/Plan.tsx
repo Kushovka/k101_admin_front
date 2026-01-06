@@ -5,7 +5,9 @@ import { FaPen } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { MdRestore } from "react-icons/md";
 
-const Plan = ({
+import type { PlanType, PlanProps } from "../../types/plans.types";
+
+const Plan: React.FC<PlanProps> = ({
   name,
   price,
   duration,
@@ -16,7 +18,7 @@ const Plan = ({
   className,
   archived,
 }) => {
-  function getMonth(number) {
+  function getMonth(number: number) {
     const n = number % 100;
     if (n >= 11 && n <= 14) return "месяцев";
     const lastDigit = n % 10;
@@ -45,9 +47,11 @@ const Plan = ({
         <div className="flex flex-col justify-center">
           <p className="details-text text-[24px] flex items-baseline gap-2">
             <span className="text-3xl text-blue-500 ">
-              {duration !== null
+              {typeof clicks === "number"
+                ? `${clicks} кликов`
+                : typeof duration === "number"
                 ? `${duration} ${getMonth(duration)}`
-                : `${clicks} кликов`}
+                : null}
             </span>
           </p>
         </div>

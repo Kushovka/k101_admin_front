@@ -12,14 +12,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import React from "react";
 import { useSidebar } from "./SidebarContext";
 
-const Sidebar = () => {
+import type { ReactElement, SVGProps } from "react";
+
+interface SidebarLink {
+  name: string;
+  icon: ReactElement<SVGProps<SVGAElement>>;
+  path: string;
+}
+
+const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const { isOpen, setIsOpen } = useSidebar();
 
   // links
-  const links = [
+  const links: SidebarLink[] = [
     { name: "Профиль", icon: <FaRegCircleUser />, path: "/account/profile" },
     { name: "Пользователи", icon: <FaUsers />, path: "/account/users" },
     {
@@ -45,7 +53,8 @@ const Sidebar = () => {
     { name: "Поиск", icon: <IoIosSearch />, path: "/account/search" },
   ];
 
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (path: string): boolean =>
+    location.pathname.startsWith(path);
 
   return (
     <section

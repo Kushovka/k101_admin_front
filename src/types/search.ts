@@ -3,6 +3,7 @@ export interface SearchForm {
   phone: string;
   person_id: string;
   email: string;
+  age: string;
 }
 
 export interface SearchResultItem {

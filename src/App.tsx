@@ -19,8 +19,10 @@ import { SearchProvider } from "./features/account/search/SearchContext";
 import { SidebarProvider } from "./components/sidebar/SidebarContext";
 import Plans from "./features/account/plans/Plans";
 import Profile from "./features/account/profile/Profile";
+import React from "react";
 
-function App() {
+const App: React.FC = () => {
+  const isAuth = Boolean(localStorage.getItem("access_token"));
   return (
     <BrowserRouter>
       <Routes>
@@ -61,7 +63,7 @@ function App() {
         <Route
           path="/"
           element={
-            localStorage.getItem("access_token") ? (
+            isAuth ? (
               <Navigate to="/account/upload-files" replace />
             ) : (
               <Navigate to="/sign-in" replace />
@@ -71,6 +73,6 @@ function App() {
       </Routes>
     </BrowserRouter>
   );
-}
+};
 
 export default App;

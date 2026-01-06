@@ -2,72 +2,77 @@ import clsx from "clsx";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Plan from "../../../components/plan/Plan";
 import { IoClose } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   allArchivedPlans,
   allPlans,
   archivedPlans,
+  updatePlans,
+  createPlans,
   unarchivedPlans,
-} from "../../../api/admin";
+} from "../../../api/plans.api";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { MdArchive } from "react-icons/md";
 import { MdVisibilityOff } from "react-icons/md";
 import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
-import api from "../../../api/axios";
+import api from "../../../api/adminApi";
+import type { PlanItem, CreatePlanPayload } from "../../../types/plans.types";
+import type { AxiosError } from "axios";
 
 const API_URL = "http://192.168.0.45:18100";
 
-const Plans = () => {
+type PlanType = "month" | "clicks";
+
+const Plans: React.FC = () => {
   const { isOpen } = useSidebar();
-  const [plans, setPlans] = useState([]);
-  const [archivePlans, setArchivePlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [plans, setPlans] = useState<PlanItem[]>([]);
+  const [archivePlans, setArchivePlans] = useState<PlanItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // модалки
-  const [openModal, setOpenModal] = useState(false);
-  const [planIdEditing, setPlanIdEditing] = useState(null);
-  const [openArchivedPlans, setOpenArchivedPlans] = useState(false);
+  const [openModal, setOpenModal] = useState<boolean>(false);
+  const [planIdEditing, setPlanIdEditing] = useState<string | null>(null);
+  const [openArchivedPlans, setOpenArchivedPlans] = useState<boolean>(false);
 
   // поля формы
-  const [namePlan, setNamePlan] = useState("");
-  const [pricePlan, setPricePlan] = useState("");
-  const [timePlan, setTimePlan] = useState("");
-  const [clicksPlan, setClicksPlan] = useState("");
-  const [planType, setPlanType] = useState("month");
+  const [namePlan, setNamePlan] = useState<string>("");
+  const [pricePlan, setPricePlan] = useState<string>("");
+  const [timePlan, setTimePlan] = useState<string>("");
+  const [clicksPlan, setClicksPlan] = useState<string>("");
+  const [planType, setPlanType] = useState<PlanType>("month");
 
   // получение всех планов
-  const getPlans = async () => {
+  const getPlans = async (): Promise<void> => {
     setLoading(true);
     setError(null);
+
     try {
       const res = await allPlans();
       setPlans(res.plans);
       console.log(res);
     } catch (err) {
+      const error = err as AxiosError;
       console.error("Ошибка API:", err);
       setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+        error.response?.status === 500
+          ? "Сервер временно недоступен. Попробуйте позже."
+          : "Ошибка при загрузке пользователей"
       );
     } finally {
       setLoading(false);
     }
   };
+
   console.log(plans);
-  useEffect(() => {
-    getPlans();
-  }, []);
 
   // получение всех архивных планов
-  const getArchivedPlans = async () => {
+  const getArchivedPlans = async (): Promise<void> => {
     setLoading(true);
     setError(null);
+
     try {
       const res = await allArchivedPlans();
       setArchivePlans(res.plans);
@@ -75,12 +80,11 @@ const Plans = () => {
       setPlans(updatedPlans.plans ?? []);
     } catch (err) {
       console.error("Ошибка API:", err);
+      const error = err as AxiosError;
       setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+        error.response?.status === 500
+          ? "Сервер временно недоступен. Попробуйте позже."
+          : "Ошибка при загрузке пользователей"
       );
     } finally {
       setLoading(false);
@@ -88,31 +92,34 @@ const Plans = () => {
   };
 
   useEffect(() => {
+    getPlans();
     getArchivedPlans();
   }, []);
 
   // открыть модалку добавления
-  const openAdd = () => {
+  const openAdd = (): void => {
     setPlanIdEditing(null);
     setNamePlan("");
     setPricePlan("");
     setTimePlan("");
+    setClicksPlan("");
+    setPlanType("month");
     setOpenModal(true);
   };
 
   // открыть модалку редактирования
-  const openEdit = (plan) => {
+  const openEdit = (plan: PlanItem): void => {
     setPlanIdEditing(plan.id);
     setNamePlan(plan.plan_name);
-    setPricePlan(plan.price);
-    setTimePlan(plan.month ?? "");
-    setClicksPlan(plan.clicks ?? "");
+    setPricePlan(String(plan.price));
+    setTimePlan(plan.month ? String(plan.month) : "");
+    setClicksPlan(plan.clicks ? String(plan.clicks) : "");
     setPlanType(plan.clicks ? "clicks" : "month");
     setOpenModal(true);
   };
 
   // сохранение (добавление или редактирование)
-  const handleSavePlan = async () => {
+  const handleSavePlan = async (): Promise<void> => {
     if (
       !namePlan ||
       !pricePlan ||
@@ -125,67 +132,31 @@ const Plans = () => {
     setError(null);
 
     try {
-      // Берем старый план, если редактируем
-      const oldPlan = planIdEditing
-        ? plans.find((p) => p.id === planIdEditing) || {}
-        : {};
-
-      const payload = {
+      const payload: CreatePlanPayload = {
         plan_name: namePlan,
         price: Number(pricePlan),
+        ...(planType === "month" && { month: Number(timePlan) }),
+        ...(planType === "clicks" && { clicks: Number(clicksPlan) }),
       };
 
-      if (planType === "month") {
-        payload.month = Number(timePlan);
-      }
-
-      if (planType === "clicks") {
-        payload.clicks = Number(clicksPlan);
-      }
-      console.log("PAYLOAD", payload);
       if (planIdEditing) {
-        await api.put(`${API_URL}/api/v1/plans/${planIdEditing}`, payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
+        await updatePlans(planIdEditing, payload);
       } else {
-        await api.post(`${API_URL}/api/v1/plans`, payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
+        await createPlans(payload);
       }
 
       const updatedPlans = await allPlans();
       setPlans(updatedPlans.plans);
       setOpenModal(false);
-      setNamePlan("");
-      setPricePlan("");
-      setTimePlan("");
-      setClicksPlan("");
-      setPlanIdEditing(null);
-      setPlanType("month");
     } catch (err) {
-      console.error("Ошибка API:", err);
-      setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при сохранении плана"
-          : "Сетевая ошибка или CORS"
-      );
+      setError("Ошибка при сохранении плана");
     } finally {
       setLoading(false);
     }
   };
 
   // архивировать план
-  const handleArchived = async (id) => {
+  const handleArchived = async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
@@ -196,12 +167,11 @@ const Plans = () => {
       setArchivePlans(res.plans);
     } catch (err) {
       console.error("Ошибка API:", err);
+      const error = err as AxiosError;
       setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+        error.response?.status === 500
+          ? "Сервер временно недоступен. Попробуйте позже."
+          : "Ошибка при загрузке пользователей"
       );
     } finally {
       setLoading(false);
@@ -209,7 +179,7 @@ const Plans = () => {
   };
 
   // разархивировать план
-  const handleUnarchive = async (id) => {
+  const handleUnarchive = async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
@@ -219,12 +189,11 @@ const Plans = () => {
       const archivedPlans = await allArchivedPlans();
       setArchivePlans(archivedPlans.plans);
     } catch (err) {
+      const error = err as AxiosError;
       setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+        error.response?.status === 500
+          ? "Сервер временно недоступен. Попробуйте позже."
+          : "Ошибка при загрузке пользователей"
       );
     } finally {
       setLoading(false);
@@ -270,7 +239,6 @@ const Plans = () => {
         <IoClose className="group-hover:w-10 group-hover:h-10 w-8 h-8 rotate-45 transition-all duration-200 cursor-pointer" />
         <Tooltip
           place="left"
-          effect="float"
           delayShow={400}
           content="Добавить тарифный план"
           id="add_plans-tooltip"
