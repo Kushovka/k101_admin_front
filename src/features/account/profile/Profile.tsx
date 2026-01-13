@@ -8,10 +8,12 @@ import { updateProfile } from "../../../api/profile";
 import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
 import { ApiUser } from "types/user";
+import { useNavigate } from "react-router-dom";
 
 type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [payInput, setPayInput] = useState<number>(100);
@@ -88,11 +90,13 @@ const Profile = () => {
       setUser(updatedUser);
 
       setOpenModal(false);
+      navigate("/payment_success", { state: { amount: payInput } });
       setPayInput(100);
       setNotify("access_pay");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
       console.error("Ошибка при пополнении баланса:", err);
+      navigate("/payment_error");
       setError("Ошибка при пополнении баланса");
     } finally {
       setLoading(false);
@@ -183,20 +187,21 @@ const Profile = () => {
           </div>
 
           {/* right-content-info-balance */}
-          <div className="border flex flex-col gap-5 p-4 rounded-[12px] w-full">
-            <div className="flex items-center justify-center">
-              <p className="subtitle text-gray01">Тарифный план</p>
+          <div className="border flex flex-col gap-5 p-4 rounded-[12px] justify-between w-full">
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-center">
+                <p className="subtitle text-gray01">Тарифный план</p>
+              </div>
+
+              <p className="details-text">
+                Число свободных запросов:{" "}
+                <span className="text-black">{user?.free_requests_count}</span>
+              </p>
+
+              <p className="details-text">
+                Баланс: <span className="text-black">{user?.balance} ₽</span>
+              </p>
             </div>
-
-            <p className="details-text">
-              Число свободных запросов:{" "}
-              <span className="text-black">{user?.free_requests_count}</span>
-            </p>
-
-            <p className="details-text">
-              Баланс: <span className="text-black">{user?.balance} ₽</span>
-            </p>
-
             <div className="flex items-center justify-center">
               <button
                 onClick={() => setOpenModal(true)}

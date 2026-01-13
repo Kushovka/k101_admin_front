@@ -10,6 +10,7 @@ export type FileItem = {
   processing_status?:
     | "queued"
     | "uploaded"
+    | "pending"
     | "extracting"
     | "failed"
     | "extracted";

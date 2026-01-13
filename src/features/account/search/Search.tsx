@@ -80,54 +80,80 @@ const Search = () => {
   ): Promise<void> => {
     if (e) e.preventDefault();
 
-    if (!form.name && !form.phone && !form.person_id && !form.email) {
+    const trimmed = {
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      person_id: form.person_id.trim(),
+      email: form.email.trim(),
+    };
+
+    if (
+      !trimmed.name &&
+      !trimmed.phone &&
+      !trimmed.person_id &&
+      !trimmed.email
+    ) {
       setError("Введите хотя бы одно поле для поиска");
       return;
     }
 
     if (!isPagination) setResult([]);
     setLoading(true);
-    setError("");
-
+    setError(null);
     setSeeSearch(false);
 
     try {
-      // Формируем query string
-      const query = new URLSearchParams({
+      const baseParams: Record<string, string> = {
         page: String(page),
         page_size: String(pageSize),
-        ...(form.name.trim() && { name: form.name.trim() }),
-        ...(form.phone.trim() && { phone: form.phone.trim() }),
-        ...(form.person_id.trim() && { person_id: form.person_id.trim() }),
-        ...(form.email.trim() && { email: form.email.trim() }),
-      }).toString();
+      };
+
+      let endpoint = "";
+
+      if (trimmed.name) {
+        // ---- Обычный поиск по имени ----
+        endpoint = "/admin/search";
+        baseParams.name = trimmed.name;
+      } else {
+        // ---- Каскадный поиск ----
+        endpoint = "/admin/cascade/search";
+        if (trimmed.phone) baseParams.phone = trimmed.phone;
+        if (trimmed.person_id) baseParams.person_id = trimmed.person_id;
+        if (trimmed.email) baseParams.email = trimmed.email;
+      }
+
+      const query = new URLSearchParams(baseParams).toString();
 
       const response = await adminApi.post<SearchResponse>(
-        `/admin/search?${query}`,
+        `${endpoint}?${query}`,
         null,
-        {
-          headers: getHeaders(),
-        }
+        { headers: getHeaders() }
       );
+
       setSeeSearch(true);
+      if ("entity" in response.data) {
+        setRes(response.data as any);
+        setResult([response.data.entity as unknown as SearchResultItem]);
+        setTotalPages(response.data.total_pages ?? 1);
+        setCurrentPage(page);
+        return;
+      }
       setRes(response.data);
       setResult(response.data.results ?? []);
       setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
     } catch (err: unknown) {
       console.error(err);
-      if (typeof err === "object" && err !== null && "responce" in err) {
-        const status = (err as { response?: { status?: number } }).response
-          ?.status;
 
-        setError(
-          status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-        );
-      } else {
-        setError("Сетевая ошибка или CORS");
-      }
+      const maybeAxiosErr = err as { response?: { status?: number } };
+
+      const status = maybeAxiosErr.response?.status;
+
+      setError(
+        status === 500
+          ? "Сервер временно недоступен. Попробуйте позже."
+          : "Ошибка при загрузке пользователей"
+      );
     } finally {
       setLoading(false);
     }

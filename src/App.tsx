@@ -20,6 +20,9 @@ import { SidebarProvider } from "./components/sidebar/SidebarContext";
 import Plans from "./features/account/plans/Plans";
 import Profile from "./features/account/profile/Profile";
 import React from "react";
+import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
+import PaymentError from "./components/paymentError/PaymentError";
+// import Verify2FA from "./features/auth/Verify2FA";
 
 const App: React.FC = () => {
   const isAuth = Boolean(localStorage.getItem("access_token"));
@@ -27,6 +30,9 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="sign-in" element={<SignIn />} />
+        <Route path="payment_success" element={<PaymentSuccess />} />
+        <Route path="payment_error" element={<PaymentError />} />
+        {/* <Route path="verify-2fa" element={<Verify2FA />} /> */}
         <Route
           path="account"
           element={

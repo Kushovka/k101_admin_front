@@ -13,7 +13,7 @@ interface SignInFormValues {
 
 interface NotifyState {
   message: string;
-  type: "error" | "success";
+  type: "error" | "access";
 }
 
 export default function SignIn() {
