@@ -9,6 +9,7 @@ import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
 import { ApiUser } from "types/user";
 import { useNavigate } from "react-router-dom";
+import { createInvoice } from "../../../api/payments";
 
 type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
@@ -74,6 +75,35 @@ const Profile = () => {
     }
   };
 
+  // /* deposit function */
+  // const handleDeposit = async () => {
+  //   if (payInput < 100) {
+  //     setNotify("error_pay");
+  //     setTimeout(() => setNotify(null), 3000);
+  //     return;
+  //   }
+  //   setLoading(true);
+
+  //   try {
+  //     await postDeposit(payInput);
+
+  //     const updatedUser: ApiUser = await getCurrentUser();
+  //     setUser(updatedUser);
+
+  //     setOpenModal(false);
+  //     navigate("/successful-payment", { state: { amount: payInput } });
+  //     setPayInput(100);
+  //     setNotify("access_pay");
+  //     setTimeout(() => setNotify(null), 3000);
+  //   } catch (err) {
+  //     console.error("Ошибка при пополнении баланса:", err);
+  //     navigate("/failed-payment");
+  //     setError("Ошибка при пополнении баланса");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   /* deposit function */
   const handleDeposit = async () => {
     if (payInput < 100) {
@@ -84,20 +114,18 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      await postDeposit(payInput);
+      const invoice = await createInvoice(payInput);
+      console.log(invoice);
 
-      const updatedUser: ApiUser = await getCurrentUser();
-      setUser(updatedUser);
+      if (!invoice?.success || !invoice.payment_url) {
+        throw new Error("Invoice error");
+      }
+      localStorage.setItem("payment_id", invoice.payment_id.toString());
 
-      setOpenModal(false);
-      navigate("/payment_success", { state: { amount: payInput } });
-      setPayInput(100);
-      setNotify("access_pay");
-      setTimeout(() => setNotify(null), 3000);
+      window.location.href = invoice.payment_url;
     } catch (err) {
-      console.error("Ошибка при пополнении баланса:", err);
-      navigate("/payment_error");
-      setError("Ошибка при пополнении баланса");
+      console.error("Ошибка создания инвойса:", err);
+      navigate("/failed-payment");
     } finally {
       setLoading(false);
     }

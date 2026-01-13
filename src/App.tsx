@@ -21,7 +21,7 @@ import Plans from "./features/account/plans/Plans";
 import Profile from "./features/account/profile/Profile";
 import React from "react";
 import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
-import PaymentError from "./components/paymentError/PaymentError";
+import PaymentError from "./components/paymentFailed/PaymentFailed";
 // import Verify2FA from "./features/auth/Verify2FA";
 
 const App: React.FC = () => {
@@ -30,8 +30,8 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="sign-in" element={<SignIn />} />
-        <Route path="payment_success" element={<PaymentSuccess />} />
-        <Route path="payment_error" element={<PaymentError />} />
+        <Route path="successful-payment" element={<PaymentSuccess />} />
+        <Route path="failed-payment" element={<PaymentError />} />
         {/* <Route path="verify-2fa" element={<Verify2FA />} /> */}
         <Route
           path="account"

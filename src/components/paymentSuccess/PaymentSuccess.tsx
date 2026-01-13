@@ -1,31 +1,96 @@
 import React, { useEffect, useState } from "react";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
-import { useLocation, useNavigate } from "react-router-dom";
-
-interface PaymentState {
-  amount: number;
-}
+import { useNavigate } from "react-router-dom";
+import { getPaymentStatus } from "../../api/payments";
+import { getCurrentUser } from "../../api/users";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
-  const { state } = useLocation() as { state: PaymentState | null };
-  const [count, setCount] = useState<number>(10);
+  const [count, setCount] = useState(10);
+  const [amount, setAmount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (count < 1) navigate("/account/profile");
+    const paymentId = localStorage.getItem("payment_id");
+    if (!paymentId) {
+      // если пришли сюда напрямую
+      navigate("/account/profile");
+      return;
+    }
 
-    const timer = setTimeout(() => {
-      setCount((prev) => prev - 1);
-    }, 1000);
+    const interval = setInterval(async () => {
+      try {
+        const data = await getPaymentStatus(Number(paymentId));
 
-    return () => clearTimeout(timer);
-  }, [count, navigate]);
+        // Статусы у CryptoCloud типа:
+        // pending, success, expired, canceled
+        if (data.status === "success") {
+          clearInterval(interval);
+          localStorage.removeItem("payment_id");
+
+          // Сохраняем сумму
+          setAmount(Number(data.amount_fiat));
+
+          // Обновляем профиль
+          await getCurrentUser();
+
+          setLoading(false);
+        }
+
+        if (["expired", "canceled"].includes(data.status)) {
+          clearInterval(interval);
+          localStorage.removeItem("payment_id");
+          setFailed(true);
+
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [navigate]);
+
+  // Автоматический redirect в профиль
+  useEffect(() => {
+    if (!loading && !failed && count > 0) {
+      const timer = setTimeout(() => setCount((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (!loading && !failed && count <= 0) {
+      navigate("/account/profile");
+    }
+  }, [count, loading, failed, navigate]);
+
+  if (loading) {
+    return (
+      <section className="w-full h-screen flex items-center justify-center">
+        <h2 className="text-common">Проверяем оплату...</h2>
+      </section>
+    );
+  }
+
+  if (failed) {
+    return (
+      <section className="w-full h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="subtitle text-red-500">Оплата не прошла</h1>
+        <button
+          onClick={() => navigate("/account/profile")}
+          className="px-3 py-2 rounded uppercase hover:bg-red-400/20 transition duration-300"
+        >
+          вернуться в профиль
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="w-full h-screen flex flex-col items-center justify-center gap-4">
       <div className="flex flex-col items-center gap-4">
         <IoIosCheckmarkCircleOutline className="w-28 h-28 text-green-600" />
         <h1 className="subtitle">
-          Ваш баланс успешно пополнен на {state?.amount} рублей
+          Баланс успешно пополнен{amount ? ` на ${amount} ₽` : ""}!
         </h1>
       </div>
       <div className="flex flex-col items-center justify-center gap-2">

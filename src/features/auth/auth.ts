@@ -1,8 +1,9 @@
 import axios, { AxiosResponse } from "axios";
 
 // const API_URL = "http://192.168.0.45:18003/api/v1/auth";
-const API_URL = "http://192.168.0.45:18100/api/v1/auth";
+// const API_URL = "http://192.168.0.45:18100/api/v1/auth";
 // const API_URL = "http://localhost:18003/api/v1/auth";
+const API_URL = "http://fuzogabu.selfip.org:18003/api/v1/auth";
 
 interface LoginRequest {
   username: string;
