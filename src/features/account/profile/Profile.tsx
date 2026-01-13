@@ -123,8 +123,9 @@ const Profile = () => {
       localStorage.setItem("payment_id", invoice.payment_id.toString());
 
       window.location.href = invoice.payment_url;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Ошибка создания инвойса:", err);
+      console.log("invoice error data:", err.response?.data);
       navigate("/failed-payment");
     } finally {
       setLoading(false);
