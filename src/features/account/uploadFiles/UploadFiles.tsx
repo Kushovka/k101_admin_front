@@ -245,7 +245,8 @@ const UploadFiles = () => {
             })
           )
         );
-        console.log(updates.map((u) => u.data.progress_percent));
+        // потом включить на тест
+        // console.log(updates.map((u) => u.data.progress_percent));
         setAllFiles((prev) =>
           prev.map((file) => {
             const fresh = updates.find((u) => u.data.file_id === file.id)?.data;
@@ -438,14 +439,14 @@ const UploadFiles = () => {
                     />
                     <div className="flex  items-center gap-6">
                       <span>{formatFileSize(file.file_size)}</span>
-                      {file.processing_status === "extracted" && (
+                     
                         <button
                           className="text-blue-600 underline "
                           onClick={() => setPreviewFile(file)}
                         >
                           Предпросмотр...
                         </button>
-                      )}
+                    
                     </div>
                   </div>
 
@@ -542,7 +543,7 @@ const UploadFiles = () => {
           </div>
         )}
       </div>
-      
+
       {/* ---------------- модалка превью файла ---------------- */}
 
       {previewFile && (
