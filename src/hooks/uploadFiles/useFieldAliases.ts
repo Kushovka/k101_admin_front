@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/adminApi";
+import userApi from "../../api/userApi";
 
 type FileLike = {
   id: string;
@@ -36,11 +37,11 @@ export const useFieldAliases = ({
     const loadAliases = async (): Promise<void> => {
       try {
         const [fileRes, globalRes] = await Promise.all([
-          api.get("http://192.168.0.45:18100/api/v1/field-mappings", {
+          userApi.get("/api/v1/field-mappings", {
             params: { raw_file_id: file.id },
             headers: { Authorization: `Bearer ${token}` },
           }),
-          api.get("http://192.168.0.45:18100/api/v1/field-mappings", {
+          userApi.get("/api/v1/field-mappings", {
             params: { is_global: true },
             headers: { Authorization: `Bearer ${token}` },
           }),
@@ -75,14 +76,14 @@ export const useFieldAliases = ({
 
     try {
       if (existing?.id) {
-        await api.patch(
-          `http://192.168.0.45:18100/api/v1/field-mappings/${existing.id}`,
+        await userApi.patch(
+          `/api/v1/field-mappings/${existing.id}`,
           { display_name: aliasValue.trim() },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        await api.post(
-          "http://192.168.0.45:18100/api/v1/field-mappings",
+        await userApi.post(
+          "/api/v1/field-mappings",
           {
             original_field_name: editingField,
             display_name: aliasValue.trim(),

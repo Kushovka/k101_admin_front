@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../api/adminApi";
+import userApi from "../../api/userApi";
 
 type FileLike = {
   id: string;
@@ -35,8 +35,8 @@ export const useFileAlias = ({
     if (!file || !fileAlias.trim()) return;
 
     try {
-      await api.patch(
-        `http://192.168.0.45:18100/api/v1/files/${file.id}/description`,
+      await userApi.patch(
+        `/api/v1/files/${file.id}/description`,
         { file_description: fileAlias.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );

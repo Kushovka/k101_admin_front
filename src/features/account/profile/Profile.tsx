@@ -7,7 +7,7 @@ import { getCurrentUser, postDeposit } from "../../../api/users";
 import { updateProfile } from "../../../api/profile";
 import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
-import { ApiUser } from "types/user";
+import { ApiUser } from "../../../types/user";
 import { useNavigate } from "react-router-dom";
 import { createInvoice } from "../../../api/payments";
 

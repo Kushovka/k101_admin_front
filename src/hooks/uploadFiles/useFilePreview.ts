@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../api/adminApi";
+import userApi from "../../api/userApi";
 
 type FileLike = { id: string };
 
@@ -21,14 +21,11 @@ export const useFilePreview = ({ file, limit, token }: UseFilePreviewArgs) => {
     if (!file) return;
     setLoading(true);
 
-    api
-      .get<FilePreviewResponse>(
-        `http://192.168.0.45:18100/api/v1/files/${file.id}/preview`,
-        {
-          params: { limit },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
+    userApi
+      .get<FilePreviewResponse>(`/api/v1/files/${file.id}/preview`, {
+        params: { limit },
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         const records = res.data?.preview_records;
         setRows(Array.isArray(records) ? records : []);
