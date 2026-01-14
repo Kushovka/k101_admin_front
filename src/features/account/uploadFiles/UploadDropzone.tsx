@@ -1,11 +1,11 @@
 import clsx from "clsx";
 import { useRef, useState } from "react";
+import { useUploadStore } from "../../../store/useUploadStore";
 
-type UploadDropzoneProps = {
-  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
-};
 
-const UploadDropzone = ({ setFiles }: UploadDropzoneProps) => {
+
+const UploadDropzone = () => {
+  const addFiles = useUploadStore((state) => state.addFiles);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState<boolean>(false);
   return (
@@ -21,7 +21,7 @@ const UploadDropzone = ({ setFiles }: UploadDropzoneProps) => {
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => {
         e.preventDefault();
-        setFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+        addFiles(Array.from(e.dataTransfer.files));
         setDragOver(false);
       }}
     >
@@ -34,7 +34,7 @@ const UploadDropzone = ({ setFiles }: UploadDropzoneProps) => {
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const files = e.currentTarget.files;
           if (!files) return;
-          setFiles((prev) => [...prev, ...Array.from(files)]);
+          addFiles(Array.from(files));
         }}
       />
       <button

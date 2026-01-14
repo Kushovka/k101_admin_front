@@ -25,6 +25,7 @@ import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import type { FileItem } from "../../../types/file";
 import { IoIosArrowForward } from "react-icons/io";
 import { getAllFiles, postUploadFiles } from "../../../api/uploadFiles";
+import { useUploadStore } from "../../../store/useUploadStore";
 
 type User = {
   id: string;
@@ -36,16 +37,18 @@ type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
 
 const UploadFiles = () => {
   const { isOpen } = useSidebar();
+  const { files, setFiles, removeFile, progress, uploading, handleUpload } =
+    useUploadStore();
 
   const [page, setPage] = useState<number>(1);
   const [pageSize] = useState<number>(20);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingFiles, setLoadingFiles] = useState<boolean>(false);
 
-  const [files, setFiles] = useState<File[]>([]);
+  // const [files, setFiles] = useState<File[]>([]);
 
-  const [progress, setProgress] = useState<Record<string, number>>({});
-  const [uploading, setUploading] = useState<boolean>(false);
+  // const [progress, setProgress] = useState<Record<string, number>>({});
+  // const [uploading, setUploading] = useState<boolean>(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [deleteFile, setDeleteFile] = useState<string | null>(null);
   const [toastFile, setToastFile] = useState<FileItem | null>(null);
@@ -152,35 +155,35 @@ const UploadFiles = () => {
 
   /* ---------------- загрузка ---------------- */
 
-  const handleUpload = async () => {
-    if (!files.length) return;
+  // const handleUpload = async () => {
+  //   if (!files.length) return;
 
-    setUploading(true);
-    setError(null);
-    setProgress({});
+  //   setUploading(true);
+  //   setError(null);
+  //   setProgress({});
 
-    try {
-      await postUploadFiles(files, (file, percent) => {
-        setProgress((prev) => ({
-          ...prev,
-          [file.name]: percent,
-        }));
-      });
+  //   try {
+  //     await postUploadFiles(files, (file, percent) => {
+  //       setProgress((prev) => ({
+  //         ...prev,
+  //         [file.name]: percent,
+  //       }));
+  //     });
 
-      // FIX: НЕ затираем allFiles напрямую
-      setNotify("upload_file");
-      setFiles([]);
+  //     // FIX: НЕ затираем allFiles напрямую
+  //     setNotify("upload_file");
+  //     setFiles([]);
 
-      setPage(1);
-      setHasMore(true);
-      loadFiles(1, true);
-    } catch (e) {
-      setError("Ошибка при загрузке файлов");
-      console.error(e);
-    } finally {
-      setUploading(false);
-    }
-  };
+  //     setPage(1);
+  //     setHasMore(true);
+  //     loadFiles(1, true);
+  //   } catch (e) {
+  //     setError("Ошибка при загрузке файлов");
+  //     console.error(e);
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
 
   /* ---------------- queue api ---------------- */
 
@@ -286,7 +289,7 @@ const UploadFiles = () => {
       <div className="flex justify-between gap-10 items-start">
         {/* ---------------- форма загрузки ---------------- */}
 
-        <UploadDropzone setFiles={setFiles} />
+        <UploadDropzone />
 
         {/* выбранные файлы */}
         <div className="min-w-0 flex-1 w-1/2">
@@ -318,10 +321,7 @@ const UploadFiles = () => {
                       <span className="shrink-0">{progress[file.name]}%</span>
                     )}
 
-                    <button
-                      className="shrink-0"
-                      onClick={() => setFiles(files.filter((_, x) => x !== i))}
-                    >
+                    <button className="shrink-0" onClick={() => removeFile(i)}>
                       <IoMdClose />
                     </button>
                   </li>
@@ -329,7 +329,17 @@ const UploadFiles = () => {
               </ul>
 
               <button
-                onClick={handleUpload}
+                onClick={() =>
+                  handleUpload({
+                    onSuccess: () => {
+                      setNotify("upload_file");
+                      setPage(1);
+                      setHasMore(true);
+                      loadFiles(1, true);
+                    },
+                    onError: (msg) => setError(msg),
+                  })
+                }
                 disabled={uploading}
                 className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
               >
