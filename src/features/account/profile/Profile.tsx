@@ -9,7 +9,7 @@ import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
 import { ApiUser } from "types/user";
 import { useNavigate } from "react-router-dom";
-import { createInvoice, getPaymentsHistory } from "../../../api/payments";
+import { createInvoice } from "../../../api/payments";
 
 type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
@@ -114,15 +114,6 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      const history = await getPaymentsHistory(1);
-      const last = history.payments?.[0];
-      console.log(last);
-
-      if (last && last.status === "pending") {
-        console.log("resume pending invoice", last.invoice_id);
-        window.location.href = last.payment_url;
-        return;
-      }
       const invoice = await createInvoice(payInput);
       console.log(invoice);
 

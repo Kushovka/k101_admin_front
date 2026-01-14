@@ -1,9 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 
-// const API_URL = "http://192.168.0.45:18003/api/v1/auth";
-// const API_URL = "http://192.168.0.45:18100/api/v1/auth";
-// const API_URL = "http://localhost:18003/api/v1/auth";
-const API_URL = "http://fuzogabu.selfip.org:18003/api/v1/auth";
+const API_URL = import.meta.env.VITE_USER_API_URL;
 
 interface LoginRequest {
   username: string;
@@ -24,7 +21,7 @@ export const login = async (
   password: string
 ): Promise<LoginResponse> => {
   const res: AxiosResponse<LoginResponse> = await axios.post(
-    `${API_URL}/login`,
+    `${API_URL}/api/v1/auth/login`,
     { username, password } as LoginRequest
   );
 
@@ -47,7 +44,7 @@ export const logout = async (): Promise<void> => {
   if (!refreshToken) return;
 
   await axios.post<void, AxiosResponse<void>, LogoutRequest>(
-    `${API_URL}/logout`,
+    `${API_URL}/api/v1/auth/logout`,
     { refresh_token: refreshToken }
   );
   localStorage.removeItem("access_token");

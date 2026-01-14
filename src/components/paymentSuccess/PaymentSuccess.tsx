@@ -9,6 +9,7 @@ const PaymentSuccess = () => {
   const [count, setCount] = useState(10);
   const [amount, setAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<string>("created");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -22,27 +23,20 @@ const PaymentSuccess = () => {
     const interval = setInterval(async () => {
       try {
         const data = await getPaymentStatus(Number(paymentId));
+        console.log("payment status data:", data);
+        setStatus(data.status);
 
-        // Статусы у CryptoCloud типа:
-        // pending, success, expired, canceled
-        if (data.status === "success") {
+        if (["completed", "paid", "overpaid"].includes(data.status)) {
           clearInterval(interval);
           localStorage.removeItem("payment_id");
-
-          // Сохраняем сумму
           setAmount(Number(data.amount_fiat));
-
-          // Обновляем профиль
           await getCurrentUser();
-
           setLoading(false);
         }
 
-        if (["expired", "canceled"].includes(data.status)) {
+        if (["canceled", "expired", "partial"].includes(data.status)) {
           clearInterval(interval);
           localStorage.removeItem("payment_id");
-          setFailed(true);
-
           setLoading(false);
         }
       } catch (err) {
@@ -55,15 +49,18 @@ const PaymentSuccess = () => {
 
   // Автоматический redirect в профиль
   useEffect(() => {
-    if (!loading && !failed && count > 0) {
-      const timer = setTimeout(() => setCount((prev) => prev - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (!loading && !failed && count <= 0) {
-      navigate("/account/profile");
+    if (!loading && ["completed", "paid", "overpaid"].includes(status)) {
+      if (count > 0) {
+        const timer = setTimeout(() => setCount((prev) => prev - 1), 1000);
+        return () => clearTimeout(timer);
+      } else {
+        navigate("/account/profile");
+      }
     }
-  }, [count, loading, failed, navigate]);
+  }, [count, status, loading, navigate]);
 
-  if (loading) {
+  // UI
+  if (loading || status === "created") {
     return (
       <section className="w-full h-screen flex items-center justify-center">
         <h2 className="text-common">Проверяем оплату...</h2>
@@ -71,10 +68,10 @@ const PaymentSuccess = () => {
     );
   }
 
-  if (failed) {
+  if (["canceled", "expired", "partial"].includes(status)) {
     return (
       <section className="w-full h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="subtitle text-red-500">Оплата не прошла</h1>
+        <h1 className="subtitle text-red-500">Оплата не завершена</h1>
         <button
           onClick={() => navigate("/account/profile")}
           className="px-3 py-2 rounded uppercase hover:bg-red-400/20 transition duration-300"

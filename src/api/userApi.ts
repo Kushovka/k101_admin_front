@@ -13,4 +13,14 @@ userApi.interceptors.request.use((config) => {
   return config;
 });
 
+userApi.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent("session-expired"));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default userApi;

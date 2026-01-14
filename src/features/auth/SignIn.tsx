@@ -18,7 +18,7 @@ interface NotifyState {
 
 export default function SignIn() {
   const isAuth = Boolean(localStorage.getItem("access_token"));
-  if (isAuth) return <Navigate to="/account/upload-files" replace />;
+  if (isAuth) return <Navigate to="/account/profile" replace />;
 
   const {
     register,
@@ -34,7 +34,7 @@ export default function SignIn() {
       await login(data.username, data.password);
       setNotify(null);
 
-      navigate("/account/upload-files");
+      navigate("/account/profile");
     } catch (err) {
       console.error(err);
       let message = "Ошибка при входе";

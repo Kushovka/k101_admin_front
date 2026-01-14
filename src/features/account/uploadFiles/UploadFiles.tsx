@@ -23,6 +23,8 @@ import { MdDelete } from "react-icons/md";
 import UploadDropzone from "./UploadDropzone";
 import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import type { FileItem } from "../../../types/file";
+import { IoIosArrowForward } from "react-icons/io";
+import { getAllFiles, postUploadFiles } from "../../../api/uploadFiles";
 
 type User = {
   id: string;
@@ -53,7 +55,7 @@ const UploadFiles = () => {
 
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [totalFiles, setTotalFiles] = useState<number | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [search, setSearch] = useState<string>("");
@@ -117,32 +119,18 @@ const UploadFiles = () => {
     setError(null);
 
     try {
-      const res = await userApi.get("/api/v1/files", {
-        params: {
-          page: pageToLoad,
-          page_size: pageSize,
-          ...(search.trim() && { search: search.trim() }),
-        },
-        headers: { Authorization: `Bearer ${token}` },
+      const data = await getAllFiles({
+        page: pageToLoad,
+        pageSize,
+        sortOrder,
+        search,
       });
 
-      const newFiles: FileItem[] = res.data.files || [];
-      console.log(res);
-      setAllFiles((prev) => {
-        const merged = replace ? newFiles : [...prev, ...newFiles];
+      const newFiles: FileItem[] = data.files || [];
+      console.log(data);
+      setAllFiles((prev) => (replace ? newFiles : [...prev, ...newFiles]));
 
-        return merged.sort((a, b) => {
-          const tA = a.created_at
-            ? new Date(a.created_at).getTime()
-            : -Infinity;
-          const tB = b.created_at
-            ? new Date(b.created_at).getTime()
-            : -Infinity;
-
-          return sortOrder === "asc" ? tA - tB : tB - tA;
-        });
-      });
-      setTotalFiles(res.data.total);
+      setTotalFiles(data.total);
       if (newFiles.length < pageSize) {
         setHasMore(false);
       }
@@ -172,25 +160,12 @@ const UploadFiles = () => {
     setProgress({});
 
     try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append("files", file);
-
-        await userApi.post("/api/v1/files/upload", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          onUploadProgress: (e) => {
-            if (e.total) {
-              const percent = Math.round((e.loaded / e.total) * 100);
-              setProgress((prev) => ({
-                ...prev,
-                [file.name]: percent,
-              }));
-            }
-          },
-        });
-      }
+      await postUploadFiles(files, (file, percent) => {
+        setProgress((prev) => ({
+          ...prev,
+          [file.name]: percent,
+        }));
+      });
 
       // FIX: НЕ затираем allFiles напрямую
       setNotify("upload_file");
@@ -374,7 +349,30 @@ const UploadFiles = () => {
             <h2 className="subtitle text-[22px]">Загруженные файлы</h2>
             <p className="text-common">Всего найдено файлов: {totalFiles}</p>
           </div>
-          <div>
+          <div className="flex gap-3">
+            <button
+              data-tooltip-id="sort_order"
+              onClick={() => {
+                const next = sortOrder === "newest" ? "oldest" : "newest";
+                setSortOrder(next);
+                setPage(1);
+                setHasMore(true);
+                loadFiles(1, true);
+              }}
+              className="px-3 py-2 border rounded"
+            >
+              <IoIosArrowForward
+                className={clsx(
+                  sortOrder === "newest" ? "rotate-90" : "-rotate-90"
+                )}
+              />
+            </button>
+            <Tooltip
+              place="top"
+              delayShow={400}
+              id="sort_order"
+              content="Сортировать по дате"
+            />
             <input
               type="text"
               value={search}
@@ -386,26 +384,6 @@ const UploadFiles = () => {
               placeholder="Поиск по названию файла"
               className="w-72 border rounded px-3 py-2"
             />
-            <button
-              onClick={() => {
-                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                setAllFiles((prev) =>
-                  [...prev].sort((a, b) => {
-                    const tA = a.created_at
-                      ? new Date(a.created_at).getTime()
-                      : -Infinity;
-                    const tB = b.created_at
-                      ? new Date(b.created_at).getTime()
-                      : -Infinity;
-
-                    return sortOrder === "asc" ? tA - tB : tB - tA;
-                  })
-                );
-              }}
-              className="px-3 py-1 border rounded"
-            >
-              {sortOrder === "asc" ? "Сначала старые" : "Сначала новые"}
-            </button>
           </div>
         </div>
 
@@ -448,8 +426,8 @@ const UploadFiles = () => {
                       id={`name-file_${file.id}`}
                       content={file.display_name}
                     />
-                    <span>{formatFileSize(file.file_size)}</span>
-                    <div>
+                    <div className="flex  items-center gap-6">
+                      <span>{formatFileSize(file.file_size)}</span>
                       {file.processing_status === "extracted" && (
                         <button
                           className="text-blue-600 underline "
