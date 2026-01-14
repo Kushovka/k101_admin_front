@@ -1,6 +1,7 @@
 import { CgDanger } from "react-icons/cg";
 import api from "../../api/adminApi";
 import type { FileItem } from "../../types/file";
+import userApi from "../../api/userApi";
 
 type DeleteModalProps = {
   deleteFile: string | null;
@@ -36,7 +37,7 @@ const DeleteModal = ({
     setNotify(null);
     setError(null);
     try {
-      await api.delete(`http://192.168.0.45:18003/api/v1/files/${id}`, {
+      await userApi.delete(`/api/v1/files/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
