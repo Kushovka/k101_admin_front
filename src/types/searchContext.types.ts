@@ -1,9 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { SearchForm, SearchResultItem, SearchResponse } from "./search";
+import React from "react";
 
 export interface SearchContextValue {
-  form: SearchForm;
-  setForm: Dispatch<SetStateAction<SearchForm>>;
+  query: string;
+  setQuery: React.Dispatch<React.SetStateAction<string>>;
 
   result: SearchResultItem[];
   setResult: Dispatch<SetStateAction<SearchResultItem[]>>;

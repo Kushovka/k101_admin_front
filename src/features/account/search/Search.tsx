@@ -30,13 +30,14 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
   const [additionalOption, setAdditionalOption] = useState(false);
+
   const { isOpen } = useSidebar();
 
   const pageSize = 10;
 
   const {
-    form,
-    setForm,
+    query,
+    setQuery,
     result,
     setResult,
     currentPage,
@@ -46,8 +47,8 @@ const Search = () => {
     res,
     setRes,
   } = useSearch() as {
-    form: SearchForm;
-    setForm: React.Dispatch<React.SetStateAction<SearchForm>>;
+    query: string;
+    setQuery: React.Dispatch<React.SetStateAction<string>>;
     result: SearchResultItem[];
     setResult: React.Dispatch<React.SetStateAction<SearchResultItem[]>>;
     currentPage: number;
@@ -68,11 +69,6 @@ const Search = () => {
     { id: 7, title: "Подробнее..." },
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleSubmit = async (
     e?: React.FormEvent,
     page: number = 1,
@@ -80,22 +76,17 @@ const Search = () => {
   ): Promise<void> => {
     if (e) e.preventDefault();
 
-    const trimmed = {
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      person_id: form.person_id.trim(),
-      email: form.email.trim(),
-    };
+    const value = query.trim();
 
-    if (
-      !trimmed.name &&
-      !trimmed.phone &&
-      !trimmed.person_id &&
-      !trimmed.email
-    ) {
-      setError("Введите хотя бы одно поле для поиска");
+    if (!value) {
+      setError("Введите запрос");
       return;
     }
+
+    const isEmail = /\S+@\S+\.\S+/.test(value);
+    const isPhone = /^\+?\d{7,}$/.test(value);
+    const isId = /^\d+$/.test(value);
+    const isName = !isEmail && !isPhone && !isId;
 
     if (!isPagination) setResult([]);
     setLoading(true);
@@ -110,27 +101,28 @@ const Search = () => {
 
       let endpoint = "";
 
-      if (trimmed.name) {
+      if (isName) {
         // ---- Обычный поиск по имени ----
         endpoint = "/admin/search";
-        baseParams.name = trimmed.name;
+        baseParams.name = value;
       } else {
         // ---- Каскадный поиск ----
         endpoint = "/admin/cascade/search";
-        if (trimmed.phone) baseParams.phone = trimmed.phone;
-        if (trimmed.person_id) baseParams.person_id = trimmed.person_id;
-        if (trimmed.email) baseParams.email = trimmed.email;
+        if (isPhone) baseParams.phone = value;
+        if (isEmail) baseParams.person_id = value;
+        if (isId) baseParams.email = value;
       }
 
-      const query = new URLSearchParams(baseParams).toString();
+      const qs = new URLSearchParams(baseParams).toString();
 
       const response = await adminApi.post<SearchResponse>(
-        `${endpoint}?${query}`,
+        `${endpoint}?${qs}`,
         null,
         { headers: getHeaders() }
       );
 
       setSeeSearch(true);
+
       if ("entity" in response.data) {
         setRes(response.data as any);
         setResult([response.data.entity as unknown as SearchResultItem]);
@@ -190,39 +182,15 @@ const Search = () => {
             onClose={() => setNotify(null)}
           />
         )}
-        <div className="flex items-center justify-center">
-          <form onSubmit={handleSubmit} className="flex gap-4">
+        <div className="flex items-center justify-center pb-10">
+          <form onSubmit={handleSubmit} className="flex gap-4 ">
             <input
               name="name"
               type="text"
               placeholder="ФИО"
-              value={form.name}
-              onChange={handleChange}
-              className="border-2 rounded-[6px] px-3"
-            />
-            <input
-              name="phone"
-              type="text"
-              placeholder="телефон"
-              value={form.phone}
-              onChange={handleChange}
-              className="border-2 rounded-[6px] px-3"
-            />
-            <input
-              name="person_id"
-              type="text"
-              placeholder="person_id"
-              value={form.person_id}
-              onChange={handleChange}
-              className="border-2 rounded-[6px] px-3"
-            />
-            <input
-              name="email"
-              type="text"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              className="border-2 rounded-[6px] px-3"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="border-2 rounded-[6px] px-3 w-[500px]"
             />
             <button
               data-tooltip-id="add_plans-tooltip"
@@ -231,7 +199,7 @@ const Search = () => {
               найти
             </button>
           </form>
-          <button
+          {/* <button
             className="w-full flex items-center justify-center gap-1 text-common text-[16px]"
             onClick={() => setAdditionalOption((prev) => !prev)}
           >
@@ -241,9 +209,9 @@ const Search = () => {
             ) : (
               <IoIosArrowDown className="w-6 h-6 transition-all duration-300" />
             )}
-          </button>
+          </button> */}
         </div>
-        {additionalOption && (
+        {/* {additionalOption && (
           <motion.form
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -284,7 +252,7 @@ const Search = () => {
               className="border-2 rounded-[6px] px-3"
             />
           </motion.form>
-        )}
+        )} */}
       </div>
 
       {seeSearch && (
@@ -292,7 +260,7 @@ const Search = () => {
           Найдено:{" "}
           {res.count === 10
             ? "Очень много совпадений, введите дополнительные параметры"
-            : `${res.count} результатов`}
+            : `${res.count || res.total_pages}`}
         </div>
       )}
       {result.length >= 0 && (

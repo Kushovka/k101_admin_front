@@ -20,22 +20,17 @@ interface SearchProviderProps {
 }
 
 export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
-  const [form, setForm] = useState<SearchForm>({
-    name: "",
-    phone: "",
-    person_id: "",
-    email: "",
-    age: "",
-  });
+  const [query, setQuery] = useState<string>("");
 
   const [result, setResult] = useState<SearchResultItem[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [res, setRes] = useState<SearchResponse | null>(null);
 
+  console.log(res);
   const value: SearchContextValue = {
-    form,
-    setForm,
+    query,
+    setQuery,
     result,
     setResult,
     currentPage,
