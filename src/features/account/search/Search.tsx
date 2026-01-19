@@ -69,23 +69,42 @@ const Search = () => {
     { id: 7, title: "Подробнее..." },
   ];
 
+  const normalizePhone = (raw: string) => {
+    let phone = raw.replace(/\D/g, "");
+
+    if (phone.startsWith("8")) {
+      phone = "7" + phone.slice(1);
+    }
+
+    if (phone.startsWith("9")) {
+      phone = "7" + phone;
+    }
+
+    if (!phone.startsWith("7")) {
+      phone = "7" + phone;
+    }
+
+    return "+" + phone;
+  };
+
   const handleSubmit = async (
     e?: React.FormEvent,
     page: number = 1,
-    isPagination: boolean = false
+    isPagination: boolean = false,
   ): Promise<void> => {
     if (e) e.preventDefault();
 
-    const value = query.trim();
+    const raw = query.trim();
 
-    if (!value) {
+    if (!raw) {
       setError("Введите запрос");
       return;
     }
 
-    const isEmail = /\S+@\S+\.\S+/.test(value);
-    const isPhone = /^\+?\d{7,}$/.test(value);
-    const isId = /^\d+$/.test(value);
+    const digit = raw.replace(/\D/g, "");
+    const isEmail = /\S+@\S+\.\S+/.test(raw);
+    const isPhone = digit.length >= 7;
+    const isId = /^\d+$/.test(raw) && !isEmail;
     const isName = !isEmail && !isPhone && !isId;
 
     if (!isPagination) setResult([]);
@@ -104,13 +123,18 @@ const Search = () => {
       if (isName) {
         // ---- Обычный поиск по имени ----
         endpoint = "/admin/search";
-        baseParams.name = value;
+        baseParams.name = raw;
       } else {
         // ---- Каскадный поиск ----
         endpoint = "/admin/cascade/search";
-        if (isPhone) baseParams.phone = value;
-        if (isEmail) baseParams.person_id = value;
-        if (isId) baseParams.email = value;
+
+        if (isPhone) {
+          baseParams.phone = normalizePhone(raw);
+        } else if (isEmail) {
+          baseParams.person_id = raw;
+        } else if (isId) {
+          baseParams.email = raw;
+        }
       }
 
       const qs = new URLSearchParams(baseParams).toString();
@@ -118,7 +142,7 @@ const Search = () => {
       const response = await adminApi.post<SearchResponse>(
         `${endpoint}?${qs}`,
         null,
-        { headers: getHeaders() }
+        { headers: getHeaders() },
       );
 
       setSeeSearch(true);
@@ -145,7 +169,7 @@ const Search = () => {
       setError(
         status === 500
           ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+          : "Ошибка при загрузке пользователей",
       );
     } finally {
       setLoading(false);
@@ -270,7 +294,7 @@ const Search = () => {
                 key={chapter.id}
                 className={clsx(
                   "flex items-center justify-center text-[12px]",
-                  chapter.id === chapterTitleSearch.length ? "" : "border-r"
+                  chapter.id === chapterTitleSearch.length ? "" : "border-r",
                 )}
               >
                 <p>{chapter.title}</p>
@@ -347,7 +371,7 @@ const Search = () => {
                 "px-3 py-1 rounded border",
                 page === currentPage
                   ? "bg-blue-500 text-white"
-                  : "bg-white hover:bg-gray-100"
+                  : "bg-white hover:bg-gray-100",
               )}
             >
               {page}
