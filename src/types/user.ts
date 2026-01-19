@@ -83,3 +83,18 @@ export interface UpdateUserPayload {
 export interface DepositPayload {
   amount: number;
 }
+
+export interface ApiTelegramUser {
+  id: number;
+  telegram_id: number;
+  telegram_username: string;
+  status: string;
+  reviewed_by_admin_id: number;
+  rejection_reason: string;
+  created_at: string;
+  reviewed_at: string;
+}
+
+export interface TelegramUsersResponse {
+  requests: ApiTelegramUser[];
+}

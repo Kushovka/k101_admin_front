@@ -1,13 +1,15 @@
 import adminApi from "./adminApi";
 import userApi from "./userApi";
 
-import type {
-  ApiUser,
-  CreatedUserResponse,
-  UpdateUserPayload,
-  UserRole,
-  UsersResponse,
-} from "types/user";
+import {
+  TelegramUsersResponse,
+  type ApiTelegramUser,
+  type ApiUser,
+  type CreatedUserResponse,
+  type UpdateUserPayload,
+  type UserRole,
+  type UsersResponse,
+} from "../types/user";
 
 const getHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("access_token");
@@ -107,5 +109,38 @@ export const postDeposit = async (amount: number): Promise<void> => {
     }
   );
   console.log(data);
+  return data;
+};
+
+/* ---------------- TG USERS ---------------- */
+
+export const getRequests = async (): Promise<ApiTelegramUser[]> => {
+  const { data } = await userApi.get<TelegramUsersResponse>(
+    `api/v1/users/admin/registration-requests`,
+    {
+      headers: getHeaders(),
+    }
+  );
+  console.log(data);
+  return data.requests;
+};
+
+export const isApproveRequest = async (id: number) => {
+  const { data } = await userApi.post(
+    `api/v1/users/admin/registration-requests/${id}/approve`,
+    {},
+    { headers: getHeaders() }
+  );
+  return data;
+};
+export const isRejectRequest = async (
+  id: number,
+  reason?: string
+): Promise<ApiTelegramUser> => {
+  const { data } = await userApi.post(
+    `api/v1/users/admin/registration-requests/${id}/reject`,
+    reason ? { reason } : {},
+    { headers: getHeaders() }
+  );
   return data;
 };

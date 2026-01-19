@@ -1,0 +1,50 @@
+[33m6002ce3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m d
+[33m4aa44b4[m update search
+[33mae6ae88[m[33m ([m[1;31morigin/master[m[33m)[m Update README.md
+[33md6b7225[m f
+[33m7d05471[m f
+[33m05accf4[m добавлена загрузка больших файлов с разбивкой на чанки
+[33mf7c537f[m f
+[33maa9b695[m f
+[33mfa65c67[m добавлено глобальное сосотояние через zustand что бы не сбрасывалась загрузка при переходах по страницам
+[33mfe5fe67[m f
+[33m05b08b2[m F
+[33me7a5b79[m f
+[33ma1ce375[m f
+[33mf65885a[m добалена модалка окончания сессии плюс исравлена страница успешной и неуспешной оплаты, доделан каскадный поиск, изменена системная статистика и сделана сортировка по дате всех файлов
+[33m5ee2ca7[m f
+[33mf72dbc2[m f
+[33m4e14aa2[m f
+[33m7b3d083[m first
+[33m9811eb4[m добавлены страницы payment_access и payment_error, настроена сортировка загруженных файлов и выведены все загруженные файлы, добавлен каскадный поиск
+[33m4ae4617[m проект переписан под тайпскрипт плюс рефакторинг плюс добавлен поиск по названию файлов по буквенному совпадению
+[33mcb6bc8a[m Update README.md
+[33mf4793ab[m Update README.md
+[33ma52c0ab[m Update README.md
+[33m80e0e5a[m рефакторинг легаси кода пекревод на ts для более стабитльной работы
+[33me43e090[m рефакторинг легаси кода и перевод приложения на тайпскрипт для лучшей стабильности и предсказуемости
+[33m3dde5bc[m сделано добавление алиасов к названию файла и начал работать прогресс бар, так же сделан рефакторинг и создано несколько кастомных хуков для оптимизации страницы с загрузкой
+[33mc28dec8[m добавлены и созданы алиасы и возможность изменять их, улучшена модалка с предпросмотром добавлен скелетон, и возможность изменять количество отображаемых срок так же доработана панель загруженных файлов
+[33ma89526f[m добавлена возможность видеть все загруженные файлы и исправлено модальное окно с предпросмотром данных
+[33maabd2f2[m добавление функционала отправки на парсинг больших файлов по чанкам, исправление ошибок с sse, добавление вывода статуса, добавление вывода первых несколььких строк, добавление функционала ручного управления состоянием загрузки, форматирование и исправление интерфейса
+[33m653841c[m доработка страницы UploadFiles.jsx, внедрение и настройка SSE для транслирования статуса загрузки в реальном времени, доработка ручек Э
+[33md770899[m Search and user creation have been improved
+[33m8ffbcfe[m File downloads have been configured and search parameters have been added
+[33m85201f5[m The search has been configured and additional search parameters have been added.
+[33md131dfd[m add new component plans and fix some components
+[33m2935efc[m update search and add component Plans.jsx
+[33mb798bbe[m Correct routing was configured on the Search.jsx and SearchDetails.jsx pages, navigator.clipboard.writeText was configured, and minor changes and code refactoring were made.
+[33m7136713[m Adding toast functionality, adding filtering functionality to SearchDetails, and adding the ability to block users to UsersDetails.
+[33m2121eca[m add SearchDetails.test.jsx
+[33mf8ec45f[m Implemented user data modification on the UserDetails.jsx page and connection to the API on the Search.jsx page with data output. Also created was the SearchDetails.jsx page with the output of additional information and data.
+[33m7dd2898[m update components
+[33m996d622[m logic fix progress bar
+[33m9bc6f82[m connect API for Users.jsx, HealthCheck.jsx and Search.jsx
+[33md7be0b4[m add loader and refactoring components
+[33mfd05a6d[m Vitest coverage of main components
+[33mc2f8c62[m add tests for Users and SignIn components
+[33mcbffb0f[m progress bar local data
+[33m13b9e0c[m Update README.md
+[33m722535d[m add dockerfile and nginx assembly
+[33mb9d89ee[m first
+[33m3368421[m react version

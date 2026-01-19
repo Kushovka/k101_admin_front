@@ -130,6 +130,7 @@ const Search = () => {
         setCurrentPage(page);
         return;
       }
+      console.log(response.data);
       setRes(response.data);
       setResult(response.data.results ?? []);
       setTotalPages(response.data.total_pages ?? 1);
@@ -150,8 +151,6 @@ const Search = () => {
       setLoading(false);
     }
   };
-
-  console.log(result);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {

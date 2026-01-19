@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../../components/loader/Loader";
-import { addUsers, getUsers } from "../../../api/users";
+import {
+  addUsers,
+  getRequests,
+  getUsers,
+  isApproveRequest,
+  isRejectRequest,
+} from "../../../api/users";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { IoClose } from "react-icons/io5";
@@ -10,12 +16,15 @@ import { Tooltip } from "react-tooltip";
 import { CgDanger } from "react-icons/cg";
 import { MdContentCopy } from "react-icons/md";
 
-import type {
-  ApiUser,
-  UsersResponse,
-  CreatedUserResponse,
-  TableUser,
+import {
+  type ApiUser,
+  type UsersResponse,
+  type CreatedUserResponse,
+  type TableUser,
+  type ApiTelegramUser,
 } from "../../../types/user";
+import { IoIosClose, IoMdCheckmark, IoMdClose } from "react-icons/io";
+import { FaUsers } from "react-icons/fa";
 
 type NotifyType = "user_create" | "access_copy";
 
@@ -24,6 +33,7 @@ export default function Users() {
   const { isOpen } = useSidebar();
 
   const [users, setUsers] = useState<TableUser[]>([]);
+  const [allRequests, setAllRequests] = useState<ApiTelegramUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,8 +43,10 @@ export default function Users() {
   const [role, setRole] = useState<"user" | "admin">("user");
   const [username, setUsername] = useState<string>("");
 
+  const [telegramUsersModal, setTelegramUsersModal] = useState<boolean>(false);
+
   const [dataAddUser, setDataAddUser] = useState<CreatedUserResponse | null>(
-    null
+    null,
   );
   const [showDataNewUser, setShowDataNewUser] = useState<boolean>(false);
   const [notify, setNotify] = useState<NotifyType | null>(null);
@@ -78,10 +90,44 @@ export default function Users() {
           ? err.response.status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
             : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+          : "Сетевая ошибка или CORS",
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* заявки из телеграма */
+
+  useEffect(() => {
+    const fetchRequests = async (): Promise<void> => {
+      try {
+        const res = await getRequests();
+        console.log(res);
+        setAllRequests(res);
+      } catch (err) {
+      } finally {
+      }
+    };
+    fetchRequests();
+  }, []);
+
+  const handleApprove = async (id: number) => {
+    try {
+      await isApproveRequest(id);
+      await getRequests();
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    const reason = prompt("Причина отказа:") || null;
+    try {
+      await isRejectRequest(id, reason ?? undefined);
+      await getRequests();
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -121,7 +167,7 @@ export default function Users() {
           ? err.response.status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
             : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+          : "Сетевая ошибка или CORS",
       );
     } finally {
       setLoading(false);
@@ -138,6 +184,16 @@ export default function Users() {
     { id: 7, title: "Дата регистрации" },
     { id: 8, title: "Статус" },
     { id: 9, title: "Идентификатор" },
+  ] as const;
+
+  const chapterTitleTg = [
+    { id: 1, title: "id" },
+    { id: 2, title: "Телеграм id" },
+    { id: 3, title: "Телеграм Никнейм" },
+    { id: 4, title: "id админа" },
+    { id: 5, title: "Статус" },
+    { id: 6, title: "Дата создания" },
+    { id: 7, title: "Действие" },
   ] as const;
 
   /* функция длдя копирования */
@@ -176,7 +232,7 @@ export default function Users() {
               <span
                 className={clsx(
                   " flex items-center justify-center text-[12px]",
-                  chapter.id === chapterTitle.length ? "" : "border-r"
+                  chapter.id === chapterTitle.length ? "" : "border-r",
                 )}
                 key={chapter.id}
               >
@@ -201,7 +257,7 @@ export default function Users() {
                     "rounded-[4px] text-black/70",
                     user.confirmationEmail === "Yes"
                       ? "bg-green-400/60"
-                      : "bg-red-500/60"
+                      : "bg-red-500/60",
                   )}
                 >
                   {user.email}
@@ -358,6 +414,74 @@ export default function Users() {
                 >
                   Понятно
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* ---------------- кнопка добавления ---------------- */}
+          <div
+            data-tooltip-id="add_plans-tooltip"
+            onClick={() => setTelegramUsersModal((prev) => !prev)}
+            className="fixed z-50 bg-gray01/40 bottom-28 right-8 hover:bottom-[107px] hover:right-7 border rounded-full p-4 group cursor-pointer hover:bg-green-300/50 transition-all duration-200 "
+          >
+            <FaUsers className="group-hover:w-10 group-hover:h-10 w-8 h-8 transition-all duration-200 cursor-pointer" />
+
+            <Tooltip
+              place="left"
+              delayShow={400}
+              content="Добавить нового пользователя"
+              id="add_plans-tooltip"
+            />
+          </div>
+
+          {telegramUsersModal && (
+            <div
+              onClick={() => setTelegramUsersModal(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-[3px] flex flex-col items-center justify-center z-50 animate-fadeIn"
+            >
+              <div className="bg-white p-10 rounded-xl">
+                {/* ---------------- названия столбцов ---------------- */}
+                <div className="grid grid-cols-7 gap-4 text-gray01 font-medium border-b pb-2">
+                  {chapterTitleTg.map((chapter) => (
+                    <span
+                      className={clsx(
+                        " flex items-center justify-center text-[12px]",
+                        chapter.id === chapterTitleTg.length ? "" : "border-r",
+                      )}
+                      key={chapter.id}
+                    >
+                      {chapter.title}
+                    </span>
+                  ))}
+                </div>
+
+                {/* ---------------- все телеграм пользователи ---------------- */}
+                <div className="flex flex-col">
+                  {allRequests.map((r) => (
+                    <div className="grid grid-cols-7 gap-4 text-gray01 font-medium text-center text-[12px] items-center border-b py-2">
+                      <p>{r.id}</p>
+                      <p>{r.telegram_id}</p>
+                      <h2>{r.telegram_username}</h2>
+                      <p>{r.reviewed_by_admin_id}</p>
+                      <p>{r.status}</p>
+                      <p>{r.created_at}</p>
+                      <div className="flex items-center justify-center gap-5">
+                        <button
+                          onClick={() => handleApprove(r.id)}
+                          className="border px-2 py-2 rounded hover:bg-green-100 transition duration-300"
+                        >
+                          <IoMdCheckmark className="w-6 h-6" />
+                        </button>
+                        <button
+                          onClick={() => handleReject(r.id)}
+                          className="border px-2 py-2 rounded hover:bg-red-100 transition duration-300"
+                        >
+                          <IoMdClose className="w-6 h-6" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
