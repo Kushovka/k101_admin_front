@@ -1,9 +1,13 @@
 import userApi from "./userApi";
 
-export const createInvoice = async (amount: number) => {
+export const createInvoice = async (
+  amount: number,
+  provider: "cryptocloud" | "bithide",
+) => {
   const { data } = await userApi.post("/api/v1/payments/create-invoice", {
     amount,
     currency: "RUB",
+    provider,
   });
   return data;
 };

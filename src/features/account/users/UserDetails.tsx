@@ -1,4 +1,4 @@
- import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
 
@@ -196,7 +196,7 @@ const UserDetails = () => {
                 "px-2 py-1 rounded-[8px]",
                 user.confirmationEmail === "Yes"
                   ? "bg-green-400"
-                  : "bg-red-500 text-white"
+                  : "bg-red-500 text-white",
               )}
             >
               {user.confirmationEmail}
@@ -209,7 +209,7 @@ const UserDetails = () => {
                 "px-2 py-1 rounded-[8px]",
                 user.status === "Active"
                   ? "bg-green-400"
-                  : "bg-red-500 text-white"
+                  : "bg-red-500 text-white",
               )}
             >
               {user.status}

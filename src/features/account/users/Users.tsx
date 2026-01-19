@@ -420,17 +420,20 @@ export default function Users() {
 
           {/* ---------------- кнопка добавления ---------------- */}
           <div
-            data-tooltip-id="add_plans-tooltip"
+            data-tooltip-id="all_requests-tooltip"
             onClick={() => setTelegramUsersModal((prev) => !prev)}
             className="fixed z-50 bg-gray01/40 bottom-28 right-8 hover:bottom-[107px] hover:right-7 border rounded-full p-4 group cursor-pointer hover:bg-green-300/50 transition-all duration-200 "
           >
+            <div className="w-6 h-6 rounded-full bg-red-500 absolute -top-1 right-0 flex justify-center font-medium">
+              {allRequests.length}
+            </div>
             <FaUsers className="group-hover:w-10 group-hover:h-10 w-8 h-8 transition-all duration-200 cursor-pointer" />
 
             <Tooltip
               place="left"
               delayShow={400}
-              content="Добавить нового пользователя"
-              id="add_plans-tooltip"
+              content="Запросы на регистрацию"
+              id="all_requests-tooltip"
             />
           </div>
 
@@ -464,20 +467,34 @@ export default function Users() {
                       <h2>{r.telegram_username}</h2>
                       <p>{r.reviewed_by_admin_id}</p>
                       <p>{r.status}</p>
-                      <p>{r.created_at}</p>
+                      <p>{`${new Date(r.created_at).toLocaleString()}`}</p>
                       <div className="flex items-center justify-center gap-5">
                         <button
+                          data-tooltip-id="approve-tooltip"
                           onClick={() => handleApprove(r.id)}
                           className="border px-2 py-2 rounded hover:bg-green-100 transition duration-300"
                         >
                           <IoMdCheckmark className="w-6 h-6" />
                         </button>
+                        <Tooltip
+                          place="left"
+                          delayShow={400}
+                          content="Принять запрос"
+                          id="approve-tooltip"
+                        />
                         <button
+                          data-tooltip-id="reject-tooltip"
                           onClick={() => handleReject(r.id)}
                           className="border px-2 py-2 rounded hover:bg-red-100 transition duration-300"
                         >
                           <IoMdClose className="w-6 h-6" />
                         </button>
+                        <Tooltip
+                          place="left"
+                          delayShow={400}
+                          content="Отклонить запрос"
+                          id="reject-tooltip"
+                        />
                       </div>
                     </div>
                   ))}

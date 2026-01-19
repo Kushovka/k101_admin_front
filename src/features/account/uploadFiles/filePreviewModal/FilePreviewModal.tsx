@@ -8,7 +8,6 @@ import { useFileAlias } from "../../../../hooks/uploadFiles/useFileAlias";
 import { useFilePreview } from "../../../../hooks/uploadFiles/useFilePreview";
 import { useFieldAliases } from "../../../../hooks/uploadFiles/useFieldAliases";
 
-
 type FileLike = {
   id: string;
   display_name?: string;
@@ -126,6 +125,7 @@ const FilePreviewModal = ({
                 <span className="px-2 py-1 cursor-pointer ">
                   {fileAlias || file.display_name || file.file_name}
                 </span>
+                {fileAlias && <span>({file.file_name})</span>}
 
                 <FaPen className="group-hover:scale-125 transition duration-300  w-[14px] h-[14px]" />
               </div>
@@ -213,7 +213,7 @@ const FilePreviewModal = ({
                         key={col}
                         className={clsx(
                           "border px-2 py-1 truncate",
-                          col === "additional_data" && "cursor-pointer"
+                          col === "additional_data" && "cursor-pointer",
                         )}
                         data-tooltip-id={`cell-tooltip-${i}-${col}`}
                       >
@@ -294,7 +294,7 @@ const FilePreviewModal = ({
                   className={clsx(
                     "px-3 py-1 border rounded",
                     activeBtn === String(n) &&
-                      "bg-blue-500 text-white border-blue-500"
+                      "bg-blue-500 text-white border-blue-500",
                   )}
                 >
                   {n}
