@@ -131,9 +131,9 @@ const Search = () => {
         if (isPhone) {
           baseParams.phone = normalizePhone(raw);
         } else if (isEmail) {
-          baseParams.person_id = raw;
-        } else if (isId) {
           baseParams.email = raw;
+        } else if (isId) {
+          baseParams.person_id = raw;
         }
       }
 
@@ -277,7 +277,9 @@ const Search = () => {
                 <span className="text-center">{item.last_name || "-"}</span>
                 <span className="text-center">{item.first_name || "-"}</span>
                 <span className="text-center">{item.middle_name || "-"}</span>
-                <span className="text-center truncate">{item.emails[0] || "-"}</span>
+                <span className="text-center truncate">
+                  {item.emails[0] || "-"}
+                </span>
                 <span className="text-center">{item.phones[0] || "-"}</span>
 
                 <span
