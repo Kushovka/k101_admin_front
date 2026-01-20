@@ -24,7 +24,14 @@ import UploadDropzone from "./UploadDropzone";
 import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import type { FileItem } from "../../../types/file";
 import { IoIosArrowForward } from "react-icons/io";
-import { getAllFiles, postUploadFiles } from "../../../api/uploadFiles";
+import {
+  getAllFiles,
+  getParsingQueue,
+  patchPositionFile,
+  patchPriorityFile,
+  postToTopFile,
+  postUploadFiles,
+} from "../../../api/uploadFiles";
 import { useUploadStore } from "../../../store/useUploadStore";
 
 type User = {
@@ -57,9 +64,13 @@ const UploadFiles = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const [queue, setQueue] = useState<any[]>([]);
+
   const [totalFiles, setTotalFiles] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const [isProcessingModal, setIsProcessingModal] = useState<boolean>(false);
 
   const [search, setSearch] = useState<string>("");
 
@@ -91,19 +102,19 @@ const UploadFiles = () => {
       prev.map((f) =>
         f.id === fileId
           ? { ...f, file_description: alias, display_name: alias }
-          : f
-      )
+          : f,
+      ),
     );
 
     setPreviewFile((prev) =>
       prev && prev.id === fileId
         ? { ...prev, file_description: alias, display_name: alias }
-        : prev
+        : prev,
     );
   };
 
   const isActiveStatus = (
-    status?: FileItem["processing_status"]
+    status?: FileItem["processing_status"],
   ): status is ActiveStatus => {
     return (
       status !== undefined && ACTIVE_STATUSES.includes(status as ActiveStatus)
@@ -192,22 +203,83 @@ const UploadFiles = () => {
       userApi.post(
         `/api/v1/parsing-queue/${id}/pause`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       ),
     resume: (id: string) =>
       userApi.post(
         `/api/v1/parsing-queue/${id}/resume`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       ),
     cancel: (id: string) =>
       userApi.post(
         `/api/v1/parsing-queue/${id}/cancel`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       ),
   };
 
+  const handleChangePriority = async (id: string, priority: number) => {
+    try {
+      const res = await patchPriorityFile(id, { priority });
+      // обновляем локально
+      setQueue((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? { ...f, priority: res.priority, position: res.position }
+            : f,
+        ),
+      );
+    } catch (e) {
+      console.error(e);
+      setError("Ошибка при изменении приоритета");
+    }
+  };
+
+  // const handleChangePosition = async (id: string, position: number) => {
+  //   try {
+  //     const res = await patchPositionFile(id, { position });
+  //     // обновляем локально
+  //     setQueue((prev) =>
+  //       prev.map((f) =>
+  //         f.id === id
+  //           ? { ...f, priority: res.priority, position: res.position }
+  //           : f,
+  //       ),
+  //     );
+  //     await handleAllQueue();
+  //   } catch (e) {
+  //     console.error(e);
+  //     setError("Ошибка при изменении приоритета");
+  //   }
+  // };
+
+  const handleAllQueue = async () => {
+    try {
+      const res = await getParsingQueue();
+      setQueue(res?.entries);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleMoveToTop = async (id: string) => {
+    try {
+      await postToTopFile(id);
+      await handleAllQueue(); // подтянуть новую позицию
+    } catch (err) {
+      console.log(err);
+      setError("Не удалось поднять в топ");
+    }
+  };
+
+  useEffect(() => {
+    handleAllQueue();
+    const interval = setInterval(handleAllQueue, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  console.log(queue);
   /* ---------------- форматер размера файла ---------------- */
 
   const formatFileSize = (bytes?: number): string => {
@@ -232,7 +304,7 @@ const UploadFiles = () => {
       (f) =>
         f.uploaded_by_user_id === currentUser.id &&
         f.processing_status !== undefined &&
-        ["queued", "extracting", "uploaded"].includes(f.processing_status)
+        ["queued", "extracting", "uploaded"].includes(f.processing_status),
     );
     if (!active.length) return;
 
@@ -242,8 +314,8 @@ const UploadFiles = () => {
           active.map((f) =>
             userApi.get(`/api/v1/files/${f.id}/status`, {
               headers: { Authorization: `Bearer ${token}` },
-            })
-          )
+            }),
+          ),
         );
         // потом включить на тест
         // console.log(updates.map((u) => u.data.progress_percent));
@@ -251,7 +323,7 @@ const UploadFiles = () => {
           prev.map((file) => {
             const fresh = updates.find((u) => u.data.file_id === file.id)?.data;
             return fresh ? { ...file, ...fresh } : file;
-          })
+          }),
         );
       } catch (err) {
         console.error("Status polling error", err);
@@ -354,6 +426,187 @@ const UploadFiles = () => {
 
       {/* загруженные файлы */}
 
+      <div className="mt-10 min-w-0">
+        <div
+          onClick={() => setIsProcessingModal((prev) => !prev)}
+          className="my-4 flex items-center justify-between border-b pb-5 cursor-pointer select-none"
+        >
+          <div>
+            <h2 className="subtitle text-[22px]">Очередь обработки</h2>
+            <p className="text-common">В очереди: {queue.length}</p>
+          </div>
+        </div>
+        {isProcessingModal && (
+          <>
+            {queue.length > 0 && (
+              <div className="mt-4">
+                {queue.map((item) => {
+                  const name =
+                    item.file_description || item.file_name || "Без имени";
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="border-b py-3 grid grid-cols-4 items-center gap-4 min-w-0"
+                    >
+                      {/* LEFT */}
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <p className="font-medium subtitle truncate">{name}</p>
+
+                        <div className="flex items-center gap-4 text-common">
+                          <span>{formatFileSize(item.file_size)}</span>
+                        </div>
+                      </div>
+
+                      {/* CENTER */}
+                      <div className="text-center text-common flex flex-col items-center">
+                        {item.status === "queued" && "Ожидание..."}
+                        {item.status === "processing" && "Обработка..."}
+                        {item.status === "completed" && "Завершено"}
+                        {item.status === "failed" && "Ошибка"}
+                      </div>
+                      {["uploaded", "queued"].includes(item.status ?? "") && (
+                        <select
+                          value={String(item.priority ?? 100)}
+                          onChange={(e) =>
+                            handleChangePriority(
+                              item.raw_file_id,
+                              Number(e.target.value),
+                            )
+                          }
+                          className={clsx(
+                            "px-3 py-[6px]",
+                            "text-sm font-medium",
+                            "rounded-md",
+                            "bg-white",
+                            "border border-gray-200",
+                            "shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_1px_2px_rgba(0,0,0,0.09)]",
+                            "cursor-pointer select-none",
+                            "transition-all duration-150",
+                            "hover:border-gray-300 hover:bg-gray-50",
+                            "focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30",
+                          )}
+                        >
+                          <option
+                            value={1}
+                            className="text-red-600 font-semibold"
+                          >
+                            Высокий (1)
+                          </option>
+                          <option value={50} className="text-orange-500">
+                            Средний (50)
+                          </option>
+                          <option value={100} className="text-gray-800">
+                            Обычный (100)
+                          </option>
+                          <option value={999} className="text-gray-500">
+                            Низкий (999)
+                          </option>
+                        </select>
+                      )}
+
+                      {/* {["uploaded", "queued"].includes(item.status ?? "") && (
+                        <input
+                          type="number"
+                          min={1}
+                          max={queue.length}
+                          value={item.position ?? 1}
+                          onChange={(e) => {
+                            const raw = Number(e.target.value);
+                            const safe = Math.max(
+                              1,
+                              Math.min(queue.length, raw),
+                            );
+                            setQueue((prev) =>
+                              prev.map((f) =>
+                                f.id === item.id ? { ...f, position: safe } : f,
+                              ),
+                            );
+                          }}
+                          onBlur={(e) => {
+                            const raw = Number(e.target.value);
+                            const safe = Math.max(
+                              1,
+                              Math.min(queue.length, raw),
+                            );
+                            handleChangePosition(item.raw_file_id, safe);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const raw = Number(
+                                (e.target as HTMLInputElement).value,
+                              );
+                              const safe = Math.max(
+                                1,
+                                Math.min(queue.length, raw),
+                              );
+                              e.currentTarget.blur(); // триггерим blur → вызовет handleChangePosition
+                            }
+                            if (e.key === "Escape") {
+                              setQueue((prev) =>
+                                prev.map((f) =>
+                                  f.id === item.id
+                                    ? { ...f, position: item.position }
+                                    : f,
+                                ),
+                              );
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          className={clsx(
+                            "w-[50px]",
+                            "px-2 py-[4px]",
+                            "rounded-md",
+                            "text-sm text-center",
+                            "border border-gray-300",
+                            "bg-white",
+                            "shadow-sm",
+                            "transition-all duration-150",
+                            "focus:border-cyan-500 focus:ring-2 focus:ring-cyan-300",
+                            "hover:border-gray-400",
+                            "select-none",
+                          )}
+                        />
+                      )} */}
+
+                      {/* RIGHT */}
+                      <div className="flex items-center justify-end gap-3 text-common">
+                        {/* <span>Prio: {item.priority}</span> */}
+                        {item.position !== null && (
+                          <span>Pos: {item.position}</span>
+                        )}
+
+                        <button
+                          onClick={() => handleMoveToTop(item.raw_file_id)}
+                          className="px-2 py-[2px] text-xs rounded border border-gray-300 hover:bg-gray-200 transition"
+                        >
+                          ↑ в топ
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+        {/* {hasMore && (
+          <div className="flex justify-center mt-3">
+            <button
+              disabled={loadingFiles}
+              onClick={() => {
+                const nextPage = page + 1;
+                setPage(nextPage);
+                loadFiles(nextPage);
+              }}
+              className="px-4 py-2 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
+            >
+              {loadingFiles ? "Загрузка..." : "Загрузить ещё"}
+            </button>
+          </div>
+        )} */}
+      </div>
+
       <div className="mt-10 min-w-0 ">
         <div className="my-4 flex items-center justify-between border-b pb-5">
           <div>
@@ -374,7 +627,7 @@ const UploadFiles = () => {
             >
               <IoIosArrowForward
                 className={clsx(
-                  sortOrder === "newest" ? "rotate-90" : "-rotate-90"
+                  sortOrder === "newest" ? "rotate-90" : "-rotate-90",
                 )}
               />
             </button>
@@ -413,7 +666,7 @@ const UploadFiles = () => {
                 key={file.id}
                 className={clsx(
                   "border-b py-3 grid grid-cols-3 items-center gap-4 min-w-0",
-                  file.uploaded_by_user_id === currentUser?.id && "bg-green-50"
+                  file.uploaded_by_user_id === currentUser?.id && "bg-green-50",
                 )}
               >
                 <div className="flex items-center justify-between gap-2 text-common">
@@ -425,7 +678,7 @@ const UploadFiles = () => {
                         __html: search
                           ? file.display_name.replace(
                               new RegExp(`(${safeSearch})`, "gi"),
-                              "<mark class='bg-green-300'>$1</mark>"
+                              "<mark class='bg-green-300'>$1</mark>",
                             )
                           : file.display_name,
                       }}
@@ -439,14 +692,13 @@ const UploadFiles = () => {
                     />
                     <div className="flex  items-center gap-6">
                       <span>{formatFileSize(file.file_size)}</span>
-                     
-                        <button
-                          className="text-blue-600 underline "
-                          onClick={() => setPreviewFile(file)}
-                        >
-                          Предпросмотр...
-                        </button>
-                    
+
+                      <button
+                        className="text-cyan-500 underline "
+                        onClick={() => setPreviewFile(file)}
+                      >
+                        Предпросмотр...
+                      </button>
                     </div>
                   </div>
 
@@ -490,7 +742,7 @@ const UploadFiles = () => {
                       {typeof file.progress_percent === "number" ? (
                         <div className="w-full bg-gray-200 h-2 rounded overflow-hidden">
                           <div
-                            className="bg-blue-500 h-full transition-all duration-300"
+                            className="bg-cyan-500 h-full transition-all duration-300"
                             style={{ width: `${file.progress_percent}%` }}
                           />
                         </div>

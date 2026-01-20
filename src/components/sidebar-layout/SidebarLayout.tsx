@@ -7,7 +7,7 @@ const SidebarLayout = () => {
     <div className="flex">
       <Sidebar />
       <div className="flex flex-col flex-1">
-        <Header />
+        {/* <Header /> */}
         <div className="flex-1">
           <Outlet />
         </div>

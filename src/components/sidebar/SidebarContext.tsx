@@ -5,10 +5,10 @@ import React, {
   type ReactNode,
 } from "react";
 
-import type { SidebarContextValue } from "types/sidebarContext.types";
+import type { SidebarContextValue } from "../../types/sidebarContext.types";
 
 const SidebarContext = createContext<SidebarContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 interface SidebarProviderProps {

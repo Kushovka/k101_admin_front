@@ -46,7 +46,7 @@ const Plan: React.FC<PlanProps> = ({
 
         <div className="flex flex-col justify-center">
           <p className="details-text text-[24px] flex items-baseline gap-2">
-            <span className="text-3xl text-blue-500 ">
+            <span className="text-3xl text-cyan-500 ">
               {typeof clicks === "number"
                 ? `${clicks} кликов`
                 : typeof duration === "number"
@@ -56,7 +56,7 @@ const Plan: React.FC<PlanProps> = ({
           </p>
         </div>
         <div className="flex items-center justify-center">
-          <button className="uppercase bg-blue-500 px-5 py-2 rounded text-white">
+          <button className="uppercase bg-cyan-500 px-5 py-2 rounded text-white">
             выбрать
           </button>
         </div>

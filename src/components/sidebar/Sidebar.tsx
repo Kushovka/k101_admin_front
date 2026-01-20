@@ -59,8 +59,8 @@ const Sidebar: React.FC = () => {
   return (
     <section
       className={clsx(
-        "fixed h-screen text-white bg-blue01 pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
-        isOpen ? "w-[80px]" : "w-[300px]"
+        "fixed h-screen text-slate-300 bg-sbr pl-4 py-4 flex flex-col justify-between transition-all duration-300 ease-in-out min-w-[80px]",
+        isOpen ? "w-[80px]" : "w-[300px]",
       )}
     >
       {/* hamburger */}
@@ -68,8 +68,8 @@ const Sidebar: React.FC = () => {
         data-testid="hamburger-button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={clsx(
-          "flex justify-end mb-20 pr-4",
-          isOpen && "items-center justify-center"
+          "flex justify-end px-3 py-2 mb-6 text-slate-400 hover:text-white transition",
+          isOpen && "items-center justify-center",
         )}
       >
         {isOpen ? <GoChevronRight size={36} /> : <RxHamburgerMenu size={30} />}
@@ -82,15 +82,15 @@ const Sidebar: React.FC = () => {
             key={link.path}
             onClick={() => navigate(link.path)}
             className={clsx(
-              "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300",
+              "flex items-center gap-3 rounded-l-md px-3 py-2 text-left transition-colors",
               isActive(link.path)
                 ? "bg-white text-blue01"
-                : "bg-transparent text-white"
+                : "bg-transparent text-slate-300 hover:text-white",
             )}
           >
             <span
               className={clsx(
-                "flex-shrink-0 flex items-center justify-center transition-all duration-300"
+                "flex-shrink-0 flex items-center justify-center transition-all duration-300",
               )}
             >
               {React.cloneElement(link.icon, {
@@ -100,7 +100,7 @@ const Sidebar: React.FC = () => {
             <span
               className={clsx(
                 "transition-opacity duration-300 whitespace-nowrap",
-                isOpen ? "opacity-0 w-0" : "opacity-100 w-auto"
+                isOpen ? "opacity-0 w-0" : "opacity-100 w-auto",
               )}
             >
               {link.name}
@@ -117,19 +117,19 @@ const Sidebar: React.FC = () => {
           navigate("/sign-in", { replace: true });
         }}
         className={clsx(
-          "flex items-center gap-2 rounded-l-lg px-2 py-2 cursor-pointer transition-all duration-300 hover:bg-white hover:text-blue01"
+          "flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-blue01 hover:bg-white rounded-l-md transition",
         )}
       >
         <IoExitOutline
           className={clsx(
             "transition-all duration-300 rotate-180 flex-shrink-0",
-            isOpen ? "w-8 h-8" : "w-5 h-5"
+            isOpen ? "w-8 h-8" : "w-5 h-5",
           )}
         />
         <span
           className={clsx(
             "transition-opacity duration-300 text-left min-w-[50px]",
-            isOpen && "opacity-0"
+            isOpen && "opacity-0",
           )}
         >
           Выход

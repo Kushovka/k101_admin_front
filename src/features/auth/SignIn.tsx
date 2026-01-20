@@ -95,7 +95,7 @@ export default function SignIn() {
         {/* button */}
         <button
           type="submit"
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          className="bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
         >
           Войти
         </button>

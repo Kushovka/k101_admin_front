@@ -211,7 +211,7 @@ const Profile = () => {
               </span>
             </p>
             <button
-              className="uppercase bg-blue-500 px-5 py-2 rounded text-white"
+              className="uppercase bg-cyan-500 px-5 py-2 rounded text-white"
               onClick={saveProfile}
             >
               сохранить изменения
@@ -237,7 +237,7 @@ const Profile = () => {
             <div className="flex items-center justify-center">
               <button
                 onClick={() => setOpenModal(true)}
-                className="uppercase bg-blue-500 px-5 py-2 rounded text-white"
+                className="uppercase bg-cyan-500 px-5 py-2 rounded text-white"
               >
                 пополнить баланс
               </button>
@@ -263,7 +263,7 @@ const Profile = () => {
                   <input
                     id="amount"
                     type="number"
-                    className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     onChange={(e) => setPayInput(Number(e.target.value))}
                     value={payInput}
                     placeholder="*введите сумму от 100₽"
@@ -312,7 +312,7 @@ const Profile = () => {
                       className={clsx(
                         "px-3 py-2 rounded border text-sm flex-1 transition",
                         provider === "cryptocloud"
-                          ? "bg-blue-500 text-white border-blue-500"
+                          ? "bg-cyan-500 text-white border-cyan-500"
                           : "bg-white text-black hover:bg-gray-100",
                       )}
                     >
@@ -325,7 +325,7 @@ const Profile = () => {
                       className={clsx(
                         "px-3 py-2 rounded border text-sm flex-1 transition",
                         provider === "bithide"
-                          ? "bg-blue-500 text-white border-blue-500"
+                          ? "bg-cyan-500 text-white border-cyan-500"
                           : "bg-white text-black hover:bg-gray-100",
                       )}
                     >

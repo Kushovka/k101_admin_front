@@ -16,4 +16,21 @@ export type FileItem = {
     | "extracted";
   progress_percent?: number;
   error_message?: string;
+  priority?: number;
+  position?: number;
+};
+
+export type FilePriority = {
+  priority: number;
+};
+export type FilePosition = {
+  position: number;
+};
+
+export type ApiPriority = {
+  success: boolean;
+  file_id: string;
+  priority?: number;
+  position?: number;
+  message: string;
 };

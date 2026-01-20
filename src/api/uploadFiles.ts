@@ -1,3 +1,9 @@
+import {
+  ApiPriority,
+  FileItem,
+  FilePosition,
+  FilePriority,
+} from "../types/file";
 import userApi from "./userApi";
 
 const getHeaders = (): Record<string, string> => {
@@ -37,7 +43,7 @@ export const getAllFiles = async ({
 
 export const postUploadFiles = async (
   files: File[],
-  onProgress?: (file: File, progress: number) => void
+  onProgress?: (file: File, progress: number) => void,
 ) => {
   const token = localStorage.getItem("access_token");
   if (!token) throw new Error("No token");
@@ -55,7 +61,7 @@ export const postUploadFiles = async (
 async function uploadRegular(
   file: File,
   token: string,
-  onProgress?: (file: File, p: number) => void
+  onProgress?: (file: File, p: number) => void,
 ) {
   const formData = new FormData();
   formData.append("files", file);
@@ -76,7 +82,7 @@ async function uploadRegular(
 async function uploadChunked(
   file: File,
   token: string,
-  onProgress?: (file: File, p: number) => void
+  onProgress?: (file: File, p: number) => void,
 ) {
   const initRes = await userApi.post("/api/v1/upload/chunked/init", {
     filename: file.name,
@@ -102,7 +108,7 @@ async function uploadChunked(
 
         const chunkPercent = Math.round((e.loaded / e.total) * 100);
         const totalPercent = Math.round(
-          ((uploadedChunks + chunkPercent / 100) / total_chunks) * 100
+          ((uploadedChunks + chunkPercent / 100) / total_chunks) * 100,
         );
         onProgress(file, totalPercent);
       },
@@ -113,3 +119,49 @@ async function uploadChunked(
 
   await userApi.post(`/api/v1/upload/chunked/${upload_id}/complete`);
 }
+
+export const patchPriorityFile = async (
+  id: string,
+  payload: FilePriority,
+): Promise<ApiPriority> => {
+  const { data } = await userApi.patch(
+    `/api/v1/parsing-queue/${id}/priority`,
+    payload,
+    {
+      headers: getHeaders(),
+    },
+  );
+  return data;
+};
+
+export const patchPositionFile = async (
+  id: string,
+  payload: FilePosition,
+): Promise<ApiPriority> => {
+  const { data } = await userApi.patch(
+    `/api/v1/parsing-queue/${id}/position`,
+    payload,
+    {
+      headers: getHeaders(),
+    },
+  );
+  return data;
+};
+
+export const postToTopFile = async (id: string): Promise<ApiPriority> => {
+  const { data } = await userApi.post(
+    `/api/v1/parsing-queue/${id}/move-to-top`,
+    {},
+    {
+      headers: getHeaders(),
+    },
+  );
+  return data;
+};
+
+export const getParsingQueue = async () => {
+  const { data } = await userApi.get("/api/v1/parsing-queue?limit=100", {
+    headers: getHeaders(),
+  });
+  return data;
+};

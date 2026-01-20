@@ -1,5 +1,3 @@
-/* ==== полный компонент ниже ==== */
-
 import clsx from "clsx";
 import React, { useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
@@ -7,10 +5,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { IoIosArrowDown } from "react-icons/io";
+import { motion } from "framer-motion";
 import type { SearchUser } from "../../../types/searchDetails.types";
 
-/* ==== semantic helpers ==== */
-
+/* semantic helpers */
 const isLatLon = (v: any) => {
   if (typeof v !== "string" && typeof v !== "number") return false;
   const n = parseFloat(String(v).replace(",", "."));
@@ -36,7 +34,6 @@ const semanticGroups = {
   crm: ["lid", "crm"],
 };
 
-/* ==== prefix labeling ==== */
 const prefixLabels: Record<string, string> = {
   delivery: "Доставка",
   delivery2: "Доставка (вторичная)",
@@ -49,23 +46,26 @@ const prefixLabels: Record<string, string> = {
   rfcont: "Контакты (RF)",
 };
 
-/* ==== main comp ==== */
-
 const SearchDetails: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isOpen } = useSidebar();
+
   const user = location.state as SearchUser | null;
 
   const [notify, setNotify] = useState(false);
   const [openMain, setOpenMain] = useState(true);
   const [openDossier, setOpenDossier] = useState(true);
 
-  if (!user) return <p className="pl-[324px] py-6">Пользователь не найден</p>;
+  if (!user) {
+    return (
+      <p className={clsx("pl-[336px] py-6 text-slate-700")}>
+        Пользователь не найден
+      </p>
+    );
+  }
 
   const cascade = user.additional_data ?? {};
-
-  /* ==== semantic containers ==== */
 
   const buckets = {
     contacts: {},
@@ -82,11 +82,7 @@ const SearchDetails: React.FC = () => {
 
   Object.entries(cascade).forEach(([key, raw]) => {
     const value = raw?.value ?? raw;
-
-    /* prefix detect */
     const prefix = key.split("_")[0].toLowerCase();
-
-    /* semantic classify */
     const normalizedKey = key.toLowerCase();
 
     let target = "misc";
@@ -100,7 +96,6 @@ const SearchDetails: React.FC = () => {
       }
     }
 
-    /* geo special detect */
     if (target === "misc") {
       if (
         isLatLon(value) ||
@@ -120,6 +115,21 @@ const SearchDetails: React.FC = () => {
     setTimeout(() => setNotify(false), 1200);
   };
 
+  const isValidName = (val: string) => /^[a-zA-Zа-яА-Я]+$/.test(val);
+
+  const titleMap = {
+    contacts: "Контакты",
+    docs: "Документы",
+    work: "Работа / Соц сети",
+    transport: "Транспорт",
+    marketplace: "Маркетплейсы",
+    delivery: "Доставка",
+    geo: "Гео",
+    security: "Безопасность",
+    crm: "CRM",
+    misc: "Прочее",
+  };
+
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       {notify && (
@@ -130,112 +140,144 @@ const SearchDetails: React.FC = () => {
         />
       )}
 
-      <div className="title">
-        Досье: {user.last_name} {user.first_name} {user.middle_name}
-      </div>
+      <div className="w-[1100px] mx-auto flex flex-col gap-6">
+        {/* title */}
+        <h1 className="text-[20px] font-semibold text-slate-900">
+          Досье: {user.last_name} {user.first_name} {user.middle_name}
+        </h1>
 
-      <button
-        onClick={() => navigate("/account/search")}
-        className="flex items-center gap-3 border px-3 py-2 rounded-[8px] hover:bg-gray-400 hover:text-white transition mb-4"
-      >
-        <IoExitOutline className="rotate-180 h-[25px] w-[25px]" />
-        Назад
-      </button>
+        {/* back button */}
+        <button
+          onClick={() => navigate("/account/search")}
+          className="flex items-center gap-3 h-[40px] w-fit border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition px-3 text-[14px]"
+        >
+          <IoExitOutline className="rotate-180 h-[20px] w-[20px] text-slate-600" />
+          Назад
+        </button>
 
-      {/* ==== MAIN INFO ==== */}
-      <div
-        className="border rounded p-4 mb-4 cursor-pointer"
-        onClick={() => setOpenMain(!openMain)}
-      >
-        <div className="flex justify-between">
-          <div className="font-medium">Основная информация</div>
-          <IoIosArrowDown
-            className={`transition ${openMain ? "rotate-180" : ""}`}
-          />
-        </div>
-      </div>
+        {/* MAIN INFO */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+        >
+          <div
+            onClick={() => setOpenMain(!openMain)}
+            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition"
+          >
+            <div className="font-medium text-slate-800">
+              Основная информация
+            </div>
+            <IoIosArrowDown
+              className={clsx(
+                "transition",
+                openMain && "rotate-180 text-slate-600",
+              )}
+            />
+          </div>
 
-      {openMain && (
-        <div className="border rounded p-4 mb-8 flex flex-col gap-2">
-          {user.phones && user.phones.length > 0 && (
-            <p>
-              Телефон:{" "}
-              <span
-                className="cursor-copy"
-                onClick={() => handleCopy(user.phones![0])}
-              >
-                {user.phones![0]}
-              </span>
-            </p>
+          {openMain && (
+            <div className="px-4 py-3 border-t border-gray-200 space-y-2 text-[14px] text-slate-700">
+              {user?.first_name && isValidName(user.first_name) && (
+                <p>
+                  Имя: <span>{user?.first_name}</span>
+                </p>
+              )}
+              {user?.last_name &&
+                isValidName(user.last_name) &&
+                user?.last_name && (
+                  <p>
+                    Фамилия: <span>{user?.last_name}</span>
+                  </p>
+                )}
+              {user?.middle_name && isValidName(user.middle_name) && (
+                <p>
+                  Отчество: <span>{user?.middle_name}</span>
+                </p>
+              )}
+              {user.phones?.[0] && (
+                <p>
+                  Телефон:{" "}
+                  <span
+                    className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                    onClick={() => handleCopy(user.phones![0])}
+                  >
+                    {user.phones![0]}
+                  </span>
+                </p>
+              )}
+
+              {user.emails?.map((e, i) => (
+                <p key={i}>
+                  Email {i + 1}:{" "}
+                  <span
+                    className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                    onClick={() => handleCopy(e)}
+                  >
+                    {e}
+                  </span>
+                </p>
+              ))}
+
+              {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
+
+              {user.addresses?.map((a, i) => (
+                <p key={i}>
+                  Адрес {i + 1}: {a}
+                </p>
+              ))}
+            </div>
           )}
-          {user.emails?.map((e, i) => (
-            <p key={i}>
-              Email {i + 1}:{" "}
-              <span className="cursor-copy" onClick={() => handleCopy(e)}>
-                {e}
-              </span>
-            </p>
-          ))}
-          {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
-          {user.addresses?.map((a, i) => (
-            <p key={i}>
-              Адрес {i + 1}: {a}
-            </p>
-          ))}
-        </div>
-      )}
+        </motion.div>
 
-      {/* ==== DOSSIER ==== */}
-      <div
-        className="border rounded p-4 mb-4 cursor-pointer"
-        onClick={() => setOpenDossier(!openDossier)}
-      >
-        <div className="flex justify-between">
-          <div className="font-medium">Досье</div>
-          <IoIosArrowDown
-            className={`transition ${openDossier ? "rotate-180" : ""}`}
-          />
-        </div>
-      </div>
+        {/* DOSSIER */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+        >
+          <div
+            onClick={() => setOpenDossier(!openDossier)}
+            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition"
+          >
+            <div className="font-medium text-slate-800">Досье</div>
+            <IoIosArrowDown
+              className={clsx(
+                "transition",
+                openDossier && "rotate-180 text-slate-600",
+              )}
+            />
+          </div>
 
-      {openDossier && (
-        <div className="border rounded p-4 flex flex-col gap-6">
-          {Object.entries(buckets).map(([bucket, data]) => {
-            if (Object.keys(data).length === 0) return null;
+          {openDossier && (
+            <div className="px-4 py-4 border-t border-gray-200 space-y-6">
+              {Object.entries(buckets).map(([bucket, data]) => {
+                if (Object.keys(data).length === 0) return null;
 
-            const titleMap = {
-              contacts: "Контакты",
-              docs: "Документы",
-              work: "Работа / Соц сети",
-              transport: "Транспорт",
-              marketplace: "Маркетплейсы",
-              delivery: "Доставка",
-              geo: "Гео",
-              security: "Безопасность",
-              crm: "CRM",
-              misc: "Прочее",
-            };
-
-            return (
-              <div key={bucket}>
-                <div className="font-medium mb-2">
-                  {titleMap[bucket as keyof typeof titleMap]}
-                </div>
-                <div className="flex flex-col gap-1 text-sm">
-                  {Object.entries(data).map(([field, val]) => (
-                    <div key={field} className="flex gap-2">
-                      <span className="text-gray-600 min-w-[180px]">
-                        {field}:
-                      </span>
-                      <span className="text-black">{String(val)}</span>
+                return (
+                  <div key={bucket} className="space-y-2">
+                    <div className="font-medium text-slate-800">
+                      {titleMap[bucket as keyof typeof titleMap]}
                     </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+
+                    <div className="flex flex-col gap-1 text-[14px]">
+                      {Object.entries(data).map(([field, val]) => (
+                        <div key={field} className="flex gap-2 text-slate-700">
+                          <span className="min-w-[180px] text-slate-500">
+                            {field}:
+                          </span>
+                          <span className="text-slate-800">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+      </div>
     </section>
   );
 };
