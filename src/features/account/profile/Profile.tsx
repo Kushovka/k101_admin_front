@@ -21,6 +21,9 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notify, setNotify] = useState<NotifyType | null>(null);
+  const [provider, setProvider] = useState<"cryptocloud" | "bithide">(
+    "cryptocloud",
+  );
 
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
@@ -114,7 +117,7 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      const invoice = await createInvoice(payInput);
+      const invoice = await createInvoice(payInput, provider);
       console.log(invoice);
 
       if (!invoice?.success || !invoice.payment_url) {
@@ -298,6 +301,37 @@ const Profile = () => {
                   >
                     +1000₽
                   </button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-gray01 text-[12px]">Способ оплаты</p>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setProvider("cryptocloud")}
+                      className={clsx(
+                        "px-3 py-2 rounded border text-sm flex-1 transition",
+                        provider === "cryptocloud"
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-black hover:bg-gray-100",
+                      )}
+                    >
+                      CryptoCloud
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setProvider("bithide")}
+                      className={clsx(
+                        "px-3 py-2 rounded border text-sm flex-1 transition",
+                        provider === "bithide"
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-black hover:bg-gray-100",
+                      )}
+                    >
+                      BitHide
+                    </button>
+                  </div>
                 </div>
 
                 <button
