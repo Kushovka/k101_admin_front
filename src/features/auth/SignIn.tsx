@@ -57,54 +57,51 @@ export default function SignIn() {
   };
 
   return (
-    <section className="flex items-center justify-center h-screen ">
+    <section className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <motion.form
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative flex flex-col gap-6 p-8 bg-white rounded w-80"
         onSubmit={handleSubmit(onSubmit)}
+        className="bg-white border border-gray-200 shadow-sm rounded-xl w-full max-w-[380px] px-6 py-8 flex flex-col gap-6"
       >
-        <h3 className="text-2xl tracking-widest text-black/80 text-center mb-4">
-          Войти
+        <h3 className="text-[22px] tracking-tight text-slate-900 text-center">
+          Вход
         </h3>
+
         {/* login */}
-        <div className="relative flex items-center justify-between">
+        <div className="flex flex-col gap-1">
           <input
             type="text"
-            className="border p-2 rounded w-full"
-            placeholder="username"
+            placeholder="Логин"
             {...register("username", { required: true, minLength: 4 })}
+            className="w-full px-3 py-2 rounded-lg border text-[14px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
           />
           {touchedFields.username && errors.username && (
-            <span className="absolute top-0 -right-[70%] ml-2 text-red-500 text-sm whitespace-nowrap">
-              *введите username
-            </span>
+            <span className="text-[12px] text-red-500">*введите логин</span>
           )}
         </div>
+
         {/* password */}
-        <div className="relative flex items-center justify-between">
+        <div className="flex flex-col gap-1">
           <input
             type="password"
-            className="border p-2 rounded w-full"
             placeholder="Пароль"
             {...register("password", { required: true, minLength: 4 })}
+            className="w-full px-3 py-2 rounded-lg border text-[14px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
           />
           {touchedFields.password && errors.password && (
-            <span className="absolute top-0 -right-[63%] ml-2 text-red-500 text-sm whitespace-nowrap">
-              *введите пароль
-            </span>
+            <span className="text-[12px] text-red-500">*введите пароль</span>
           )}
         </div>
-        {/* button */}
+
         <button
           type="submit"
-          className="bg-cyan-600 text-white py-2 rounded hover:bg-cyan-700 transition"
+          className="mt-2 w-full py-2 rounded-lg text-[15px] font-medium text-white bg-cyan-600 hover:bg-cyan-700 transition"
         >
           Войти
         </button>
       </motion.form>
 
-      {/* message */}
       {notify && (
         <Toast
           message={notify.message}

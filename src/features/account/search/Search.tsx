@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ const getHeaders = () => ({
 
 const Search = () => {
   const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [notify, setNotify] = useState<null | string>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +87,10 @@ const Search = () => {
 
     return "+" + phone;
   };
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (
     e?: React.FormEvent,
@@ -211,6 +216,7 @@ const Search = () => {
           >
             <div className="relative flex-1">
               <input
+                ref={inputRef}
                 type="text"
                 placeholder="ФИО, email, телефон или ID"
                 value={query}

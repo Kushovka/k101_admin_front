@@ -74,31 +74,50 @@ const HealthCheck: React.FC = () => {
   ];
 
   return (
-    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      <div className="title">Health Check</div>
+    <section
+      className={clsx(
+        "min-h-screen bg-slate-50 py-10 transition-all",
+        isOpen ? "pl-[116px]" : "pl-[336px]",
+      )}
+    >
       {error && (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          <p className="subtitle">*Проверка состояния Admin Panel и Gateway.</p>
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border flex flex-col justify-center items-start w-1/3 gap-5 p-4 rounded-[12px] text-common"
-          >
-            {subtitle.map((item, index) => (
-              <div key={index}>
-                <p className="text-health-system text-common">
-                  {item.title}: {item.text}
-                </p>
-              </div>
-            ))}
-          </motion.div>
-        </>
-      )}
+
+      <div className="max-w-[900px] w-full mx-auto flex flex-col gap-6">
+        <h1 className="text-[22px] font-medium tracking-tight text-slate-900">
+          Health Check
+        </h1>
+
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <p className="text-[14px] text-slate-500">
+              Проверка состояния Admin Panel и Gateway
+            </p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4 text-[15px]"
+            >
+              {subtitle.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between border-b last:border-none pb-2"
+                >
+                  <span className="text-slate-600">{item.title}</span>
+                  <span className="font-medium text-slate-900">
+                    {item.text ?? "-"}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </div>
     </section>
   );
 };

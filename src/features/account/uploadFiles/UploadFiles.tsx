@@ -360,271 +360,227 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
-      <div className="flex justify-between gap-10 items-start">
-        {/* ---------------- форма загрузки ---------------- */}
+
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="flex gap-8 items-start"
+      >
+        {/* Upload Dropzone */}
 
         <UploadDropzone />
 
-        {/* выбранные файлы */}
-        <div className="min-w-0 flex-1 w-1/2">
-          {files.length > 0 && (
-            <div className="mt-6 ">
-              <ul className="flex flex-col gap-2">
-                {files.map((file, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between gap-4 min-w-0"
+        {/* Selected files */}
+        {files.length > 0 && (
+          <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-4 w-1/2">
+            <p className="text-[15px] font-medium text-slate-900">
+              Выбранные файлы
+            </p>
+
+            <ul className="flex flex-col gap-3">
+              {files.map((file, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between gap-3 min-w-0"
+                >
+                  <div
+                    data-tooltip-id="see_file_name-tooltip"
+                    className="flex items-center gap-3 min-w-0 cursor-pointer"
                   >
-                    <div
-                      data-tooltip-id="see_file_name-tooltip"
-                      className="flex items-center gap-2 min-w-0 cursor-pointer"
-                    >
-                      <div className="w-6 h-6 text-gray-700 flex items-center justify-center shrink-0">
-                        {getFileIcon(file.name)}
-                      </div>
-                      <span className="truncate max-w-full">{file.name}</span>
+                    <div className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 text-gray-700 shrink-0">
+                      {getFileIcon(file.name)}
                     </div>
-                    <Tooltip
-                      place="top"
-                      delayShow={400}
-                      content={file.name}
-                      id="see_file_name-tooltip"
-                    />
+                    <span className="truncate text-[14px] text-slate-800 max-w-full">
+                      {file.name}
+                    </span>
+                  </div>
 
-                    {uploading && progress[file.name] !== undefined && (
-                      <span className="shrink-0">{progress[file.name]}%</span>
-                    )}
+                  {uploading && progress[file.name] != null && (
+                    <span className="text-[13px] text-slate-600 shrink-0">
+                      {progress[file.name]}%
+                    </span>
+                  )}
 
-                    <button className="shrink-0" onClick={() => removeFile(i)}>
-                      <IoMdClose />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="text-slate-500 hover:text-red-500 transition"
+                  >
+                    <IoMdClose className="w-5 h-5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-              <button
-                onClick={() =>
-                  handleUpload({
-                    onSuccess: () => {
-                      setNotify("upload_file");
-                      setPage(1);
-                      setHasMore(true);
-                      loadFiles(1, true);
-                    },
-                    onError: (msg) => setError(msg),
-                  })
-                }
-                disabled={uploading}
-                className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-              >
-                {uploading ? "Загрузка..." : "Загрузить"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+            <button
+              onClick={() =>
+                handleUpload({
+                  onSuccess: () => {
+                    setNotify("upload_file");
+                    setPage(1);
+                    setHasMore(true);
+                    loadFiles(1, true);
+                  },
+                  onError: (msg) => setError(msg),
+                })
+              }
+              disabled={uploading}
+              className={clsx(
+                "px-4 py-2 rounded-lg text-sm font-medium transition",
+                uploading
+                  ? "bg-gray-300 text-slate-600 cursor-not-allowed"
+                  : "bg-cyan-500 text-white hover:bg-cyan-600",
+              )}
+            >
+              {uploading ? "Загрузка..." : "Загрузить"}
+            </button>
+          </div>
+        )}
+
+        {/* Spacer right area (files and queue later) */}
+        <div className="flex-1 min-w-0" />
+      </motion.div>
+
       {/* ---------------- нижний контент ---------------- */}
 
       {/* загруженные файлы */}
 
+      {/* PROCESSING QUEUE */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="mt-10 min-w-0"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="mt-10"
       >
         <div
           onClick={() => setIsProcessingModal((prev) => !prev)}
-          className="my-4 flex items-center justify-between border-b pb-5 cursor-pointer select-none"
+          className="flex items-center justify-between cursor-pointer select-none pb-4 border-b hover:opacity-80 transition"
         >
           <div>
-            <h2 className="subtitle text-[22px]">Очередь обработки</h2>
-            <p className="text-common">В очереди: {queue.length}</p>
+            <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
+              Очередь обработки
+            </h2>
+            <p className="text-[13px] text-slate-500 mt-[2px]">
+              В очереди: {queue.length}
+            </p>
           </div>
-        </div>
-        {isProcessingModal && (
-          <>
-            {queue.length > 0 && (
-              <div className="mt-4">
-                {queue.map((item) => {
-                  const name =
-                    item.file_description || item.file_name || "Без имени";
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="border-b py-3 grid grid-cols-4 items-center gap-4 min-w-0"
-                    >
-                      {/* LEFT */}
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <p className="font-medium subtitle truncate">{name}</p>
-
-                        <div className="flex items-center gap-4 text-common">
-                          <span>{formatFileSize(item.file_size)}</span>
-                        </div>
-                      </div>
-
-                      {/* CENTER */}
-                      <div className="text-center text-common flex flex-col items-center">
-                        {item.status === "queued" && "Ожидание..."}
-                        {item.status === "processing" && "Обработка..."}
-                        {item.status === "completed" && "Завершено"}
-                        {item.status === "failed" && "Ошибка"}
-                      </div>
-                      {["uploaded", "queued"].includes(item.status ?? "") && (
-                        <select
-                          value={String(item.priority ?? 100)}
-                          onChange={(e) =>
-                            handleChangePriority(
-                              item.raw_file_id,
-                              Number(e.target.value),
-                            )
-                          }
-                          className={clsx(
-                            "px-3 py-[6px]",
-                            "text-sm font-medium",
-                            "rounded-md",
-                            "bg-white",
-                            "border border-gray-200",
-                            "shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_1px_2px_rgba(0,0,0,0.09)]",
-                            "cursor-pointer select-none",
-                            "transition-all duration-150",
-                            "hover:border-gray-300 hover:bg-gray-50",
-                            "focus:border-blue-500 focus:ring-2 focus:ring-blue-400/30",
-                          )}
-                        >
-                          <option
-                            value={1}
-                            className="text-red-600 font-semibold"
-                          >
-                            Высокий (1)
-                          </option>
-                          <option value={50} className="text-orange-500">
-                            Средний (50)
-                          </option>
-                          <option value={100} className="text-gray-800">
-                            Обычный (100)
-                          </option>
-                          <option value={999} className="text-gray-500">
-                            Низкий (999)
-                          </option>
-                        </select>
-                      )}
-
-                      {/* {["uploaded", "queued"].includes(item.status ?? "") && (
-                        <input
-                          type="number"
-                          min={1}
-                          max={queue.length}
-                          value={item.position ?? 1}
-                          onChange={(e) => {
-                            const raw = Number(e.target.value);
-                            const safe = Math.max(
-                              1,
-                              Math.min(queue.length, raw),
-                            );
-                            setQueue((prev) =>
-                              prev.map((f) =>
-                                f.id === item.id ? { ...f, position: safe } : f,
-                              ),
-                            );
-                          }}
-                          onBlur={(e) => {
-                            const raw = Number(e.target.value);
-                            const safe = Math.max(
-                              1,
-                              Math.min(queue.length, raw),
-                            );
-                            handleChangePosition(item.raw_file_id, safe);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              const raw = Number(
-                                (e.target as HTMLInputElement).value,
-                              );
-                              const safe = Math.max(
-                                1,
-                                Math.min(queue.length, raw),
-                              );
-                              e.currentTarget.blur(); // триггерим blur → вызовет handleChangePosition
-                            }
-                            if (e.key === "Escape") {
-                              setQueue((prev) =>
-                                prev.map((f) =>
-                                  f.id === item.id
-                                    ? { ...f, position: item.position }
-                                    : f,
-                                ),
-                              );
-                              e.currentTarget.blur();
-                            }
-                          }}
-                          className={clsx(
-                            "w-[50px]",
-                            "px-2 py-[4px]",
-                            "rounded-md",
-                            "text-sm text-center",
-                            "border border-gray-300",
-                            "bg-white",
-                            "shadow-sm",
-                            "transition-all duration-150",
-                            "focus:border-cyan-500 focus:ring-2 focus:ring-cyan-300",
-                            "hover:border-gray-400",
-                            "select-none",
-                          )}
-                        />
-                      )} */}
-
-                      {/* RIGHT */}
-                      <div className="flex items-center justify-end gap-3 text-common">
-                        {/* <span>Prio: {item.priority}</span> */}
-                        {item.position !== null && (
-                          <span>Pos: {item.position}</span>
-                        )}
-
-                        <button
-                          onClick={() => handleMoveToTop(item.raw_file_id)}
-                          className="px-2 py-[2px] text-xs rounded border border-gray-300 hover:bg-gray-200 transition"
-                        >
-                          ↑ в топ
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <IoIosArrowDown
+            className={clsx(
+              "w-5 h-5 text-slate-600 transition-transform duration-200",
+              isProcessingModal && "rotate-180",
             )}
-          </>
-        )}
-        {/* {hasMore && (
-          <div className="flex justify-center mt-3">
-            <button
-              disabled={loadingFiles}
-              onClick={() => {
-                const nextPage = page + 1;
-                setPage(nextPage);
-                loadFiles(nextPage);
-              }}
-              className="px-4 py-2 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
-            >
-              {loadingFiles ? "Загрузка..." : "Загрузить ещё"}
-            </button>
+          />
+        </div>
+
+        {isProcessingModal && queue.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6 bg-white border border-gray-200 shadow-sm rounded-xl p-4">
+            {queue.map((item) => {
+              const name =
+                item.file_description || item.file_name || "Без имени";
+              return (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[1fr,110px,130px,90px] gap-4 items-center border-b last:border-0 py-3"
+                >
+                  {/* NAME + INFO */}
+                  <div className="min-w-0 flex flex-col">
+                    <p className="truncate font-medium text-[15px] text-slate-900">
+                      {name}
+                    </p>
+                    <p className="text-[13px] text-slate-500">
+                      {formatFileSize(item.file_size)}
+                    </p>
+                  </div>
+
+                  {/* STATUS */}
+                  <div className="text-[13px] text-center">
+                    {item.status === "queued" && (
+                      <span className="text-blue-600">Ожидание...</span>
+                    )}
+                    {item.status === "processing" && (
+                      <span className="text-cyan-600">Обработка...</span>
+                    )}
+                    {item.status === "completed" && (
+                      <span className="text-green-600">Готово</span>
+                    )}
+                    {item.status === "failed" && (
+                      <span className="text-red-600">Ошибка</span>
+                    )}
+                  </div>
+
+                  {/* PRIORITY SELECT */}
+                  {["uploaded", "queued"].includes(item.status ?? "") ? (
+                    <select
+                      value={String(item.priority ?? 100)}
+                      onChange={(e) =>
+                        handleChangePriority(
+                          item.raw_file_id,
+                          Number(e.target.value),
+                        )
+                      }
+                      className="px-3 py-[6px] rounded-md text-[13px] bg-white border border-gray-300 hover:border-gray-400 shadow-sm focus:ring-2 focus:ring-cyan-300 select-none"
+                    >
+                      <option value={1} className="text-red-600">
+                        Высокий (1)
+                      </option>
+                      <option value={50} className="text-orange-500">
+                        Средний (50)
+                      </option>
+                      <option value={100}>Обычный (100)</option>
+                      <option value={999} className="text-slate-500">
+                        Низкий (999)
+                      </option>
+                    </select>
+                  ) : (
+                    <div className="text-[13px] text-slate-500 text-center">
+                      {item.priority}
+                    </div>
+                  )}
+
+                  {/* ACTIONS */}
+                  <div className="flex items-center gap-3 justify-end">
+                    {item.position !== null && (
+                      <span className="text-[12px] text-slate-500">
+                        pos: {item.position}
+                      </span>
+                    )}
+
+                    <button
+                      onClick={() => handleMoveToTop(item.raw_file_id)}
+                      className="px-2 py-[3px] rounded border border-gray-300 text-[12px] text-slate-700 hover:bg-gray-100 transition"
+                    >
+                      ↑ в топ
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )} */}
+        )}
+
+        {isProcessingModal && queue.length === 0 && (
+          <p className="text-[13px] text-slate-500 mt-4">Очередь пуста</p>
+        )}
       </motion.div>
 
+      {/* FILES LIST */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="mt-10 min-w-0 "
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="mt-12"
       >
-        <div className="my-4 flex items-center justify-between border-b pb-5">
+        <div className="flex items-center justify-between pb-4 border-b">
           <div>
-            <h2 className="subtitle text-[22px]">Загруженные файлы</h2>
-            <p className="text-common">Всего найдено файлов: {totalFiles}</p>
+            <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
+              Загруженные файлы
+            </h2>
+            <p className="text-[13px] text-slate-500">Всего: {totalFiles}</p>
           </div>
-          <div className="flex gap-3">
+
+          <div className="flex gap-3 items-center">
+            {/* SORT */}
             <button
               data-tooltip-id="sort_order"
               onClick={() => {
@@ -634,20 +590,18 @@ const UploadFiles = () => {
                 setHasMore(true);
                 loadFiles(1, true);
               }}
-              className="px-3 py-2 border rounded"
+              className="px-3 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
             >
               <IoIosArrowForward
                 className={clsx(
+                  "w-4 h-4 transition-transform duration-200",
                   sortOrder === "newest" ? "rotate-90" : "-rotate-90",
                 )}
               />
             </button>
-            <Tooltip
-              place="top"
-              delayShow={400}
-              id="sort_order"
-              content="Сортировать по дате"
-            />
+            <Tooltip id="sort_order" content="Сортировать по дате" />
+
+            {/* SEARCH */}
             <input
               type="text"
               value={search}
@@ -657,34 +611,35 @@ const UploadFiles = () => {
                 setHasMore(true);
               }}
               placeholder="Поиск по названию файла"
-              className="w-72 border rounded px-3 py-2"
+              className="w-64 px-3 py-2 text-[14px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
             />
           </div>
         </div>
 
-        <div className="mt-4">
+        {/* FILE ROWS */}
+        <div className="mt-5 flex flex-col">
           {allFiles.map((file) => {
-            // const percent =
-            //   typeof file.progress_percent === "number"
-            //     ? file.progress_percent
-            //     : 2; // минимальный индикатор жизни
             const percent =
               file.progress_percent ??
               (file.processing_status === "extracting" ? 100 : 0);
+
             const safeSearch = escapeRegExp(search);
+
             return (
               <div
                 key={file.id}
                 className={clsx(
-                  "border-b py-3 grid grid-cols-3 items-center gap-4 min-w-0",
-                  file.uploaded_by_user_id === currentUser?.id && "bg-green-50",
+                  "grid grid-cols-[1fr,110px,160px] gap-4 items-center py-3 border-b last:border-0 transition",
+                  file.uploaded_by_user_id === currentUser?.id &&
+                    "bg-green-50/60",
                 )}
               >
-                <div className="flex items-center justify-between gap-2 text-common">
-                  <div className="min-w-0 flex flex-col">
+                {/* LEFT: NAME + SIZE + PREVIEW */}
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <div className="flex flex-col min-w-0">
                     <p
                       data-tooltip-id={`name-file_${file.id}`}
-                      className="font-medium subtitle truncate cursor-pointer"
+                      className="text-[14px] font-medium text-slate-900 truncate cursor-pointer"
                       dangerouslySetInnerHTML={{
                         __html: search
                           ? file.display_name.replace(
@@ -701,76 +656,87 @@ const UploadFiles = () => {
                       id={`name-file_${file.id}`}
                       content={file.display_name}
                     />
-                    <div className="flex  items-center gap-6">
-                      <span>{formatFileSize(file.file_size)}</span>
 
+                    <div className="flex items-center gap-4 text-[13px] text-slate-500">
+                      <span>{formatFileSize(file.file_size)}</span>
                       <button
-                        className="text-cyan-500 underline "
                         onClick={() => setPreviewFile(file)}
+                        className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
                       >
-                        Предпросмотр...
+                        Предпросмотр
                       </button>
                     </div>
                   </div>
 
                   {isActiveStatus(file.processing_status) && (
-                    <div className="flex items-center gap-3 relative z-40">
+                    <div className="flex items-center gap-2 shrink-0 text-slate-600">
                       <button
                         onClick={() => queueApi.resume(file.id)}
-                        className="p-1 hover:text-blue-500 transition-all duration-300"
+                        className="p-[6px] rounded hover:bg-slate-200 transition"
                       >
-                        <FaPlay className="w-5 h-5" />
+                        <FaPlay className="w-[14px] h-[14px]" />
                       </button>
                       <button
                         onClick={() => queueApi.pause(file.id)}
-                        className="p-1 hover:text-yellow-500 transition-all duration-300"
+                        className="p-[6px] rounded hover:bg-slate-200 transition"
                       >
-                        <FaStop className="w-5 h-5" />
+                        <FaStop className="w-[14px] h-[14px]" />
                       </button>
                       <button
                         onClick={() => queueApi.cancel(file.id)}
-                        className="p-1 hover:text-red-500 transition-all duration-300"
+                        className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                       >
-                        <MdDelete className="w-6 h-6" />
+                        <MdDelete className="w-[16px] h-[16px]" />
                       </button>
                     </div>
                   )}
                 </div>
-                <p className="text-center text-common">
+
+                {/* CENTER: CREATED */}
+                <p className="text-[13px] text-slate-600 text-center">
                   {file.created_at
                     ? new Date(file.created_at).toLocaleDateString()
                     : "-"}
                 </p>
 
-                <div className="text-right text-common flex justify-end items-center gap-2">
-                  {file.processing_status === "uploaded" && "Подготовка..."}
-                  {file.processing_status === "pending" && "Ожидание..."}
+                {/* RIGHT: STATUS + PROGRESS + DELETE */}
+                <div className="flex items-center justify-end gap-3 text-[13px] min-w-0">
+                  {file.processing_status === "uploaded" && (
+                    <span className="text-blue-600">Подготовка...</span>
+                  )}
+                  {file.processing_status === "pending" && (
+                    <span className="text-slate-500">Ожидание...</span>
+                  )}
 
                   {file.processing_status === "extracting" && (
-                    <>
-                      <p>Обработка...</p>
-
-                      {typeof file.progress_percent === "number" ? (
-                        <div className="w-full bg-gray-200 h-2 rounded overflow-hidden">
-                          <div
-                            className="bg-cyan-500 h-full transition-all duration-300"
-                            style={{ width: `${file.progress_percent}%` }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="mini_loader"></div>
-                      )}
-                    </>
+                    <div className="flex flex-col gap-[4px] min-w-[120px]">
+                      <span className="text-cyan-600">Обработка...</span>
+                      <div className="w-full bg-gray-200 h-[6px] rounded overflow-hidden">
+                        <div
+                          className="bg-cyan-500 h-full transition-all rounded"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
                   )}
-                  {file.processing_status === "extracted" && "Выполнено"}
-                  {file.processing_status === "failed" && "Ошибка"}
+
+                  {file.processing_status === "extracted" && (
+                    <span className="text-green-600">Готово</span>
+                  )}
+
+                  {file.processing_status === "failed" && (
+                    <span className="text-red-600">Ошибка</span>
+                  )}
+
+                  {/* DELETE */}
                   <button
                     data-tooltip-id="delete-file_tooltip"
-                    className="p-1 cursor-pointer hover:text-red-500 transition-all duration-300"
                     onClick={() => setDeleteFile(file.id)}
+                    className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                   >
-                    <MdDelete className="w-6 h-6" />
+                    <MdDelete className="w-[16px] h-[16px]" />
                   </button>
+
                   <Tooltip
                     place="top"
                     delayShow={400}
@@ -778,20 +744,14 @@ const UploadFiles = () => {
                     content="Удалить файл"
                   />
                 </div>
-
-                {file.processing_status === "failed" && file.error_message && (
-                  <Tooltip
-                    id={`error-${file.id}`}
-                    content={file.error_message}
-                  />
-                )}
               </div>
             );
           })}
         </div>
 
+        {/* PAGINATION */}
         {hasMore && (
-          <div className="flex justify-center mt-3">
+          <div className="flex justify-center mt-4">
             <button
               disabled={loadingFiles}
               onClick={() => {
@@ -799,7 +759,7 @@ const UploadFiles = () => {
                 setPage(nextPage);
                 loadFiles(nextPage);
               }}
-              className="px-4 py-2 border rounded text-sm hover:bg-gray-100 disabled:opacity-50"
+              className="px-4 py-[8px] rounded border border-gray-300 bg-white hover:bg-gray-100 text-[14px] transition disabled:opacity-50"
             >
               {loadingFiles ? "Загрузка..." : "Загрузить ещё"}
             </button>

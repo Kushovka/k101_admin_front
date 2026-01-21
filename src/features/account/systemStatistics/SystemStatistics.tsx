@@ -59,153 +59,181 @@ const SystemStatistics = () => {
   };
 
   return (
-    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      <div className="title mb-4">Системная статистика</div>
-
-      {loading && <Loader />}
-      {error && (
-        <Toast type="error" message={error} onClose={() => setError(null)} />
+    <section
+      className={clsx(
+        "min-h-screen bg-slate-50 py-10 transition-all",
+        isOpen ? "pl-[116px]" : "pl-[336px]",
       )}
+    >
+      <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+        <h1 className="text-[22px] font-medium tracking-tight text-slate-900">
+          Системная статистика
+        </h1>
 
-      {stats && (
-        <motion.div
-          className="grid grid-cols-2 gap-6 w-full"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          {/* Система */}
+        {loading && <Loader />}
+        {error && (
+          <Toast type="error" message={error} onClose={() => setError(null)} />
+        )}
+
+        {stats && (
           <motion.div
-            variants={item}
-            className="p-4 border rounded-lg flex flex-col gap-2"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 gap-6 w-full"
           >
-            <h2 className="subtitle mb-1 text-[20px]">Система</h2>
-            <p
-              className={clsx(
-                "font-semibold",
-                stats.gateway_status === "healthy"
-                  ? "text-green-600"
-                  : "text-red-500",
-              )}
+            {/* SYSTEM */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-3"
             >
-              gateway: {stats.gateway_status}
-            </p>
+              <p className="text-[15px] text-slate-600">Система</p>
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] text-slate-500">Gateway</span>
+                <span
+                  className={clsx(
+                    "text-[14px] font-medium",
+                    stats.gateway_status === "healthy"
+                      ? "text-emerald-600"
+                      : "text-red-500",
+                  )}
+                >
+                  {stats.gateway_status}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* FILES */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4"
+            >
+              <p className="text-[15px] text-slate-600">Файлы</p>
+
+              <div className="flex flex-col gap-2 text-[14px] text-slate-700">
+                <div className="flex justify-between">
+                  <span>Всего загружено</span>
+                  <span className="font-medium">
+                    {stats.files.total_files_uploaded}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Записей извлечено</span>
+                  <span className="font-medium">
+                    {stats.files.total_records_parsed}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-emerald-600">
+                  <span>Выполнено</span>
+                  <span className="font-medium">
+                    {stats.files.files_completed}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-blue-600">
+                  <span>В обработке</span>
+                  <span className="font-medium">
+                    {stats.files.files_processing}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-red-500">
+                  <span>Ошибка</span>
+                  <span className="font-medium">
+                    {stats.files.files_failed}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* PAYMENTS */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4"
+            >
+              <p className="text-[15px] text-slate-600">Платежи</p>
+
+              <div className="flex flex-col gap-2 text-[14px] text-slate-700">
+                <div className="flex justify-between">
+                  <span>Всего платежей</span>
+                  <span className="font-medium">
+                    {stats.financial.payments.total_payments}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Общая сумма</span>
+                  <span className="font-medium">
+                    {stats.financial.payments.total_amount}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-emerald-600">
+                  <span>Зачислено</span>
+                  <span className="font-medium">
+                    {stats.financial.payments.completed_amount}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Средний баланс пользователя</span>
+                  <span className="font-medium">
+                    {stats.financial.average_user_balance}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Общий баланс пользователей</span>
+                  <span className="font-medium">
+                    {stats.financial.total_user_balance}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* USERS */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4"
+            >
+              <p className="text-[15px] text-slate-600">Пользователи</p>
+
+              <div className="flex flex-col gap-2 text-[14px] text-slate-700">
+                <div className="flex justify-between">
+                  <span>Всего</span>
+                  <span className="font-medium">{stats.users.total}</span>
+                </div>
+
+                <div className="flex justify-between text-emerald-600">
+                  <span>Активные</span>
+                  <span className="font-medium">{stats.users.active}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Email подтверждён</span>
+                  <span className="font-medium">
+                    {stats.users.email_verified}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Новые за 7 дней</span>
+                  <span className="font-medium">{stats.users.new_last_7d}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>Новые за 30 дней</span>
+                  <span className="font-medium">
+                    {stats.users.new_last_30d}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
-
-          {/* Файлы */}
-          <motion.div
-            variants={item}
-            className="p-4 border rounded-lg flex flex-col gap-3"
-          >
-            <h2 className="subtitle text-[20px]">Файлы</h2>
-
-            <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
-              <div className="flex justify-between">
-                <span>Всего загружено:</span>
-                <span className="font-medium">
-                  {stats.files.total_files_uploaded}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Записей извлечено:</span>
-                <span className="font-medium">
-                  {stats.files.total_records_parsed}
-                </span>
-              </div>
-              <div className="flex justify-between text-green-600">
-                <span>Выполнено:</span>
-                <span className="font-medium">
-                  {stats.files.files_completed}
-                </span>
-              </div>
-              <div className="flex justify-between text-blue-600">
-                <span>В обработке:</span>
-                <span className="font-medium">
-                  {stats.files.files_processing}
-                </span>
-              </div>
-              <div className="flex justify-between text-red-500">
-                <span>Ошибка:</span>
-                <span className="font-medium">{stats.files.files_failed}</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Платежи */}
-          <motion.div
-            variants={item}
-            className="p-4 border rounded-lg flex flex-col gap-3"
-          >
-            <h2 className="subtitle text-[20px]">Платежи</h2>
-
-            <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
-              <div className="flex justify-between">
-                <span>Всего платежей:</span>
-                <span className="font-medium">
-                  {stats.financial.payments.total_payments}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Общая сумма:</span>
-                <span className="font-medium">
-                  {stats.financial.payments.total_amount}
-                </span>
-              </div>
-              <div className="flex justify-between text-green-600">
-                <span>Зачислено:</span>
-                <span className="font-medium">
-                  {stats.financial.payments.completed_amount}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Средний баланс пользователя:</span>
-                <span className="font-medium">
-                  {stats.financial.average_user_balance}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Общий баланс пользователей:</span>
-                <span className="font-medium">
-                  {stats.financial.total_user_balance}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Пользователи */}
-          <motion.div
-            variants={item}
-            className="p-4 border rounded-lg flex flex-col gap-3"
-          >
-            <h2 className="subtitle text-[20px]">Пользователи</h2>
-
-            <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
-              <div className="flex justify-between">
-                <span>Всего:</span>
-                <span className="font-medium">{stats.users.total}</span>
-              </div>
-              <div className="flex justify-between text-green-600">
-                <span>Активные:</span>
-                <span className="font-medium">{stats.users.active}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Подтвердили email:</span>
-                <span className="font-medium">
-                  {stats.users.email_verified}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Новые за 7 дней:</span>
-                <span className="font-medium">{stats.users.new_last_7d}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Новые за 30 дней:</span>
-                <span className="font-medium">{stats.users.new_last_30d}</span>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
+        )}
+      </div>
     </section>
   );
 };

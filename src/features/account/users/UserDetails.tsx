@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
-
+import { motion } from "framer-motion";
 import { IoExitOutline } from "react-icons/io5";
 import Loader from "../../../components/loader/Loader";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
@@ -145,191 +145,255 @@ const UserDetails = () => {
   if (loading) return <Loader />;
   if (!user) return <div>User not found</div>;
 
-  return (
-    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      <div className="title">Пользователь: {user.name}</div>
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.12 } },
+  };
 
-      <div className="flex gap-10">
-        {/* left content */}
-        <div className="border flex flex-col gap-5 p-4 rounded-[12px]">
-          <form className="flex flex-col gap-5">
-            <div className="flex items-center gap-5">
+  const item = {
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+  };
+
+  return (
+    <section
+      className={clsx(
+        "min-h-screen bg-slate-50 py-10 transition-all",
+        isOpen ? "pl-[116px]" : "pl-[336px]",
+      )}
+    >
+      <div className="max-w-[1100px] mx-auto flex flex-col gap-8">
+        <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
+          Пользователь: {user.nickName}
+        </h1>
+
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 gap-8"
+        >
+          {/* LEFT */}
+          <motion.div
+            variants={item}
+            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
+          >
+            <p className="text-[16px] font-medium text-slate-900 text-center">
+              Основная информация
+            </p>
+
+            <div className="space-y-3 text-[15px] text-slate-800">
               <EditableField
                 label="Имя"
                 value={formData.first_name}
                 onChange={(val: string) =>
-                  setFormData((prev) => ({ ...prev, first_name: val }))
+                  setFormData((p) => ({ ...p, first_name: val }))
                 }
               />
-            </div>
 
-            <div className="flex items-center gap-5">
               <EditableField
                 label="Фамилия"
                 value={formData.last_name}
                 onChange={(val: string) =>
-                  setFormData((prev) => ({ ...prev, last_name: val }))
+                  setFormData((p) => ({ ...p, last_name: val }))
                 }
               />
-            </div>
 
-            <div className="flex items-center gap-5">
               <EditableField
                 label="Email"
                 value={formData.email}
                 onChange={(val: string) =>
-                  setFormData((prev) => ({ ...prev, email: val }))
+                  setFormData((p) => ({ ...p, email: val }))
                 }
               />
+
+              <p className="flex justify-between text-slate-600">
+                <span>Роль:</span>
+                <span className="font-medium text-slate-900">{user.role}</span>
+              </p>
+
+              <p className="flex justify-between text-slate-600">
+                <span>Дата регистрации:</span>
+                <span className="font-medium text-slate-900">
+                  {user.registrationDate}
+                </span>
+              </p>
+
+              <p className="flex justify-between text-slate-600">
+                <span>Подтверждение email:</span>
+                <span
+                  className={clsx(
+                    "px-2 py-[2px] rounded text-xs font-medium",
+                    user.confirmationEmail === "Yes"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700",
+                  )}
+                >
+                  {user.confirmationEmail}
+                </span>
+              </p>
+
+              <p className="flex justify-between text-slate-600">
+                <span>Статус:</span>
+                <span
+                  className={clsx(
+                    "px-2 py-[2px] rounded text-xs font-medium",
+                    user.status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700",
+                  )}
+                >
+                  {user.status}
+                </span>
+              </p>
             </div>
-          </form>
-          <p className="flex items-center gap-5">
-            Роль: <span>{user.role}</span>
-          </p>
-          <p className="flex items-center gap-5">
-            Дата регистрации: <span>{user.registrationDate}</span>
-          </p>
-          <p className="flex items-center gap-5">
-            Подтверждение почты:{" "}
-            <span
-              className={clsx(
-                "px-2 py-1 rounded-[8px]",
-                user.confirmationEmail === "Yes"
-                  ? "bg-green-400"
-                  : "bg-red-500 text-white",
+
+            <div className="flex flex-col gap-3">
+              {user.role === "User" && (
+                <button
+                  onClick={toggleBlocked}
+                  className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+                >
+                  {user.status === "Active"
+                    ? "Заблокировать пользователя"
+                    : "Разблокировать пользователя"}
+                </button>
               )}
-            >
-              {user.confirmationEmail}
-            </span>
-          </p>
-          <p className="flex items-center gap-5">
-            Статус:{" "}
-            <span
-              className={clsx(
-                "px-2 py-1 rounded-[8px]",
-                user.status === "Active"
-                  ? "bg-green-400"
-                  : "bg-red-500 text-white",
-              )}
-            >
-              {user.status}
-            </span>
-          </p>
-          {user.role === "User" && (
+
+              <button
+                onClick={saveUser}
+                className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+              >
+                сохранить изменения
+              </button>
+            </div>
+          </motion.div>
+
+          {/* RIGHT */}
+          <motion.div
+            variants={item}
+            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
+          >
+            <div className="flex flex-col gap-4">
+              <p className="text-[16px] font-medium text-slate-900 text-center">
+                Баланс и расходы
+              </p>
+
+              <p className="flex justify-between text-slate-600 text-[15px]">
+                Баланс:
+                <span className="text-[20px] font-semibold text-slate-900">
+                  {user.balance} ₽
+                </span>
+              </p>
+
+              <p className="flex justify-between text-slate-600 text-[15px]">
+                Бесплатные запросы:
+                <span className="font-medium text-slate-900">
+                  {user.freeRequest}
+                </span>
+              </p>
+
+              <p className="flex justify-between text-slate-600 text-[15px]">
+                Всего запросов:
+                <span className="font-medium text-slate-900">
+                  {user.allRequest}
+                </span>
+              </p>
+
+              <p className="flex justify-between text-slate-600 text-[15px]">
+                Потрачено:
+                <span className="font-medium text-slate-900">
+                  {user.totalSpend}
+                </span>
+              </p>
+            </div>
+
             <button
-              onClick={toggleBlocked}
-              className="bg-red01/60 text-white px-4 py-2 rounded hover:bg-red01 transition duration-300"
+              onClick={() => setOpenModal(true)}
+              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
             >
-              {user.status === "Active"
-                ? "Заблокировать пользователя"
-                : "Разблокировать пользователя"}
+              пополнить баланс
             </button>
-          )}
-          <button
-            onClick={saveUser}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            Сохранить изменения
-          </button>
-        </div>
-        {/* right content */}
-        <div className="border flex flex-col gap-5 p-4 rounded-[12px]">
-          <p className="flex items-center gap-5 text-gray01">
-            Баланс: <span className="text-black">{user.balance}</span>
-          </p>
-          <p className="flex items-center gap-5 text-gray01">
-            Осталось бесплатных запросов:{" "}
-            <span className="text-black">{user.freeRequest}</span>
-          </p>
-          <p className="flex items-center gap-5 text-gray01">
-            Всего запросов:{" "}
-            <span className="text-black">{user.allRequest}</span>
-          </p>
-          <p className="flex items-center gap-5 text-gray01">
-            Всего потрачено:{" "}
-            <span className="text-black">{user.totalSpend}</span>
-          </p>
-          <button
-            onClick={() => setOpenModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            Добавить баланс
-          </button>
-        </div>
-      </div>
-      {/* modal */}
-      {openModal && (
-        <div
-          onClick={() => {
-            setOpenModal(false);
-            setPayInput(100);
-          }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
+          </motion.div>
+        </motion.div>
+
+        {/* MODAL */}
+        {openModal && (
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white p-6 rounded-lg w-80 flex flex-col gap-4"
+            onClick={() => {
+              setOpenModal(false);
+              setPayInput(100);
+            }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
           >
-            <p className="text-lg font-semibold mb-4 text-center">Оплата</p>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="amount">Введите сумму</label>
-              <input
-                id="amount"
-                type="number"
-                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => setPayInput(Number(e.target.value))}
-                value={payInput}
-                placeholder="*введите сумму от 100₽"
-              />
-              {payInput <= 0 ? (
-                <span className="text-error">*введите корректную сумму</span>
-              ) : null}
-              {payInput < 100 ? (
-                <span className="text-error">*пополнение от 100₽</span>
-              ) : null}
-            </div>
-
-            <p className="text-gray01 text-[12px]">
-              *или выберете из предложенных
-            </p>
-
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setPayInput((prev) => Number(prev) + 100)}
-                className="pay-btn"
-              >
-                +100₽
-              </button>
-              <button
-                onClick={() => setPayInput((prev) => Number(prev) + 500)}
-                className="pay-btn"
-              >
-                +500₽
-              </button>
-              <button
-                onClick={() => setPayInput((prev) => Number(prev) + 1000)}
-                className="pay-btn"
-              >
-                +1000₽
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDeposit}
-              className="uppercase border px-2 py-1 rounded text-black font-medium hover:bg-green-500/70 transition duration-300 w-full"
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.22 }}
+              className="bg-white rounded-xl p-6 shadow-xl w-[360px] flex flex-col gap-5"
             >
-              оплатить
-            </button>
+              <p className="text-lg font-semibold text-slate-900 text-center">
+                Оплата
+              </p>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="amount" className="text-sm text-slate-600">
+                  Введите сумму
+                </label>
+                <input
+                  id="amount"
+                  type="number"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  onChange={(e) => setPayInput(Number(e.target.value))}
+                  value={payInput}
+                  placeholder="*от 100₽"
+                />
+                {payInput < 100 && (
+                  <span className="text-red-500 text-xs">
+                    *пополнение от 100₽
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500">*быстрый выбор</p>
+
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={() => setPayInput((p) => Number(p) + 100)}
+                  className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                >
+                  +100₽
+                </button>
+                <button
+                  onClick={() => setPayInput((p) => Number(p) + 500)}
+                  className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                >
+                  +500₽
+                </button>
+                <button
+                  onClick={() => setPayInput((p) => Number(p) + 1000)}
+                  className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                >
+                  +1000₽
+                </button>
+              </div>
+
+              <button
+                onClick={handleDeposit}
+                className="px-3 py-2 rounded-lg border text-sm font-medium text-slate-900 hover:bg-green-500/70 hover:text-white transition w-full"
+              >
+                оплатить
+              </button>
+            </motion.div>
           </div>
-        </div>
-      )}
-      <div>
+        )}
+
         <button
           onClick={() => navigate("/account/users")}
-          className="flex items-center gap-3 border px-3 py-2 rounded-[8px] hover:bg-gray-400 hover:text-white transition"
+          className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
         >
-          <IoExitOutline className="rotate-180 h-[25px] w-[25px]" />
+          <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
           Назад
         </button>
       </div>
