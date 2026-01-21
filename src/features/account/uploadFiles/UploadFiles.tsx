@@ -15,6 +15,7 @@ import {
   PiFilePdfBold,
   PiFileCsvBold,
 } from "react-icons/pi";
+import { motion } from "framer-motion";
 import { TbJson } from "react-icons/tb";
 import { CgDanger } from "react-icons/cg";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
@@ -426,7 +427,12 @@ const UploadFiles = () => {
 
       {/* загруженные файлы */}
 
-      <div className="mt-10 min-w-0">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="mt-10 min-w-0"
+      >
         <div
           onClick={() => setIsProcessingModal((prev) => !prev)}
           className="my-4 flex items-center justify-between border-b pb-5 cursor-pointer select-none"
@@ -605,9 +611,14 @@ const UploadFiles = () => {
             </button>
           </div>
         )} */}
-      </div>
+      </motion.div>
 
-      <div className="mt-10 min-w-0 ">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="mt-10 min-w-0 "
+      >
         <div className="my-4 flex items-center justify-between border-b pb-5">
           <div>
             <h2 className="subtitle text-[22px]">Загруженные файлы</h2>
@@ -794,7 +805,7 @@ const UploadFiles = () => {
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* ---------------- модалка превью файла ---------------- */}
 

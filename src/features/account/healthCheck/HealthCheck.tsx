@@ -6,6 +6,7 @@ import clsx from "clsx";
 import Toast from "../../../components/toast/Toast.jsx";
 import { CgDanger } from "react-icons/cg";
 import type { HealthCheckResponse } from "../../../types/healthCheck";
+import { motion } from "framer-motion";
 
 interface SubtitleItem {
   title: string;
@@ -34,7 +35,7 @@ const HealthCheck: React.FC = () => {
           ? err.response.status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
             : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS"
+          : "Сетевая ошибка или CORS",
       );
     } finally {
       setLoading(false);
@@ -83,7 +84,11 @@ const HealthCheck: React.FC = () => {
       ) : (
         <>
           <p className="subtitle">*Проверка состояния Admin Panel и Gateway.</p>
-          <div className="border flex flex-col justify-center items-start w-1/3 gap-5 p-4 rounded-[12px] text-common">
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border flex flex-col justify-center items-start w-1/3 gap-5 p-4 rounded-[12px] text-common"
+          >
             {subtitle.map((item, index) => (
               <div key={index}>
                 <p className="text-health-system text-common">
@@ -91,7 +96,7 @@ const HealthCheck: React.FC = () => {
                 </p>
               </div>
             ))}
-          </div>
+          </motion.div>
         </>
       )}
     </section>

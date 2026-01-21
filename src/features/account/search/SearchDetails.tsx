@@ -136,7 +136,8 @@ const SearchDetails: React.FC = () => {
     setTimeout(() => setNotify(false), 1200);
   };
 
-  const isValidName = (val: string) => /^[a-zA-Zа-яА-Я]+$/.test(val);
+  // const isValidName = (val: string) => /^[a-zA-Zа-яА-ЯёЁ-]+$/.test(val);
+  const isValidName = (val: string) => /^\p{L}+$/u.test(val);
 
   const titleMap = {
     contacts: "Контакты",
@@ -204,18 +205,19 @@ const SearchDetails: React.FC = () => {
                   Имя: <span>{user?.first_name}</span>
                 </p>
               )}
-              {user?.last_name &&
-                isValidName(user.last_name) &&
-                user?.last_name && (
-                  <p>
-                    Фамилия: <span>{user?.last_name}</span>
-                  </p>
-                )}
+
+              {user?.last_name && isValidName(user.last_name) && (
+                <p>
+                  Фамилия: <span>{user?.last_name}</span>
+                </p>
+              )}
+
               {user?.middle_name && isValidName(user.middle_name) && (
                 <p>
                   Отчество: <span>{user?.middle_name}</span>
                 </p>
               )}
+
               {user.phones?.[0] && (
                 <p>
                   Телефон:{" "}
@@ -227,7 +229,7 @@ const SearchDetails: React.FC = () => {
                   </span>
                 </p>
               )}
-
+              {user.snils?.[0] && <p>Снилс: {user.snils[0]}</p>}
               {user.emails?.map((e, i) => (
                 <p key={i}>
                   Email {i + 1}:{" "}

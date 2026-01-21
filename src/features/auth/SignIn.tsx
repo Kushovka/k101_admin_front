@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 import Toast from "../../components/toast/Toast";
 import { login } from "./auth";
@@ -57,7 +58,9 @@ export default function SignIn() {
 
   return (
     <section className="flex items-center justify-center h-screen ">
-      <form
+      <motion.form
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
         className="relative flex flex-col gap-6 p-8 bg-white rounded w-80"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -99,7 +102,8 @@ export default function SignIn() {
         >
           Войти
         </button>
-      </form>
+      </motion.form>
+
       {/* message */}
       {notify && (
         <Toast

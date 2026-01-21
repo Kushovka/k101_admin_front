@@ -10,6 +10,7 @@ import Loader from "../../../components/loader/Loader";
 import { ApiUser } from "../../../types/user";
 import { useNavigate } from "react-router-dom";
 import { createInvoice } from "../../../api/payments";
+import { motion } from "framer-motion";
 
 type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
@@ -158,6 +159,22 @@ const Profile = () => {
     },
   };
 
+  /* ---------------- motion animate ---------------- */
+
+  const container = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       {notify && toastConfig[notify] && (
@@ -171,9 +188,17 @@ const Profile = () => {
       {/* title */}
       <div className="title">Профиль пользователя</div>
       {!error ? (
-        <div className="flex justify-between w-full gap-10">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="flex justify-between w-full gap-10"
+        >
           {/* left-content-info-user */}
-          <div className="border flex flex-col w-full gap-5 p-4 rounded-[12px]">
+          <motion.div
+            variants={item}
+            className="border flex flex-col w-full gap-5 p-4 rounded-[12px]"
+          >
             <div className="flex items-center justify-center">
               <p className="subtitle text-gray01">Основная информация</p>
             </div>
@@ -216,10 +241,13 @@ const Profile = () => {
             >
               сохранить изменения
             </button>
-          </div>
+          </motion.div>
 
           {/* right-content-info-balance */}
-          <div className="border flex flex-col gap-5 p-4 rounded-[12px] justify-between w-full">
+          <motion.div
+            variants={item}
+            className="border flex flex-col gap-5 p-4 rounded-[12px] justify-between w-full"
+          >
             <div className="flex flex-col gap-5">
               <div className="flex items-center justify-center">
                 <p className="subtitle text-gray01">Тарифный план</p>
@@ -242,7 +270,7 @@ const Profile = () => {
                 пополнить баланс
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* modal */}
           {openModal && (
@@ -344,7 +372,7 @@ const Profile = () => {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
       ) : (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}

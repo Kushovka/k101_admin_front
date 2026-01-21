@@ -18,6 +18,7 @@ import { MdVisibilityOff } from "react-icons/md";
 import Toast from "../../../components/toast/Toast";
 import Loader from "../../../components/loader/Loader";
 import api from "../../../api/adminApi";
+import { motion } from "framer-motion";
 import type { PlanItem, CreatePlanPayload } from "../../../types/plans.types";
 import type { AxiosError } from "axios";
 
@@ -59,7 +60,7 @@ const Plans: React.FC = () => {
       setError(
         error.response?.status === 500
           ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+          : "Ошибка при загрузке пользователей",
       );
     } finally {
       setLoading(false);
@@ -84,7 +85,7 @@ const Plans: React.FC = () => {
       setError(
         error.response?.status === 500
           ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+          : "Ошибка при загрузке пользователей",
       );
     } finally {
       setLoading(false);
@@ -171,7 +172,7 @@ const Plans: React.FC = () => {
       setError(
         error.response?.status === 500
           ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+          : "Ошибка при загрузке пользователей",
       );
     } finally {
       setLoading(false);
@@ -193,7 +194,7 @@ const Plans: React.FC = () => {
       setError(
         error.response?.status === 500
           ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей"
+          : "Ошибка при загрузке пользователей",
       );
     } finally {
       setLoading(false);
@@ -213,7 +214,12 @@ const Plans: React.FC = () => {
       {/* все активные тарифные планы */}
       <div className="grid grid-cols-3 gap-4 mt-4">
         {plans.map((plan, idx) => (
-          <div key={idx}>
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.12 }}
+          >
             <Plan
               key={plan.id}
               name={plan.plan_name}
@@ -226,7 +232,7 @@ const Plans: React.FC = () => {
               onClick_archived={() => handleArchived(plan.id)}
             />
             {plan.archived === true && <div>{plan.price}</div>}
-          </div>
+          </motion.div>
         ))}
       </div>
 

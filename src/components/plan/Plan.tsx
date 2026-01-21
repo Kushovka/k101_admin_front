@@ -40,7 +40,7 @@ const Plan: React.FC<PlanProps> = ({
 
         <div className=" flex items-end gap-3">
           <p className="subtitle leading-none text-gray01 text-[52px]">
-            <CountUp start={100} end={price} duration={0.5} />₽
+            <CountUp start={100} end={price} duration={0.3} />₽
           </p>
         </div>
 

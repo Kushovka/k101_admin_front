@@ -4,6 +4,7 @@ import { systemStatistics } from "../../../api/systemStatistics";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
 import Toast from "../../../components/toast/Toast";
+import { motion } from "framer-motion";
 
 import type { SystemStatisticsResponse } from "../../../types/systemStatistics";
 
@@ -27,7 +28,7 @@ const SystemStatistics = () => {
         setError(
           response?.status === 500
             ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
+            : "Ошибка при загрузке пользователей",
         );
       } else {
         setError("Сетевая ошибка или CORS");
@@ -41,6 +42,22 @@ const SystemStatistics = () => {
     fetchStats();
   }, []);
 
+  /* ---------------- motion animate ---------------- */
+
+  const container = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 6 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       <div className="title mb-4">Системная статистика</div>
@@ -51,24 +68,35 @@ const SystemStatistics = () => {
       )}
 
       {stats && (
-        <div className="grid grid-cols-2 gap-6 w-full">
+        <motion.div
+          className="grid grid-cols-2 gap-6 w-full"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
           {/* Система */}
-          <div className="p-4 border rounded-lg flex flex-col gap-2">
+          <motion.div
+            variants={item}
+            className="p-4 border rounded-lg flex flex-col gap-2"
+          >
             <h2 className="subtitle mb-1 text-[20px]">Система</h2>
             <p
               className={clsx(
                 "font-semibold",
                 stats.gateway_status === "healthy"
                   ? "text-green-600"
-                  : "text-red-500"
+                  : "text-red-500",
               )}
             >
               gateway: {stats.gateway_status}
             </p>
-          </div>
+          </motion.div>
 
           {/* Файлы */}
-          <div className="p-4 border rounded-lg flex flex-col gap-3">
+          <motion.div
+            variants={item}
+            className="p-4 border rounded-lg flex flex-col gap-3"
+          >
             <h2 className="subtitle text-[20px]">Файлы</h2>
 
             <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
@@ -101,10 +129,13 @@ const SystemStatistics = () => {
                 <span className="font-medium">{stats.files.files_failed}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Платежи */}
-          <div className="p-4 border rounded-lg flex flex-col gap-3">
+          <motion.div
+            variants={item}
+            className="p-4 border rounded-lg flex flex-col gap-3"
+          >
             <h2 className="subtitle text-[20px]">Платежи</h2>
 
             <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
@@ -139,10 +170,13 @@ const SystemStatistics = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Пользователи */}
-          <div className="p-4 border rounded-lg flex flex-col gap-3">
+          <motion.div
+            variants={item}
+            className="p-4 border rounded-lg flex flex-col gap-3"
+          >
             <h2 className="subtitle text-[20px]">Пользователи</h2>
 
             <div className="grid grid-cols-2 gap-3 gap-x-12 text-common">
@@ -169,8 +203,8 @@ const SystemStatistics = () => {
                 <span className="font-medium">{stats.users.new_last_30d}</span>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </section>
   );

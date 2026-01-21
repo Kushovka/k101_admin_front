@@ -15,7 +15,7 @@ import { IoClose } from "react-icons/io5";
 import { Tooltip } from "react-tooltip";
 import { CgDanger } from "react-icons/cg";
 import { MdContentCopy } from "react-icons/md";
-
+import { motion } from "framer-motion";
 import {
   type ApiUser,
   type UsersResponse,
@@ -225,7 +225,12 @@ export default function Users() {
       {loading ? (
         <Loader />
       ) : (
-        <>
+        <motion.div
+          className="flex flex-col gap-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           {/* ---------------- названия столбцов ---------------- */}
           <div className="grid grid-cols-8 gap-4 text-gray01 font-medium border-b pb-2">
             {chapterTitle.map((chapter) => (
@@ -510,7 +515,7 @@ export default function Users() {
               onClose={() => setNotify(null)}
             />
           )}
-        </>
+        </motion.div>
       )}
     </section>
   );
