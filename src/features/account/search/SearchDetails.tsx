@@ -17,6 +17,28 @@ const isLatLon = (v: any) => {
 
 const semanticGroups = {
   contacts: ["phones", "emails", "rfcont", "rfcont_name"],
+  personal: [
+    "грудь",
+    "breast",
+    "размер одежды",
+    "clothing size",
+    "рост",
+    "height",
+    "девушка",
+    "nickname",
+    "вес",
+    "weight",
+    "размер обуви",
+    "shoes size",
+    "номер анкеты",
+    "anketa_id",
+    "район",
+    "area",
+    "метро",
+    "metro",
+    "дата обновления",
+    "updated ",
+  ],
   docs: ["passport", "паспорт", "serial", "number", "snils"],
   work: [
     "fb",
@@ -25,6 +47,10 @@ const semanticGroups = {
     "fb_work",
     "external_share_link",
     "pic_max",
+    "дата резюме",
+    "зарплата",
+    "образование",
+    "профессия",
   ],
   transport: [
     "gibdd",
@@ -90,6 +116,7 @@ const SearchDetails: React.FC = () => {
 
   const buckets = {
     contacts: {},
+    personal: {},
     docs: {},
     work: {},
     transport: {},
@@ -123,7 +150,7 @@ const SearchDetails: React.FC = () => {
         normalizedKey.includes("lat") ||
         normalizedKey.includes("lon")
       ) {
-        target = "geo";
+        target = "misc";
       }
     }
 
@@ -141,6 +168,7 @@ const SearchDetails: React.FC = () => {
 
   const titleMap = {
     contacts: "Контакты",
+    personal: "Личная информация",
     docs: "Документы",
     work: "Работа / Соц сети",
     transport: "Транспорт",
@@ -230,6 +258,7 @@ const SearchDetails: React.FC = () => {
                 </p>
               )}
               {user.snils?.[0] && <p>Снилс: {user.snils[0]}</p>}
+              {user.age && <p>Возраст: {user.age}</p>}
               {user.emails?.map((e, i) => (
                 <p key={i}>
                   Email {i + 1}:{" "}

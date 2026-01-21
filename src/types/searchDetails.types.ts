@@ -12,6 +12,7 @@ export interface SearchUser {
   first_name?: string;
   last_name?: string;
   middle_name?: string;
+  age?: number;
 
   birthdays?: string[];
   birthday?: string;

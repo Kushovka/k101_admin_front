@@ -267,6 +267,7 @@ const Search = () => {
                 Нет результатов
               </div>
             )}
+            
 
             {result.map((item, index) => (
               <motion.div
