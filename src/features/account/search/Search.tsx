@@ -3,20 +3,11 @@ import clsx from "clsx";
 import Loader from "../../../components/loader/Loader";
 import { useNavigate } from "react-router-dom";
 import adminApi from "../../../api/adminApi";
-import Toast from "../../../components/toast/Toast";
 import { useSearch } from "./SearchContext";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import { IoIosArrowDown } from "react-icons/io";
 import { motion } from "framer-motion";
 
-import {
-  SearchForm,
-  SearchResultItem,
-  SearchResponse,
-} from "../../../types/search";
-
-// const API_URL = "http://192.168.0.45:18000/search/dynamic";
-const API_URL = "http://192.168.0.45:18101/admin/search";
+import { SearchResultItem, SearchResponse } from "../../../types/search";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -267,7 +258,6 @@ const Search = () => {
                 Нет результатов
               </div>
             )}
-            
 
             {result.map((item, index) => (
               <motion.div

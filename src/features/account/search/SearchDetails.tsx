@@ -15,6 +15,47 @@ const isLatLon = (v: any) => {
   return !isNaN(n) && n >= -180 && n <= 180;
 };
 
+const fieldLabels: Record<string, string> = {
+  height: "Рост",
+  weight: "Вес",
+  breast: "Грудь",
+  "clothing size": "Размер одежды",
+  "shoes size": "Размер обуви",
+  nickname: "Имя",
+  anketa_id: "Номер анкеты",
+  area: "Район",
+  metro: "Метро",
+  "updated ": "Дата обновления",
+  humannumber: "Номер очереди",
+  pic_max: "Фотография",
+  external_share_link: "Ссылка на профиль",
+  number: "Номер паспорта",
+  serial: "Серия паспорта",
+  snils: "СНИЛС",
+  delivery: "Доставка",
+  delivery2: "Доставка",
+  yandex: "Яндекс",
+  comment: "Комментарий",
+  commission: "Комиссия",
+  "currency code": "Валюта",
+  "date added": "Дата заказа",
+  ip: "IP адрес",
+  "order id": "ID заказа",
+  "order status id": "ID статуса",
+  password: "Пароль",
+  "payment code": "Код оплаты",
+  "payment country": "Страна оплаты",
+  "payment method": "Метод оплаты",
+  "payment postcode": "Посткод оплаты",
+  "payment zone": "Зона оплаты",
+  "shipping address 1": "Адрес доставки",
+  "shipping city": "Город доставки",
+  "shipping country": "Страна доставки",
+  "shipping method": "Метод доставки",
+  status: "Статус",
+  "user agent": "Устройство пользователя",
+};
+
 const semanticGroups = {
   contacts: ["phones", "emails", "rfcont", "rfcont_name"],
   personal: [
@@ -74,11 +115,61 @@ const semanticGroups = {
     "цена",
     "кол-во хозяев по птс",
   ],
-  delivery: ["delivery", "delivery2", "yandex"],
+  delivery: [
+    "delivery",
+    "delivery2",
+    "yandex",
+    "comment",
+    "commission",
+    "currency code",
+    "date added",
+    "ip",
+    "order id",
+    "order status id",
+    "password",
+    "payment code",
+    "payment country",
+    "payment method",
+    "payment postcode",
+    "payment zone",
+    "shipping address 1",
+    "shipping city",
+    "shipping country",
+    "shipping method",
+    "status",
+    "user agent",
+    "accept language",
+  ],
   marketplace: ["avito", "wildberries", "wb"],
   geo: ["lat", "lon", "широта", "долгота"],
   security: ["password", "checkword", "external_auth_id", "login"],
-  crm: ["lid", "crm"],
+  crm: [
+    "lid",
+    "crm",
+    "активность",
+    "активные сделки",
+    "должности контактных лиц",
+    "должность",
+    "избранное",
+    "информация о контактных лицах",
+    "количество активных коммуникаций",
+    "количество завершенных сделок",
+    "количество коммуникаций",
+    "количество неоплаченных счетов",
+    "количество сделок",
+    "количество счетов",
+    "компания",
+    "непрочитанные комментарии",
+    "плательщики",
+    "создана",
+    "сумма активных сделок",
+    "сумма всех сделок",
+    "сумма всех счетов",
+    "сумма завершенных сделок",
+    "сумма неоплаченных счетов",
+    "счетчик дел",
+    "тип",
+  ],
 };
 
 const prefixLabels: Record<string, string> = {
@@ -176,7 +267,7 @@ const SearchDetails: React.FC = () => {
     delivery: "Доставка",
     geo: "Гео",
     security: "Безопасность",
-    crm: "CRM",
+    crm: "Бизнес / CRM",
     misc: "Прочее",
   };
 
@@ -257,8 +348,9 @@ const SearchDetails: React.FC = () => {
                   </span>
                 </p>
               )}
-              {user.snils?.[0] && <p>Снилс: {user.snils[0]}</p>}
+              {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
               {user.age && <p>Возраст: {user.age}</p>}
+              {user.gender && <p>Пол: {user.gender}</p>}
               {user.emails?.map((e, i) => (
                 <p key={i}>
                   Email {i + 1}:{" "}
@@ -314,14 +406,24 @@ const SearchDetails: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col gap-1 text-[14px]">
-                      {Object.entries(data).map(([field, val]) => (
-                        <div key={field} className="flex gap-2 text-slate-700">
-                          <span className="min-w-[180px] text-slate-500">
-                            {field}:
-                          </span>
-                          <span className="text-slate-800">{String(val)}</span>
-                        </div>
-                      ))}
+                      {Object.entries(data).map(([field, val]) => {
+                        const keyNormalized = field.toLowerCase();
+                        const label = fieldLabels[keyNormalized] ?? field;
+
+                        return (
+                          <div
+                            key={field}
+                            className="flex gap-2 text-slate-700"
+                          >
+                            <span className="min-w-[180px] text-slate-500">
+                              {label}:
+                            </span>
+                            <span className="text-slate-800">
+                              {String(val)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );

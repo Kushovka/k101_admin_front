@@ -100,6 +100,8 @@ const FilePreviewModal = ({
     </div>
   );
 
+  console.log(typedRows);
+
   /* ---------------- render ---------------- */
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

@@ -496,7 +496,7 @@ const UploadFiles = () => {
                   {/* STATUS */}
                   <div className="text-[13px] text-center">
                     {item.status === "queued" && (
-                      <span className="text-blue-600">Ожидание...</span>
+                      <span className="text-blue-600">В очереди...</span>
                     )}
                     {item.status === "processing" && (
                       <span className="text-cyan-600">Обработка...</span>
