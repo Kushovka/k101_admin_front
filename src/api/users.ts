@@ -42,7 +42,7 @@ interface CreatedUserPayload {
 }
 
 export const addUsers = async (
-  payload: CreatedUserPayload
+  payload: CreatedUserPayload,
 ): Promise<CreatedUserResponse> => {
   const res = await adminApi.post(`/admin/users/create`, payload, {
     headers: getHeaders(),
@@ -71,30 +71,39 @@ export const getUserById = async (id: string): Promise<ApiUser> => {
 
 export const updateUser = async (
   id: string,
-  payload: UpdateUserPayload
+  payload: UpdateUserPayload,
 ): Promise<ApiUser> => {
   const { data } = await adminApi.patch<ApiUser>(
     `/admin/users/${id}`,
     payload,
     {
       headers: getHeaders(),
-    }
+    },
   );
   return data;
 };
 
 export const isBlockedUser = async (
   id: string,
-  isBlocked: boolean
+  isBlocked: boolean,
 ): Promise<ApiUser> => {
   const { data } = await adminApi.post(
     `/admin/users/${id}/toggle-active`,
     { is_blocked: isBlocked },
     {
       headers: getHeaders(),
-    }
+    },
   );
   console.log(data);
+  return data;
+};
+
+export const isDeletedUser = async (id: string): Promise<ApiUser> => {
+  const { data } = await adminApi.delete(`/admin/users/${id}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
   return data;
 };
 
@@ -106,7 +115,7 @@ export const postDeposit = async (amount: number): Promise<void> => {
     { amount: amount.toString() },
     {
       headers: getHeaders(),
-    }
+    },
   );
   console.log(data);
   return data;
@@ -115,32 +124,33 @@ export const postDeposit = async (amount: number): Promise<void> => {
 /* ---------------- TG USERS ---------------- */
 
 export const getRequests = async (): Promise<ApiTelegramUser[]> => {
-  const { data } = await userApi.get<TelegramUsersResponse>(
-    `api/v1/users/admin/registration-requests`,
+  const { data } = await adminApi.get<TelegramUsersResponse>(
+    `/admin/registration-requests`,
     {
       headers: getHeaders(),
-    }
+    },
   );
   console.log(data);
   return data.requests;
 };
 
 export const isApproveRequest = async (id: number) => {
-  const { data } = await userApi.post(
-    `api/v1/users/admin/registration-requests/${id}/approve`,
+  const { data } = await adminApi.post(
+    `/admin/registration-requests/${id}/approve`,
     {},
-    { headers: getHeaders() }
+    { headers: getHeaders() },
   );
   return data;
 };
+
 export const isRejectRequest = async (
   id: number,
-  reason?: string
+  reason?: string,
 ): Promise<ApiTelegramUser> => {
-  const { data } = await userApi.post(
-    `api/v1/users/admin/registration-requests/${id}/reject`,
+  const { data } = await adminApi.post(
+    `/admin/registration-requests/${id}/reject`,
     reason ? { reason } : {},
-    { headers: getHeaders() }
+    { headers: getHeaders() },
   );
   return data;
 };

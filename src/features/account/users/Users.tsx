@@ -115,7 +115,8 @@ export default function Users() {
   const handleApprove = async (id: number) => {
     try {
       await isApproveRequest(id);
-      await getRequests();
+      const updated = await getRequests();
+      setAllRequests(updated);
     } catch (e) {
       console.log(e);
     }
@@ -130,6 +131,8 @@ export default function Users() {
       console.log(e);
     }
   };
+
+  const pendingRequests = allRequests.filter((r) => r.status === "pending");
 
   /* добавление пользователя */
   const addUser = async (): Promise<void> => {
@@ -333,9 +336,9 @@ export default function Users() {
             onClick={() => setTelegramUsersModal((prev) => !prev)}
             className="fixed bottom-28 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-slate-700 text-white shadow-lg hover:bg-slate-800 transition cursor-pointer active:scale-95"
           >
-            {!!allRequests.length && (
+            {!!pendingRequests.length && (
               <div className="absolute -top-1 -right-1 h-5 min-w-[20px] rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center px-[6px]">
-                {allRequests.length}
+                {pendingRequests.length}
               </div>
             )}
             <FaUsers className="w-6 h-6" />
@@ -564,6 +567,7 @@ export default function Users() {
                       <span>{r.reviewed_by_admin_id ?? "-"}</span>
 
                       {/* STATUS */}
+
                       <span
                         className={clsx(
                           "px-[6px] py-[2px] rounded text-[10px] font-medium mx-auto",
@@ -583,22 +587,24 @@ export default function Users() {
                       </span>
 
                       {/* ACTIONS */}
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          data-tooltip-id="approve"
-                          onClick={() => handleApprove(r.id)}
-                          className="p-[6px] rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition active:scale-95"
-                        >
-                          <IoMdCheckmark className="text-green-600 w-4 h-4" />
-                        </button>
-                        <button
-                          data-tooltip-id="reject"
-                          onClick={() => handleReject(r.id)}
-                          className="p-[6px] rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 transition active:scale-95"
-                        >
-                          <IoMdClose className="text-red-600 w-4 h-4" />
-                        </button>
-                      </div>
+                      {r.status == "pending" && (
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            data-tooltip-id="approve"
+                            onClick={() => handleApprove(r.id)}
+                            className="p-[6px] rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition active:scale-95"
+                          >
+                            <IoMdCheckmark className="text-green-600 w-4 h-4" />
+                          </button>
+                          <button
+                            data-tooltip-id="reject"
+                            onClick={() => handleReject(r.id)}
+                            className="p-[6px] rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 transition active:scale-95"
+                          >
+                            <IoMdClose className="text-red-600 w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

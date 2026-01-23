@@ -8,6 +8,7 @@ import EditableField from "../../../components/editable-field-props/EditableFiel
 import {
   getUserById,
   isBlockedUser,
+  isDeletedUser,
   postDeposit,
   updateUser,
 } from "../../../api/users";
@@ -88,6 +89,16 @@ const UserDetails = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await isDeletedUser(id);
+      navigate("/account/users");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   /* deposit users */
   const handleDeposit = async () => {
     if (!id) return;
@@ -144,6 +155,8 @@ const UserDetails = () => {
 
   if (loading) return <Loader />;
   if (!user) return <div>User not found</div>;
+
+  /* ---------------- motion animated ---------------- */
 
   const container = {
     hidden: {},
@@ -388,14 +401,21 @@ const UserDetails = () => {
             </motion.div>
           </div>
         )}
-
-        <button
-          onClick={() => navigate("/account/users")}
-          className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
-        >
-          <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
-          Назад
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/account/users")}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
+            Назад
+          </button>
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            Удалить пользователя
+          </button>
+        </div>
       </div>
     </section>
   );
