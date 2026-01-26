@@ -66,6 +66,7 @@ const UploadFiles = () => {
 
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [queue, setQueue] = useState<any[]>([]);
+  const [parsingCurrent, setParsingCurrent] = useState<any[]>([]);
 
   const [totalFiles, setTotalFiles] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -273,6 +274,18 @@ const UploadFiles = () => {
       setError("Не удалось поднять в топ");
     }
   };
+  useEffect(() => {
+    const handleParsingCurrent = async () => {
+      try {
+        const res = await getParsingQueue();
+        setParsingCurrent(res.currently_processing);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    handleParsingCurrent();
+  }, []);
+  console.log(parsingCurrent);
 
   useEffect(() => {
     handleAllQueue();
@@ -280,7 +293,7 @@ const UploadFiles = () => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log(queue);
+  // console.log(queue);
   /* ---------------- форматер размера файла ---------------- */
 
   const formatFileSize = (bytes?: number): string => {
@@ -472,6 +485,10 @@ const UploadFiles = () => {
             )}
           />
         </div>
+
+        {parsingCurrent.length > 0 && (
+          <div></div>
+        )}
 
         {isProcessingModal && queue.length > 0 && (
           <div className="flex flex-col gap-2 mt-6 bg-white border border-gray-200 shadow-sm rounded-xl p-4">

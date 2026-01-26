@@ -199,7 +199,7 @@ export default function Users() {
     { id: 7, title: "Действие" },
   ] as const;
 
-  /* функция длдя копирования */
+  /* функция для копирования */
   const handleCopy = (text: string): void => {
     navigator.clipboard.writeText(text).then(() => {
       setNotify("access_copy");
@@ -316,6 +316,7 @@ export default function Users() {
           </div>
 
           {/* FLOATING ACTION BUTTONS */}
+
           {/* CREATE USER */}
           <div
             data-tooltip-id="add_user"
@@ -444,6 +445,7 @@ export default function Users() {
               </motion.div>
             </div>
           )}
+
           {/* ---------------- модалка с данными созданного пользователя ---------------- */}
           {showDataNewUser && (
             <div
@@ -519,6 +521,7 @@ export default function Users() {
               </motion.div>
             </div>
           )}
+
           {/* ---------------- заявки из телеграма ---------------- */}
           {telegramUsersModal && (
             <div

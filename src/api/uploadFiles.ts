@@ -165,3 +165,12 @@ export const getParsingQueue = async () => {
   });
   return data;
 };
+
+export const getParsingCurrent = async () => {
+  const { data } = await userApi.get("/api/v1/parsing-queue/current", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
+  return data;
+};
