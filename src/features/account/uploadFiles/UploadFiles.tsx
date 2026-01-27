@@ -1,39 +1,35 @@
 import clsx from "clsx";
+import { motion } from "framer-motion";
 import { JSX, useEffect, useState } from "react";
-import { IoMdClose } from "react-icons/io";
-import Toast from "../../../components/toast/Toast";
-import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import userApi from "../../../api/userApi";
-import { getCurrentUser } from "../../../api/users";
-import { IoIosArrowDown } from "react-icons/io";
-import { Tooltip } from "react-tooltip";
+import { CgDanger } from "react-icons/cg";
+import { FaPlay, FaStop } from "react-icons/fa";
+import { IoIosArrowDown, IoIosArrowForward, IoMdClose } from "react-icons/io";
+import { MdDelete } from "react-icons/md";
 import {
-  PiFileXlsBold,
-  PiMicrosoftExcelLogoBold,
-  PiFileTxtBold,
+  PiFileCsvBold,
   PiFileHtmlBold,
   PiFilePdfBold,
-  PiFileCsvBold,
+  PiFileTxtBold,
+  PiFileXlsBold,
+  PiMicrosoftExcelLogoBold,
 } from "react-icons/pi";
-import { motion } from "framer-motion";
 import { TbJson } from "react-icons/tb";
-import { CgDanger } from "react-icons/cg";
-import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
-import { FaPlay, FaStop } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
-import UploadDropzone from "./UploadDropzone";
-import DeleteModal from "../../../components/deleteModal/DeleteModal";
-import type { FileItem } from "../../../types/file";
-import { IoIosArrowForward } from "react-icons/io";
+import { Tooltip } from "react-tooltip";
 import {
   getAllFiles,
   getParsingQueue,
-  patchPositionFile,
   patchPriorityFile,
   postToTopFile,
-  postUploadFiles,
 } from "../../../api/uploadFiles";
+import userApi from "../../../api/userApi";
+import { getCurrentUser } from "../../../api/users";
+import DeleteModal from "../../../components/deleteModal/DeleteModal";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import Toast from "../../../components/toast/Toast";
 import { useUploadStore } from "../../../store/useUploadStore";
+import type { FileItem } from "../../../types/file";
+import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
+import UploadDropzone from "./UploadDropzone";
 
 type User = {
   id: string;
@@ -45,7 +41,7 @@ type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
 
 const UploadFiles = () => {
   const { isOpen } = useSidebar();
-  const { files, setFiles, removeFile, progress, uploading, handleUpload } =
+  const { files, removeFile, progress, uploading, handleUpload } =
     useUploadStore();
 
   const [page, setPage] = useState<number>(1);
@@ -53,15 +49,12 @@ const UploadFiles = () => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingFiles, setLoadingFiles] = useState<boolean>(false);
 
-  // const [files, setFiles] = useState<File[]>([]);
-
-  // const [progress, setProgress] = useState<Record<string, number>>({});
-  // const [uploading, setUploading] = useState<boolean>(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [deleteFile, setDeleteFile] = useState<string | null>(null);
   const [toastFile, setToastFile] = useState<FileItem | null>(null);
 
   const [notify, setNotify] = useState<string | null>(null);
+  const [toast, setToast] = useState(null);
   const [error, setError] = useState<string | null>(null);
 
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
@@ -166,38 +159,6 @@ const UploadFiles = () => {
     loadFiles(1, true);
   }, [search]);
 
-  /* ---------------- загрузка ---------------- */
-
-  // const handleUpload = async () => {
-  //   if (!files.length) return;
-
-  //   setUploading(true);
-  //   setError(null);
-  //   setProgress({});
-
-  //   try {
-  //     await postUploadFiles(files, (file, percent) => {
-  //       setProgress((prev) => ({
-  //         ...prev,
-  //         [file.name]: percent,
-  //       }));
-  //     });
-
-  //     // FIX: НЕ затираем allFiles напрямую
-  //     setNotify("upload_file");
-  //     setFiles([]);
-
-  //     setPage(1);
-  //     setHasMore(true);
-  //     loadFiles(1, true);
-  //   } catch (e) {
-  //     setError("Ошибка при загрузке файлов");
-  //     console.error(e);
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  // };
-
   /* ---------------- queue api ---------------- */
 
   const queueApi = {
@@ -238,24 +199,6 @@ const UploadFiles = () => {
     }
   };
 
-  // const handleChangePosition = async (id: string, position: number) => {
-  //   try {
-  //     const res = await patchPositionFile(id, { position });
-  //     // обновляем локально
-  //     setQueue((prev) =>
-  //       prev.map((f) =>
-  //         f.id === id
-  //           ? { ...f, priority: res.priority, position: res.position }
-  //           : f,
-  //       ),
-  //     );
-  //     await handleAllQueue();
-  //   } catch (e) {
-  //     console.error(e);
-  //     setError("Ошибка при изменении приоритета");
-  //   }
-  // };
-
   const handleAllQueue = async () => {
     try {
       const res = await getParsingQueue();
@@ -274,6 +217,7 @@ const UploadFiles = () => {
       setError("Не удалось поднять в топ");
     }
   };
+
   useEffect(() => {
     const handleParsingCurrent = async () => {
       try {
@@ -359,15 +303,19 @@ const UploadFiles = () => {
       {error && (
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
+
       {notify === "upload_file" && (
         <Toast
+          key="upload"
           type="access"
           message="Файлы успешно загружены"
           onClose={() => setNotify(null)}
         />
       )}
+
       {notify === "delete_file" && (
         <Toast
+          key="delete"
           type="access"
           message={`Файл ${toastFile?.display_name ?? ""} успешно удален `}
           onClose={() => setNotify(null)}
@@ -486,9 +434,7 @@ const UploadFiles = () => {
           />
         </div>
 
-        {parsingCurrent.length > 0 && (
-          <div></div>
-        )}
+        {parsingCurrent.length > 0 && <div></div>}
 
         {isProcessingModal && queue.length > 0 && (
           <div className="flex flex-col gap-2 mt-6 bg-white border border-gray-200 shadow-sm rounded-xl p-4">

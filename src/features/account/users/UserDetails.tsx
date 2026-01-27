@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import clsx from "clsx";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { IoExitOutline } from "react-icons/io5";
-import Loader from "../../../components/loader/Loader";
-import EditableField from "../../../components/editable-field-props/EditableFieldProps";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   getUserById,
   isBlockedUser,
@@ -12,12 +10,15 @@ import {
   postDeposit,
   updateUser,
 } from "../../../api/users";
+import EditableField from "../../../components/editable-field-props/EditableFieldProps";
+import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 
+import Toast from "../../../components/toast/Toast";
 import type {
+  UpdateUserPayload,
   UserDetailsApi,
   UserDetailsUI,
-  UpdateUserPayload,
 } from "../../../types/user";
 
 const mapUser = (u: UserDetailsApi): UserDetailsUI => ({
@@ -110,14 +111,12 @@ const UserDetails = () => {
     }
     setLoading(true);
     try {
-      await postDeposit(payInput);
+      await postDeposit(payInput, id);
       const updated: UserDetailsApi = await getUserById(id);
       setUser(mapUser(updated));
-
       setOpenModal(false);
       setPayInput(100);
       setNotify("access_pay");
-      setTimeout(() => setNotify(null), 3000);
     } catch (err) {
       console.error("Ошибка при пополнении баланса:", err);
       setError("Ошибка при пополнении баланса");
@@ -175,6 +174,13 @@ const UserDetails = () => {
         isOpen ? "pl-[116px]" : "pl-[336px]",
       )}
     >
+      {notify === "access_pay" && (
+        <Toast
+          type="access"
+          message={`Баланс пользователя ${formData.first_name} успешно пополнен`}
+          onClose={() => setNotify(null)}
+        />
+      )}
       <div className="max-w-[1100px] mx-auto flex flex-col gap-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
           Пользователь: {user.nickName}

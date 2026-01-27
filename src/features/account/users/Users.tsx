@@ -1,7 +1,13 @@
-import { useState, useEffect } from "react";
 import clsx from "clsx";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { CgDanger } from "react-icons/cg";
+import { FaUsers } from "react-icons/fa";
+import { IoIosClose, IoMdCheckmark, IoMdClose } from "react-icons/io";
+import { IoClose } from "react-icons/io5";
+import { MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import Loader from "../../../components/loader/Loader";
+import { Tooltip } from "react-tooltip";
 import {
   addUsers,
   getRequests,
@@ -9,22 +15,14 @@ import {
   isApproveRequest,
   isRejectRequest,
 } from "../../../api/users";
+import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
-import { IoClose } from "react-icons/io5";
-import { Tooltip } from "react-tooltip";
-import { CgDanger } from "react-icons/cg";
-import { MdContentCopy } from "react-icons/md";
-import { motion } from "framer-motion";
 import {
-  type ApiUser,
-  type UsersResponse,
+  type ApiTelegramUser,
   type CreatedUserResponse,
   type TableUser,
-  type ApiTelegramUser,
 } from "../../../types/user";
-import { IoIosClose, IoMdCheckmark, IoMdClose } from "react-icons/io";
-import { FaUsers } from "react-icons/fa";
 
 type NotifyType = "user_create" | "access_copy";
 
@@ -40,7 +38,7 @@ export default function Users() {
   const [email, setEmail] = useState<string>("");
   const [first_name, setFirstName] = useState<string>("");
   const [last_name, setLastName] = useState<string>("");
-  const [role, setRole] = useState<"user" | "admin">("user");
+  const [role, setRole] = useState<"user" | "admin">("admin");
   const [username, setUsername] = useState<string>("");
 
   const [telegramUsersModal, setTelegramUsersModal] = useState<boolean>(false);
@@ -98,7 +96,6 @@ export default function Users() {
   };
 
   /* заявки из телеграма */
-
   useEffect(() => {
     const fetchRequests = async (): Promise<void> => {
       try {
@@ -136,7 +133,7 @@ export default function Users() {
 
   /* добавление пользователя */
   const addUser = async (): Promise<void> => {
-    if (!email || !first_name || !last_name || !username) {
+    if (!email || !first_name || !last_name || !username || !role) {
       setError("Заполните все поля");
       return;
     }
@@ -163,7 +160,7 @@ export default function Users() {
       setFirstName("");
       setLastName("");
       setUsername("");
-      setRole("user");
+      setRole("admin");
     } catch (err: any) {
       setError(
         err.response
@@ -431,6 +428,37 @@ export default function Users() {
                       placeholder="example@mail.com"
                       className="border border-gray-300 rounded-lg px-3 py-[9px] text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
+                  </div>
+                  {/* role */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm text-slate-600">Роль</label>
+                    <div className="flex">
+                      <button
+                        type="button"
+                        onClick={() => setRole("user")}
+                        className={clsx(
+                          "px-3 py-2 rounded-l-lg border text-sm font-medium transition flex-1",
+                          role === "user"
+                            ? "bg-cyan-500 text-white border-cyan-500"
+                            : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
+                        )}
+                      >
+                        user
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setRole("admin")}
+                        className={clsx(
+                          "px-3 py-2 rounded-r-lg border text-sm font-medium transition flex-1",
+                          role === "admin"
+                            ? "bg-cyan-500 text-white border-cyan-500"
+                            : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
+                        )}
+                      >
+                        admin
+                      </button>
+                    </div>
                   </div>
                 </div>
 

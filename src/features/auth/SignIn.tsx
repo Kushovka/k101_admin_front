@@ -73,7 +73,7 @@ export default function SignIn() {
           <input
             type="text"
             placeholder="Логин"
-            {...register("username", { required: true, minLength: 4 })}
+            {...register("username", { required: true, minLength: 2 })}
             className="w-full px-3 py-2 rounded-lg border text-[14px] focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition"
           />
           {touchedFields.username && errors.username && (

@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
-import EditableField from "../../../components/editable-field-props/EditableFieldProps";
-import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
-import { getCurrentUser } from "../../../api/users";
-import { updateProfile } from "../../../api/profile";
-import Toast from "../../../components/toast/Toast";
-import Loader from "../../../components/loader/Loader";
-import { ApiUser } from "../../../types/user";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createInvoice } from "../../../api/payments";
-import { motion } from "framer-motion";
+import { updateProfile } from "../../../api/profile";
+import { getCurrentUser } from "../../../api/users";
+import EditableField from "../../../components/editable-field-props/EditableFieldProps";
+import Loader from "../../../components/loader/Loader";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import Toast from "../../../components/toast/Toast";
+import { ApiUser } from "../../../types/user";
 
 type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
 
@@ -28,9 +28,11 @@ const Profile = () => {
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [email, setEmail] = useState("");
+  // const [link, setLink] = useState("");
 
   const { isOpen } = useSidebar();
 
+  /* ---------------- ger user ---------------- */
   useEffect(() => {
     const fetchUser = async (): Promise<void> => {
       setLoading(true);
@@ -51,6 +53,7 @@ const Profile = () => {
     fetchUser();
   }, []);
 
+  /* ---------------- updated profile ---------------- */
   const saveProfile = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -76,6 +79,7 @@ const Profile = () => {
     }
   };
 
+  /* ---------------- deposit ---------------- */
   const handleDeposit = async () => {
     if (payInput < 100) {
       setNotify("error_pay");
@@ -100,6 +104,21 @@ const Profile = () => {
     }
   };
 
+  // /* ---------------- link for telegram ---------------- */
+  // useEffect(() => {
+  //   const handleLink = async () => {
+  //     try {
+  //       const res = await linkForTelegram();
+  //       setLink(res.deep_link);
+  //       console.log(res.deep_link);
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   };
+  //   handleLink();
+  // }, []);
+
+  /* ---------------- toast config ---------------- */
   const toastConfig: Record<
     NotifyType,
     { type: "access" | "error"; message: string }
@@ -121,6 +140,8 @@ const Profile = () => {
       message: "Ошибка при обновлении профиля",
     },
   };
+
+  /* ---------------- animate motion ---------------- */
 
   const container = {
     hidden: {},
@@ -212,6 +233,11 @@ const Profile = () => {
                   </span>
                 </p>
               </div>
+              {/* <a href={link} target="_blank" rel="noreferrer">
+                <button className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition">
+                  привязать тг
+                </button>
+              </a> */}
 
               <button
                 onClick={saveProfile}

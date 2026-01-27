@@ -1,11 +1,11 @@
 import clsx from "clsx";
+import { motion } from "framer-motion";
 import React, { useState } from "react";
+import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
-import Toast from "../../../components/toast/Toast";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import { IoIosArrowDown } from "react-icons/io";
-import { motion } from "framer-motion";
+import Toast from "../../../components/toast/Toast";
 import type { SearchUser } from "../../../types/searchDetails.types";
 
 /* semantic helpers */
@@ -183,6 +183,17 @@ const prefixLabels: Record<string, string> = {
   gibdd: "Транспорт (ГИБДД)",
   rfcont: "Контакты (RF)",
 };
+const getHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    throw new Error("Access token not found");
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+};
 
 const SearchDetails: React.FC = () => {
   const location = useLocation();
@@ -194,6 +205,8 @@ const SearchDetails: React.FC = () => {
   const [notify, setNotify] = useState(false);
   const [openMain, setOpenMain] = useState(true);
   const [openDossier, setOpenDossier] = useState(true);
+  // const [aiDossier, setAIDossier] = useState("");
+  // const [dossierLoading, setDossierLoading] = useState(false);
 
   if (!user) {
     return (
@@ -254,6 +267,23 @@ const SearchDetails: React.FC = () => {
     setTimeout(() => setNotify(false), 1200);
   };
 
+  // const handleAIDossier = async (id: string) => {
+  //   try {
+  //     setDossierLoading(true);
+  //     const response = await userApi.post(
+  //       "/api/v1/search/dossier",
+  //       { person_id: id },
+  //       { headers: getHeaders() },
+  //     );
+
+  //     setAIDossier(response.data.dossier);
+  //   } catch (err) {
+  //     console.error(err);
+  //   } finally {
+  //     setDossierLoading(false);
+  //   }
+  // };
+
   // const isValidName = (val: string) => /^[a-zA-Zа-яА-ЯёЁ-]+$/.test(val);
   const isValidName = (val: string) => /^\p{L}+$/u.test(val);
 
@@ -270,6 +300,8 @@ const SearchDetails: React.FC = () => {
     crm: "Бизнес / CRM",
     misc: "Прочее",
   };
+
+  // const personId = user.entity_id;
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
@@ -431,6 +463,37 @@ const SearchDetails: React.FC = () => {
             </div>
           )}
         </motion.div>
+
+        {/* досье ии */}
+
+        {/* <div className="bg-white border rounded-xl p-4 flex justify-between items-center">
+          <div className="text-[15px] font-medium text-slate-800">
+            AI-Досье (15 ₽)
+          </div>
+
+          <button
+            disabled={dossierLoading}
+            onClick={() => handleAIDossier(personId)}
+            className={clsx(
+              "px-4 py-2 rounded-lg text-sm font-medium",
+              dossierLoading
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-cyan-500 hover:bg-cyan-600 text-white",
+            )}
+          >
+            {dossierLoading ? "Генерация..." : "Сгенерировать"}
+          </button>
+        </div>
+
+        {aiDossier && (
+          <motion.div
+            className="bg-white border rounded-xl p-4 whitespace-pre-wrap text-[14px]"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {aiDossier}
+          </motion.div>
+        )} */}
       </div>
     </section>
   );

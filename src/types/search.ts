@@ -18,5 +18,6 @@ export interface SearchResultItem {
 export interface SearchResponse {
   count: number;
   total_pages: number;
+  total_records_found: number;
   results: SearchResultItem[];
 }

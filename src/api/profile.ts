@@ -1,4 +1,4 @@
-import { ApiUser, UpdateUserPayload } from "types/user";
+import { ApiUser, UpdateUserPayload } from "../types/user";
 import userApi from "./userApi";
 
 const USER_API_URL = import.meta.env.VITE_USER_API_URL;
@@ -17,15 +17,27 @@ const getHeaders = (): Record<string, string> => {
 
 /* ---------------- update profile ---------------- */
 export const updateProfile = async (
-  payload: UpdateUserPayload
+  payload: UpdateUserPayload,
 ): Promise<ApiUser> => {
   const { data } = await userApi.put<ApiUser>(
     `/api/v1/users/profile`,
     payload,
     {
       headers: getHeaders(),
-    }
+    },
   );
   console.log(data);
   return data;
 };
+
+// /* ---------------- link for telegram ---------------- */
+// export const linkForTelegram = async () => {
+//   const { data } = await userApi.post(
+//     "/api/v1/users/link-telegram",
+//     {},
+//     {
+//       headers: getHeaders(),
+//     },
+//   );
+//   return data;
+// };

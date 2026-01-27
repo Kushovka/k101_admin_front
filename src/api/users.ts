@@ -109,9 +109,12 @@ export const isDeletedUser = async (id: string): Promise<ApiUser> => {
 
 /* ---------------- BALANCE ---------------- */
 
-export const postDeposit = async (amount: number): Promise<void> => {
-  const { data } = await userApi.post(
-    `/api/v1/users/balance/deposit`,
+export const postDeposit = async (
+  amount: number,
+  id: string,
+): Promise<void> => {
+  const { data } = await adminApi.post(
+    `/admin/users/${id}/top-up`,
     { amount: amount.toString() },
     {
       headers: getHeaders(),

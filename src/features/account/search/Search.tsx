@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import Loader from "../../../components/loader/Loader";
+import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import adminApi from "../../../api/adminApi";
-import { useSearch } from "./SearchContext";
+import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import { motion } from "framer-motion";
+import { useSearch } from "./SearchContext";
 
-import { SearchResultItem, SearchResponse } from "../../../types/search";
+import { SearchResponse, SearchResultItem } from "../../../types/search";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -144,12 +144,20 @@ const Search = () => {
       setSeeSearch(true);
 
       if ("entity" in response.data) {
-        setRes(response.data as any);
-        setResult([response.data.entity as unknown as SearchResultItem]);
+        setRes(response.data);
+
+        // если ничего не найдено — показываем пусто
+        if (response.data.total_records_found === 0) {
+          setResult([]);
+        } else {
+          setResult([response.data.entity as any]);
+        }
+
         setTotalPages(response.data.total_pages ?? 1);
         setCurrentPage(page);
         return;
       }
+
       console.log(response.data);
       setRes(response.data);
       setResult(response.data.results ?? []);
@@ -237,7 +245,9 @@ const Search = () => {
               Найдено:{" "}
               {res.count === 10
                 ? "Очень много совпадений, уточните запрос"
-                : res.count || res.total_pages}
+                : res.count || res.total_pages > 0
+                  ? res.total_pages
+                  : 0}
             </div>
           )}
 
@@ -253,11 +263,13 @@ const Search = () => {
 
             {loading && <Loader />}
 
-            {result.length === 0 && !loading && (
-              <div className="py-10 text-center text-slate-400 text-[14px]">
-                Нет результатов
-              </div>
-            )}
+            {result.length === 0 &&
+              res?.total_records_found === 0 &&
+              !loading && (
+                <div className="py-10 text-center text-slate-400 text-[14px]">
+                  Нет результатов
+                </div>
+              )}
 
             {result.map((item, index) => (
               <motion.div
