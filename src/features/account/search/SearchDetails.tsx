@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
+import userApi from "../../../api/userApi";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import type { SearchUser } from "../../../types/searchDetails.types";
@@ -204,9 +205,9 @@ const SearchDetails: React.FC = () => {
 
   const [notify, setNotify] = useState(false);
   const [openMain, setOpenMain] = useState(true);
-  const [openDossier, setOpenDossier] = useState(true);
-  // const [aiDossier, setAIDossier] = useState("");
-  // const [dossierLoading, setDossierLoading] = useState(false);
+  const [openDossier, setOpenDossier] = useState(false);
+  const [aiDossier, setAIDossier] = useState("");
+  const [dossierLoading, setDossierLoading] = useState(false);
 
   if (!user) {
     return (
@@ -267,22 +268,22 @@ const SearchDetails: React.FC = () => {
     setTimeout(() => setNotify(false), 1200);
   };
 
-  // const handleAIDossier = async (id: string) => {
-  //   try {
-  //     setDossierLoading(true);
-  //     const response = await userApi.post(
-  //       "/api/v1/search/dossier",
-  //       { person_id: id },
-  //       { headers: getHeaders() },
-  //     );
+  const handleAIDossier = async (id: string) => {
+    try {
+      setDossierLoading(true);
+      const response = await userApi.post(
+        "/api/v1/search/dossier",
+        { person_id: id },
+        { headers: getHeaders() },
+      );
 
-  //     setAIDossier(response.data.dossier);
-  //   } catch (err) {
-  //     console.error(err);
-  //   } finally {
-  //     setDossierLoading(false);
-  //   }
-  // };
+      setAIDossier(response.data.dossier);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDossierLoading(false);
+    }
+  };
 
   // const isValidName = (val: string) => /^[a-zA-Zа-яА-ЯёЁ-]+$/.test(val);
   const isValidName = (val: string) => /^\p{L}+$/u.test(val);
@@ -301,7 +302,7 @@ const SearchDetails: React.FC = () => {
     misc: "Прочее",
   };
 
-  // const personId = user.entity_id;
+  const personId = user.entity_id;
 
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
@@ -332,7 +333,7 @@ const SearchDetails: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
         >
           <div
             onClick={() => setOpenMain(!openMain)}
@@ -411,13 +412,13 @@ const SearchDetails: React.FC = () => {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
         >
           <div
             onClick={() => setOpenDossier(!openDossier)}
             className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition"
           >
-            <div className="font-medium text-slate-800">Досье</div>
+            <div className="font-medium text-slate-800">Полное досье</div>
             <IoIosArrowDown
               className={clsx(
                 "transition",
@@ -465,35 +466,41 @@ const SearchDetails: React.FC = () => {
         </motion.div>
 
         {/* досье ии */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
+        >
+          <div className="bg-white p-4 flex justify-between items-center">
+            <div className="text-[15px] font-medium text-slate-800">
+              AI-Досье
+            </div>
 
-        {/* <div className="bg-white border rounded-xl p-4 flex justify-between items-center">
-          <div className="text-[15px] font-medium text-slate-800">
-            AI-Досье (15 ₽)
+            <button
+              disabled={dossierLoading}
+              onClick={() => handleAIDossier(personId)}
+              className={clsx(
+                "px-4 py-2 rounded-lg text-sm font-medium",
+                dossierLoading
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-cyan-500 hover:bg-cyan-600 text-white",
+              )}
+            >
+              {dossierLoading ? "Генерация..." : "Сгенерировать"}
+            </button>
           </div>
 
-          <button
-            disabled={dossierLoading}
-            onClick={() => handleAIDossier(personId)}
-            className={clsx(
-              "px-4 py-2 rounded-lg text-sm font-medium",
-              dossierLoading
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : "bg-cyan-500 hover:bg-cyan-600 text-white",
-            )}
-          >
-            {dossierLoading ? "Генерация..." : "Сгенерировать"}
-          </button>
-        </div>
-
-        {aiDossier && (
-          <motion.div
-            className="bg-white border rounded-xl p-4 whitespace-pre-wrap text-[14px]"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {aiDossier}
-          </motion.div>
-        )} */}
+          {aiDossier && (
+            <motion.div
+              className="bg-white border-t p-4 whitespace-pre-wrap text-[14px]"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {aiDossier}
+            </motion.div>
+          )}
+        </motion.div>
       </div>
     </section>
   );
