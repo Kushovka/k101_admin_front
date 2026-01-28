@@ -27,7 +27,7 @@ import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { useUploadStore } from "../../../store/useUploadStore";
-import type { FileItem } from "../../../types/file";
+import type { FileItem, FileItemQueue } from "../../../types/file";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
 import UploadDropzone from "./UploadDropzone";
 
@@ -35,7 +35,7 @@ type User = {
   id: string;
 };
 
-const ACTIVE_STATUSES = ["uploaded", "extracting"] as const;
+const ACTIVE_STATUSES = ["queued", "paused", "processing"] as const;
 
 type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
 
@@ -70,6 +70,8 @@ const UploadFiles = () => {
   const [search, setSearch] = useState<string>("");
 
   const token = localStorage.getItem("access_token") ?? "";
+
+  const auth = { headers: { Authorization: `Bearer ${token}` } };
 
   /* ---------------- user ---------------- */
 
@@ -109,7 +111,7 @@ const UploadFiles = () => {
   };
 
   const isActiveStatus = (
-    status?: FileItem["processing_status"],
+    status?: FileItemQueue["status"],
   ): status is ActiveStatus => {
     return (
       status !== undefined && ACTIVE_STATUSES.includes(status as ActiveStatus)
@@ -162,24 +164,33 @@ const UploadFiles = () => {
   /* ---------------- queue api ---------------- */
 
   const queueApi = {
-    pause: (id: string) =>
-      userApi.post(
-        `/api/v1/parsing-queue/${id}/pause`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      ),
-    resume: (id: string) =>
-      userApi.post(
-        `/api/v1/parsing-queue/${id}/resume`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      ),
-    cancel: (id: string) =>
-      userApi.post(
-        `/api/v1/parsing-queue/${id}/cancel`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      ),
+    pause: async (id: string) => {
+      try {
+        await userApi.post(`/api/v1/parsing-queue/${id}/pause`, {}, auth);
+        await handleAllQueue();
+      } catch (e: any) {
+        console.error(e);
+        setError(e.response?.data?.detail ?? "Ошибка при паузе файла");
+      }
+    },
+    resume: async (id: string) => {
+      try {
+        await userApi.post(`/api/v1/parsing-queue/${id}/resume`, {}, auth);
+        await handleAllQueue();
+      } catch (e: any) {
+        console.error(e);
+        setError(e.response?.data?.detail ?? "Ошибка при возобновлении файла");
+      }
+    },
+    cancel: async (id: string) => {
+      try {
+        await userApi.post(`/api/v1/parsing-queue/${id}/cancel`, {}, auth);
+        await handleAllQueue();
+      } catch (e: any) {
+        console.error(e);
+        setError(e.response?.data?.detail ?? "Ошибка при отмене файла");
+      }
+    },
   };
 
   const handleChangePriority = async (id: string, priority: number) => {
@@ -204,7 +215,7 @@ const UploadFiles = () => {
       const res = await getParsingQueue();
       setQueue(res?.entries);
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
   };
 
@@ -229,7 +240,7 @@ const UploadFiles = () => {
     };
     handleParsingCurrent();
   }, []);
-  console.log(parsingCurrent);
+  // console.log(parsingCurrent);
 
   useEffect(() => {
     handleAllQueue();
@@ -290,7 +301,9 @@ const UploadFiles = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [allFiles, currentUser, token]);
+  }, [currentUser, token]);
+
+  // console.log(queue);
 
   /* ---------------- рендер ---------------- */
 
@@ -441,10 +454,11 @@ const UploadFiles = () => {
             {queue.map((item) => {
               const name =
                 item.file_description || item.file_name || "Без имени";
+              // console.log(item);
               return (
                 <div
                   key={item.id}
-                  className="grid grid-cols-[1fr,110px,130px,90px] gap-4 items-center border-b last:border-0 py-3"
+                  className="grid grid-cols-5 gap-4 items-center border-b last:border-0 py-3"
                 >
                   {/* NAME + INFO */}
                   <div className="min-w-0 flex flex-col">
@@ -456,16 +470,51 @@ const UploadFiles = () => {
                     </p>
                   </div>
 
+                  <div>
+                    {isActiveStatus(item.status) && (
+                      <div className="flex items-center gap-2 shrink-0 text-slate-600">
+                        {item.status === "paused" && (
+                          <button
+                            onClick={() => queueApi.resume(item.raw_file_id)}
+                            className="p-[6px] rounded hover:bg-slate-200 transition"
+                          >
+                            <FaPlay className="w-[20px] h-[20px]" />
+                          </button>
+                        )}
+                        {item.status === "queued" && (
+                          <button
+                            onClick={() => queueApi.pause(item.raw_file_id)}
+                            className="p-[6px] rounded hover:bg-slate-200 transition"
+                          >
+                            <FaStop className="w-[20px] h-[20px]" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => queueApi.cancel(item.raw_file_id)}
+                          className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                        >
+                          <MdDelete className="w-[22px] h-[22px]" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* STATUS */}
                   <div className="text-[13px] text-center">
                     {item.status === "queued" && (
                       <span className="text-blue-600">В очереди...</span>
                     )}
-                    {item.status === "processing" && (
-                      <span className="text-cyan-600">Обработка...</span>
+                    {item.status === "paused" && (
+                      <span className="text-cyan-600">На паузе</span>
+                    )}
+                    {item.status === "cancelled" && (
+                      <span className="text-red-600">Отменен</span>
                     )}
                     {item.status === "completed" && (
-                      <span className="text-green-600">Готово</span>
+                      <span className="text-green-600">Выполнен</span>
+                    )}
+                    {item.status === "processing" && (
+                      <span className="text-green-600">Идет обработка</span>
                     )}
                     {item.status === "failed" && (
                       <span className="text-red-600">Ошибка</span>
@@ -630,29 +679,6 @@ const UploadFiles = () => {
                       </button>
                     </div>
                   </div>
-
-                  {isActiveStatus(file.processing_status) && (
-                    <div className="flex items-center gap-2 shrink-0 text-slate-600">
-                      <button
-                        onClick={() => queueApi.resume(file.id)}
-                        className="p-[6px] rounded hover:bg-slate-200 transition"
-                      >
-                        <FaPlay className="w-[14px] h-[14px]" />
-                      </button>
-                      <button
-                        onClick={() => queueApi.pause(file.id)}
-                        className="p-[6px] rounded hover:bg-slate-200 transition"
-                      >
-                        <FaStop className="w-[14px] h-[14px]" />
-                      </button>
-                      <button
-                        onClick={() => queueApi.cancel(file.id)}
-                        className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
-                      >
-                        <MdDelete className="w-[16px] h-[16px]" />
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* CENTER: CREATED */}

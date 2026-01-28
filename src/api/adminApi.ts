@@ -5,7 +5,6 @@ const adminApi = axios.create({
   baseURL: import.meta.env.VITE_ADMIN_API_URL,
 });
 
-// добавляем access в заголовок
 adminApi.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) {
@@ -14,15 +13,20 @@ adminApi.interceptors.request.use((config) => {
   return config;
 });
 
-// общий флаг для гонок
 let refreshing: Promise<boolean> | null = null;
 
 adminApi.interceptors.response.use(
   (res) => res,
   async (error) => {
     const status = error.response?.status;
+    const original = error.config;
 
     if (status !== 401) {
+      return Promise.reject(error);
+    }
+
+    if (original.__isRetry) {
+      window.dispatchEvent(new CustomEvent("session-expired"));
       return Promise.reject(error);
     }
 
@@ -38,8 +42,8 @@ adminApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const config = error.config;
-    return adminApi(config);
+    original.__isRetry = true;
+    return adminApi(original);
   },
 );
 

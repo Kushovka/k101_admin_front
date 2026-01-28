@@ -20,6 +20,21 @@ export type FileItem = {
   position?: number;
 };
 
+export type FileItemQueue = {
+  raw_file_id: string;
+  file_name?: string;
+  file_size?: number;
+  status?:
+    | "queued"
+    | "paused"
+    | "cancelled"
+    | "failed"
+    | "completed"
+    | "processing";
+  priority?: number;
+  position?: number;
+};
+
 export type FilePriority = {
   priority: number;
 };

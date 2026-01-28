@@ -1,32 +1,34 @@
+import React, { useEffect, useState } from "react";
+import { CgDanger } from "react-icons/cg";
 import {
   BrowserRouter,
-  Routes,
-  Route,
   Navigate,
   Outlet,
+  Route,
+  Routes,
 } from "react-router-dom";
-import SignIn from "./features/auth/SignIn";
-import UploadFiles from "./features/account/uploadFiles/UploadFiles";
+import PaymentError from "./components/paymentFailed/PaymentFailed";
+import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
 import ProtectedRoute from "./components/protected-route/ProtectedRoute";
-import Users from "./features/account/users/Users";
 import SidebarLayout from "./components/sidebar-layout/SidebarLayout";
-import HealthCheck from "./features/account/healthCheck/HealthCheck";
-import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
-import Search from "./features/account/search/Search";
-import UserDetails from "./features/account/users/UserDetails";
-import SearchDetails from "./features/account/search/SearchDetails";
-import { SearchProvider } from "./features/account/search/SearchContext";
 import { SidebarProvider } from "./components/sidebar/SidebarContext";
+import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import Plans from "./features/account/plans/Plans";
 import Profile from "./features/account/profile/Profile";
-import React, { useEffect, useState } from "react";
-import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
-import PaymentError from "./components/paymentFailed/PaymentFailed";
-import { CgDanger } from "react-icons/cg";
+import Search from "./features/account/search/Search";
+import { SearchProvider } from "./features/account/search/SearchContext";
+import SearchDetails from "./features/account/search/SearchDetails";
+import SystemStatistics from "./features/account/systemStatistics/SystemStatistics";
+import UploadFiles from "./features/account/uploadFiles/UploadFiles";
+import UserDetails from "./features/account/users/UserDetails";
+import Users from "./features/account/users/Users";
+import SignIn from "./features/auth/SignIn";
+import { useBankIdleLogout } from "./hooks/logout/useIdLogout";
 // import Verify2FA from "./features/auth/Verify2FA";
 
 const App: React.FC = () => {
   const isAuth = Boolean(localStorage.getItem("access_token"));
+  useBankIdleLogout(30 * 1000);
 
   const [sessionExpired, setSessionExpired] = useState(false);
 

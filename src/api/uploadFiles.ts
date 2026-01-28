@@ -1,9 +1,4 @@
-import {
-  ApiPriority,
-  FileItem,
-  FilePosition,
-  FilePriority,
-} from "../types/file";
+import { ApiPriority, FilePosition, FilePriority } from "../types/file";
 import userApi from "./userApi";
 
 const getHeaders = (): Record<string, string> => {
@@ -168,6 +163,15 @@ export const getParsingQueue = async () => {
 
 export const getParsingCurrent = async () => {
   const { data } = await userApi.get("/api/v1/parsing-queue/current", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
+  return data;
+};
+
+export const postRestartFile = async (id: string) => {
+  const { data } = await userApi.post(`/api/v1/files/${id}/restart`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },

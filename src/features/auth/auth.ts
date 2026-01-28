@@ -62,9 +62,15 @@ export async function refreshTokens() {
 
     localStorage.setItem("access_token", res.data.access_token);
     localStorage.setItem("refresh_token", res.data.refresh_token);
-
     return true;
-  } catch (e) {
+  } catch (e: any) {
+    const status = e.response?.status;
+
+    // backend возвращает 422 если refresh просрочен → считаем это expired
+    if (status === 422) return false;
+
+    // все остальные ошибки → считаем истёкшей сессией
     return false;
   }
 }
+
