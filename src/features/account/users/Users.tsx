@@ -72,7 +72,6 @@ export default function Users() {
         role: u.role === "user" ? "User" : "Admin",
         registrationDate: new Date(u.registration_date).toLocaleDateString(),
         status: u.is_blocked ? "Blocked" : "Active",
-        confirmationEmail: u.is_email_verified ? "Yes" : "No",
         identifier: u.id,
         balance: u.balance ?? 0,
         freeRequest: u.free_requests_count ?? 0,
@@ -268,12 +267,7 @@ export default function Users() {
 
                   {/* EMAIL */}
                   <span
-                    className={clsx(
-                      "px-2 py-[3px] rounded-md text-xs mx-auto",
-                      u.confirmationEmail === "Yes"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700",
-                    )}
+                    className={clsx("px-2 py-[3px] rounded-md text-xs mx-auto")}
                   >
                     {u.email}
                   </span>

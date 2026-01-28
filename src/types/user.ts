@@ -9,7 +9,6 @@ export interface ApiUser {
   role: UserRole;
   registration_date: string;
   is_blocked: boolean;
-  is_email_verified: boolean;
   balance?: number;
   free_requests_count?: number;
   all_requests_count?: number;
@@ -25,7 +24,6 @@ export interface TableUser {
   role: "User" | "Admin";
   registrationDate: string;
   status: "Blocked" | "Active";
-  confirmationEmail: "Yes" | "No";
   identifier: string;
   balance: number;
   freeRequest: number;
@@ -51,7 +49,6 @@ export interface UserDetailsApi {
   role: UserRole;
   registration_date: string;
   is_blocked: boolean;
-  is_email_verified: boolean;
   balance?: number;
   free_requests_count?: number;
   all_requests_count?: number;
@@ -67,7 +64,6 @@ export interface UserDetailsUI {
   role: "User" | "Admin";
   registrationDate: string;
   status: "Active" | "Blocked";
-  confirmationEmail: "Yes" | "No";
   balance: number;
   freeRequest: number;
   allRequest: number;

@@ -30,7 +30,6 @@ const mapUser = (u: UserDetailsApi): UserDetailsUI => ({
   role: u.role === "user" ? "User" : "Admin",
   registrationDate: new Date(u.registration_date).toLocaleDateString(),
   status: u.is_blocked ? "Blocked" : "Active",
-  confirmationEmail: u.is_email_verified ? "Yes" : "No",
   balance: u.balance ?? 0,
   freeRequest: u.free_requests_count ?? 0,
   allRequest: u.all_requests_count ?? 0,
@@ -237,21 +236,6 @@ const UserDetails = () => {
                   {user.registrationDate}
                 </span>
               </p>
-
-              <p className="flex justify-between text-slate-600">
-                <span>Подтверждение email:</span>
-                <span
-                  className={clsx(
-                    "px-2 py-[2px] rounded text-xs font-medium",
-                    user.confirmationEmail === "Yes"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700",
-                  )}
-                >
-                  {user.confirmationEmail}
-                </span>
-              </p>
-
               <p className="flex justify-between text-slate-600">
                 <span>Статус:</span>
                 <span
