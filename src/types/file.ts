@@ -5,6 +5,7 @@ export type FileItem = {
   file_description?: string | null;
   file_size?: number;
   created_at?: string;
+  file_group: string;
 
   uploaded_by_user_id?: string;
   processing_status?:

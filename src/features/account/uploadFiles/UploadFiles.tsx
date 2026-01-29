@@ -641,7 +641,7 @@ const UploadFiles = () => {
               <div
                 key={file.id}
                 className={clsx(
-                  "grid grid-cols-[1fr,110px,160px] gap-4 items-center py-3 border-b last:border-0 transition",
+                  "grid grid-cols-4 gap-4 items-center py-3 border-b last:border-0 transition",
                   file.uploaded_by_user_id === currentUser?.id &&
                     "bg-green-50/60",
                 )}
@@ -687,6 +687,8 @@ const UploadFiles = () => {
                     ? new Date(file.created_at).toLocaleDateString()
                     : "-"}
                 </p>
+
+                <p className="text-center">{file.file_group ?? "—"}</p>
 
                 {/* RIGHT: STATUS + PROGRESS + DELETE */}
                 <div className="flex items-center justify-end gap-3 text-[13px] min-w-0">
