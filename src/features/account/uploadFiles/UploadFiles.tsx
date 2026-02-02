@@ -1,9 +1,10 @@
 import clsx from "clsx";
-import { motion } from "framer-motion";
-import { JSX, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { JSX, useEffect, useMemo, useState } from "react";
 import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowForward, IoMdClose } from "react-icons/io";
+import { IoClose } from "react-icons/io5";
 import { MdDelete } from "react-icons/md";
 import {
   PiFileCsvBold,
@@ -18,6 +19,7 @@ import { Tooltip } from "react-tooltip";
 import {
   getAllFiles,
   getParsingQueue,
+  patchFileGroup,
   patchPriorityFile,
   postToTopFile,
 } from "../../../api/uploadFiles";
@@ -60,6 +62,9 @@ const UploadFiles = () => {
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [queue, setQueue] = useState<any[]>([]);
   const [parsingCurrent, setParsingCurrent] = useState<any[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   const [totalFiles, setTotalFiles] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -248,6 +253,18 @@ const UploadFiles = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleFileGroup = async (id: string, group: string) => {
+    try {
+      await patchFileGroup(id, group);
+
+      setAllFiles((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, file_group: group } : f)),
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // console.log(queue);
   /* ---------------- форматер размера файла ---------------- */
 
@@ -258,6 +275,26 @@ const UploadFiles = () => {
     if (kb < 1024) return `${kb.toFixed(1)} КБ`;
 
     return `${(kb / 1024).toFixed(2)} МБ`;
+  };
+  // console.log(queue);
+  const groupedFiles = useMemo(() => {
+    return allFiles.reduce<Record<string, FileItem[]>>((acc, file) => {
+      const group = file.file_group ?? "Без группы";
+
+      if (!acc[group]) {
+        acc[group] = [];
+      }
+
+      acc[group].push(file);
+      return acc;
+    }, {});
+  }, [allFiles]);
+
+  const toggleGroup = (groupName: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
   };
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
@@ -304,6 +341,8 @@ const UploadFiles = () => {
   }, [currentUser, token]);
 
   // console.log(queue);
+  const DISABLE_ANIMATION_LIMIT = 50;
+  const shouldAnimate = files.length < DISABLE_ANIMATION_LIMIT;
 
   /* ---------------- рендер ---------------- */
 
@@ -473,7 +512,8 @@ const UploadFiles = () => {
                   <div>
                     {isActiveStatus(item.status) && (
                       <div className="flex items-center gap-2 shrink-0 text-slate-600">
-                        {item.status === "paused" && (
+                        {(item.status === "paused" ||
+                          item.status === "cancelled") && (
                           <button
                             onClick={() => queueApi.resume(item.raw_file_id)}
                             className="p-[6px] rounded hover:bg-slate-200 transition"
@@ -493,7 +533,7 @@ const UploadFiles = () => {
                           onClick={() => queueApi.cancel(item.raw_file_id)}
                           className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                         >
-                          <MdDelete className="w-[22px] h-[22px]" />
+                          <IoClose className="w-[30px] h-[30px]" />
                         </button>
                       </div>
                     )}
@@ -552,6 +592,14 @@ const UploadFiles = () => {
 
                   {/* ACTIONS */}
                   <div className="flex items-center gap-3 justify-end">
+                    {item.status == "cancelled" && (
+                      <button
+                        onClick={() => setDeleteFile(item.id)}
+                        className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                      >
+                        <MdDelete className="w-[26px] h-[26px]" />
+                      </button>
+                    )}
                     {item.position !== null && (
                       <span className="text-[12px] text-slate-500">
                         pos: {item.position}
@@ -628,116 +676,163 @@ const UploadFiles = () => {
           </div>
         </div>
 
-        {/* FILE ROWS */}
-        <div className="mt-5 flex flex-col">
-          {allFiles.map((file) => {
-            const percent =
-              file.progress_percent ??
-              (file.processing_status === "extracting" ? 100 : 0);
-
-            const safeSearch = escapeRegExp(search);
-
-            return (
+        {/* GROUPS */}
+        <div className="mt-5 flex flex-col gap-6">
+          {Object.entries(groupedFiles).map(([groupName, files]) => (
+            <div
+              key={groupName}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            >
+              {/* GROUP HEADER */}
               <div
-                key={file.id}
-                className={clsx(
-                  "grid grid-cols-4 gap-4 items-center py-3 border-b last:border-0 transition",
-                  file.uploaded_by_user_id === currentUser?.id &&
-                    "bg-green-50/60",
-                )}
+                onClick={() => toggleGroup(groupName)}
+                className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between cursor-pointer select-none hover:bg-slate-100 transition"
               >
-                {/* LEFT: NAME + SIZE + PREVIEW */}
-                <div className="flex items-center justify-between gap-2 min-w-0">
-                  <div className="flex flex-col min-w-0">
-                    <p
-                      data-tooltip-id={`name-file_${file.id}`}
-                      className="text-[14px] font-medium text-slate-900 truncate cursor-pointer"
-                      dangerouslySetInnerHTML={{
-                        __html: search
-                          ? file.display_name.replace(
-                              new RegExp(`(${safeSearch})`, "gi"),
-                              "<mark class='bg-green-300'>$1</mark>",
-                            )
-                          : file.display_name,
-                      }}
-                    />
-
-                    <Tooltip
-                      place="top"
-                      delayShow={400}
-                      id={`name-file_${file.id}`}
-                      content={file.display_name}
-                    />
-
-                    <div className="flex items-center gap-4 text-[13px] text-slate-500">
-                      <span>{formatFileSize(file.file_size)}</span>
-                      <button
-                        onClick={() => setPreviewFile(file)}
-                        className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
-                      >
-                        Предпросмотр
-                      </button>
-                    </div>
-                  </div>
+                <div>
+                  <h3 className="text-[15px] font-semibold text-slate-900">
+                    {groupName}
+                  </h3>
+                  <p className="text-[12px] text-slate-500">
+                    Файлов: {files.length}
+                  </p>
                 </div>
 
-                {/* CENTER: CREATED */}
-                <p className="text-[13px] text-slate-600 text-center">
-                  {file.created_at
-                    ? new Date(file.created_at).toLocaleDateString()
-                    : "-"}
-                </p>
-
-                <p className="text-center">{file.file_group ?? "—"}</p>
-
-                {/* RIGHT: STATUS + PROGRESS + DELETE */}
-                <div className="flex items-center justify-end gap-3 text-[13px] min-w-0">
-                  {file.processing_status === "uploaded" && (
-                    <span className="text-blue-600">Подготовка...</span>
+                <IoIosArrowDown
+                  className={clsx(
+                    "w-5 h-5 text-slate-600 transition-transform duration-200",
+                    collapsedGroups[groupName] && "-rotate-90",
                   )}
-                  {file.processing_status === "pending" && (
-                    <span className="text-slate-500">Ожидание...</span>
-                  )}
-
-                  {file.processing_status === "extracting" && (
-                    <div className="flex flex-col gap-[4px] min-w-[120px]">
-                      <span className="text-cyan-600">Обработка...</span>
-                      <div className="w-full bg-gray-200 h-[6px] rounded overflow-hidden">
-                        <div
-                          className="bg-cyan-500 h-full transition-all rounded"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {file.processing_status === "extracted" && (
-                    <span className="text-green-600">Готово</span>
-                  )}
-
-                  {file.processing_status === "failed" && (
-                    <span className="text-red-600">Ошибка</span>
-                  )}
-
-                  {/* DELETE */}
-                  <button
-                    data-tooltip-id="delete-file_tooltip"
-                    onClick={() => setDeleteFile(file.id)}
-                    className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
-                  >
-                    <MdDelete className="w-[16px] h-[16px]" />
-                  </button>
-
-                  <Tooltip
-                    place="top"
-                    delayShow={400}
-                    id="delete-file_tooltip"
-                    content="Удалить файл"
-                  />
-                </div>
+                />
               </div>
-            );
-          })}
+
+              {/* FILES */}
+              <AnimatePresence initial={false}>
+                {!collapsedGroups[groupName] && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="flex flex-col overflow-hidden"
+                  >
+                    {files.map((file) => {
+                      const percent =
+                        file.progress_percent ??
+                        (file.processing_status === "extracting" ? 100 : 0);
+
+                      const safeSearch = escapeRegExp(search);
+
+                      return (
+                        <div
+                          key={file.id}
+                          className={clsx(
+                            "grid grid-cols-4 gap-4 items-center py-3 px-4 border-b last:border-0 transition",
+                            file.uploaded_by_user_id === currentUser?.id &&
+                              "bg-green-50/60",
+                          )}
+                        >
+                          {/* LEFT */}
+                          <div className="flex flex-col min-w-0">
+                            <p
+                              data-tooltip-id={`name-file_${file.id}`}
+                              className="text-[14px] font-medium text-slate-900 truncate"
+                              dangerouslySetInnerHTML={{
+                                __html: search
+                                  ? file.display_name.replace(
+                                      new RegExp(`(${safeSearch})`, "gi"),
+                                      "<mark class='bg-green-300'>$1</mark>",
+                                    )
+                                  : file.display_name,
+                              }}
+                            />
+                            <Tooltip
+                              place="top"
+                              delayShow={400}
+                              id={`name-file_${file.id}`}
+                              content={file.display_name}
+                            />
+
+                            <div className="flex items-center gap-4 text-[13px] text-slate-500">
+                              <span>{formatFileSize(file.file_size)}</span>
+                              <button
+                                onClick={() => setPreviewFile(file)}
+                                className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
+                              >
+                                Предпросмотр
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* CREATED */}
+                          <p className="text-[13px] text-slate-600 text-center">
+                            {file.created_at
+                              ? new Date(file.created_at).toLocaleDateString()
+                              : "-"}
+                          </p>
+
+                          {/* FILE GROUP */}
+                          <select
+                            value={file.file_group ?? ""}
+                            onChange={(e) =>
+                              handleFileGroup(file.id, e.target.value)
+                            }
+                            className="px-2 py-[4px] w-[250px] rounded border border-gray-300 text-[12px] bg-white hover:border-gray-400 focus:ring-2 focus:ring-cyan-300"
+                          >
+                            <option value="">Без группы</option>
+                            <option value="Личная информация">
+                              Личная информация
+                            </option>
+                            <option value="Документы">Документы</option>
+                            <option value="Финансы">Финансы</option>
+                          </select>
+
+                          {/* STATUS + DELETE */}
+                          <div className="flex items-center justify-end gap-3 text-[13px]">
+                            {file.processing_status === "uploaded" && (
+                              <span className="text-blue-600">
+                                Подготовка...
+                              </span>
+                            )}
+                            {file.processing_status === "pending" && (
+                              <span className="text-slate-500">
+                                Ожидание...
+                              </span>
+                            )}
+                            {file.processing_status === "extracting" && (
+                              <div className="flex flex-col gap-[4px] min-w-[120px]">
+                                <span className="text-cyan-600">
+                                  Обработка...
+                                </span>
+                                <div className="w-full bg-gray-200 h-[6px] rounded overflow-hidden">
+                                  <div
+                                    className="bg-cyan-500 h-full rounded"
+                                    style={{ width: `${percent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {file.processing_status === "extracted" && (
+                              <span className="text-green-600">Готово</span>
+                            )}
+                            {file.processing_status === "failed" && (
+                              <span className="text-red-600">Ошибка</span>
+                            )}
+
+                            <button
+                              onClick={() => setDeleteFile(file.id)}
+                              className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                            >
+                              <MdDelete className="w-[16px] h-[16px]" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
         </div>
 
         {/* PAGINATION */}

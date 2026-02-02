@@ -28,7 +28,7 @@ import { useBankIdleLogout } from "./hooks/logout/useIdLogout";
 
 const App: React.FC = () => {
   const isAuth = Boolean(localStorage.getItem("access_token"));
-  useBankIdleLogout(10 * 60 * 1000);
+  useBankIdleLogout(100 * 60 * 1000);
 
   const [sessionExpired, setSessionExpired] = useState(false);
 

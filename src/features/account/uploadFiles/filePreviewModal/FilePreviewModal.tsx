@@ -1,12 +1,12 @@
+import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { FaPen } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { Tooltip } from "react-tooltip";
 import Toast from "../../../../components/toast/Toast";
-import clsx from "clsx";
-import { FaPen } from "react-icons/fa";
+import { useFieldAliases } from "../../../../hooks/uploadFiles/useFieldAliases";
 import { useFileAlias } from "../../../../hooks/uploadFiles/useFileAlias";
 import { useFilePreview } from "../../../../hooks/uploadFiles/useFilePreview";
-import { useFieldAliases } from "../../../../hooks/uploadFiles/useFieldAliases";
 
 type FileLike = {
   id: string;
@@ -69,6 +69,21 @@ const FilePreviewModal = ({
       document.body.style.overflow = originalOverflow;
     };
   }, []);
+
+  /* ---------------- esc close ---------------- */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   /* ---------------- helpers ---------------- */
 
@@ -209,12 +224,12 @@ const FilePreviewModal = ({
               </thead>
               <tbody>
                 {typedRows.map((row, i) => (
-                  <tr key={i} className="truncate">
+                  <tr key={i} className="">
                     {columns.map((col) => (
                       <td
                         key={col}
                         className={clsx(
-                          "border px-2 py-1 truncate",
+                          "border px-2 py-1 ",
                           col === "additional_data" && "cursor-pointer",
                         )}
                         data-tooltip-id={`cell-tooltip-${i}-${col}`}

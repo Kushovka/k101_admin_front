@@ -333,11 +333,11 @@ const SearchDetails: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
         >
           <div
             onClick={() => setOpenMain(!openMain)}
-            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition"
+            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition  select-none"
           >
             <div className="font-medium text-slate-800">
               Основная информация
@@ -412,11 +412,11 @@ const SearchDetails: React.FC = () => {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
         >
           <div
             onClick={() => setOpenDossier(!openDossier)}
-            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition"
+            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition select-none"
           >
             <div className="font-medium text-slate-800">Полное досье</div>
             <IoIosArrowDown
@@ -470,9 +470,9 @@ const SearchDetails: React.FC = () => {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden select-none"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
         >
-          <div className="bg-white p-4 flex justify-between items-center">
+          <div className="bg-white p-4 flex justify-between items-center select-none">
             <div className="text-[15px] font-medium text-slate-800">
               AI-Досье
             </div>

@@ -178,3 +178,17 @@ export const postRestartFile = async (id: string) => {
   });
   return data;
 };
+
+export const patchFileGroup = async (id: string, file_group: string) => {
+  const { data } = await userApi.patch(
+    `/api/v1/files/${id}/group`,
+    { file_group },
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    },
+  );
+
+  return data;
+};
