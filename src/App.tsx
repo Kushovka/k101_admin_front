@@ -24,11 +24,13 @@ import UserDetails from "./features/account/users/UserDetails";
 import Users from "./features/account/users/Users";
 import SignIn from "./features/auth/SignIn";
 import { useBankIdleLogout } from "./hooks/logout/useIdLogout";
+import { useUploadStore } from "./store/useUploadStore";
 // import Verify2FA from "./features/auth/Verify2FA";
 
 const App: React.FC = () => {
   const isAuth = Boolean(localStorage.getItem("access_token"));
-  useBankIdleLogout(100 * 60 * 1000);
+  const { uploading } = useUploadStore();
+  useBankIdleLogout(100 * 60 * 1000, uploading);
 
   const [sessionExpired, setSessionExpired] = useState(false);
 

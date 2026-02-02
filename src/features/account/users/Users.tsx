@@ -2,12 +2,10 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CgDanger } from "react-icons/cg";
-import { FaUsers } from "react-icons/fa";
 import { IoIosClose, IoMdCheckmark, IoMdClose } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { Tooltip } from "react-tooltip";
 import {
   addUsers,
   getRequests,
@@ -40,6 +38,7 @@ export default function Users() {
   const [last_name, setLastName] = useState<string>("");
   const [role, setRole] = useState<"user" | "admin">("admin");
   const [username, setUsername] = useState<string>("");
+  const [openModal, setOpenModal] = useState<"users" | "requests">("users");
 
   const [telegramUsersModal, setTelegramUsersModal] = useState<boolean>(false);
 
@@ -232,114 +231,149 @@ export default function Users() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
           className="w-full mx-auto flex flex-col gap-6"
         >
-          {/* TITLE */}
-          <h1 className="text-[24px] font-semibold text-slate-900 tracking-tight">
-            Пользователи
-          </h1>
+          {/* SWITCH HEADER */}
+          <div className="grid grid-cols-2 rounded-xl overflow-hidden border border-gray-200 bg-white">
+            <button
+              onClick={() => setOpenModal("users")}
+              className={clsx(
+                "py-3 text-[18px] font-semibold transition",
+                openModal === "users"
+                  ? "bg-slate-100 text-slate-900"
+                  : "text-slate-500 hover:bg-slate-50",
+              )}
+            >
+              Пользователи
+            </button>
+            <button
+              onClick={() => setOpenModal("requests")}
+              className={clsx(
+                "py-3 text-[18px] font-semibold transition",
+                openModal === "requests"
+                  ? "bg-slate-100 text-slate-900"
+                  : "text-slate-500 hover:bg-slate-50",
+              )}
+            >
+              Заявки из Telegram
+            </button>
+          </div>
 
-          {/* TABLE CONTAINER */}
+          {/* TABLE */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             {/* HEADER */}
-            <div className="grid grid-cols-8 text-sm font-medium text-slate-600 bg-slate-50 border-b border-gray-200">
-              {chapterTitle.map((chapter) => (
-                <div
-                  key={chapter.id}
-                  className="px-3 py-3 text-center uppercase tracking-wide text-[11px]"
-                >
-                  {chapter.title}
-                </div>
-              ))}
+            <div
+              className={clsx(
+                "grid text-sm font-medium text-slate-600 bg-slate-50 border-b border-gray-200",
+                openModal === "users" ? "grid-cols-8" : "grid-cols-7",
+              )}
+            >
+              {(openModal === "users" ? chapterTitle : chapterTitleTg).map(
+                (c) => (
+                  <div
+                    key={c.id}
+                    className="px-3 py-3 text-center uppercase tracking-wide text-[11px]"
+                  >
+                    {c.title}
+                  </div>
+                ),
+              )}
             </div>
 
-            {/* ROWS */}
+            {/* BODY */}
             <div className="flex flex-col divide-y divide-gray-100">
-              {users.map((u) => (
-                <div
-                  key={u.id}
-                  onClick={() => navigate(`/account/users/${u.identifier}`)}
-                  className="grid grid-cols-8 text-sm text-slate-700 py-3 items-center text-center cursor-pointer hover:bg-slate-50 transition"
-                >
-                  <span>{u.nickName}</span>
-                  <span>{u.name}</span>
-                  <span>{u.surname}</span>
-
-                  {/* EMAIL */}
-                  <span
-                    className={clsx("px-2 py-[3px] rounded-md text-xs mx-auto")}
+              {openModal === "users" &&
+                users.map((u) => (
+                  <div
+                    key={u.id}
+                    onClick={() => navigate(`/account/users/${u.identifier}`)}
+                    className="grid grid-cols-8 text-sm text-slate-700 py-3 items-center text-center cursor-pointer hover:bg-slate-50 transition"
                   >
-                    {u.email}
-                  </span>
+                    <span>{u.nickName}</span>
+                    <span>{u.name}</span>
+                    <span>{u.surname}</span>
+                    <span className="text-xs">{u.email}</span>
+                    <span className="font-medium">{u.role}</span>
+                    <span className="text-xs text-slate-600">
+                      {u.registrationDate}
+                    </span>
+                    <span
+                      className={clsx(
+                        "px-2 py-[3px] rounded-md text-xs mx-auto",
+                        u.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700",
+                      )}
+                    >
+                      {u.status}
+                    </span>
+                    <span className="text-xs font-mono text-slate-600">
+                      {u.identifier}
+                    </span>
+                  </div>
+                ))}
 
-                  {/* ROLE */}
-                  <span
-                    className={clsx(
-                      "px-2 py-[3px] rounded-md  text-sm font-medium mx-auto",
-                    )}
+              {openModal === "requests" &&
+                allRequests.map((r) => (
+                  <div
+                    key={r.id}
+                    className="grid grid-cols-7 text-sm text-slate-700 py-3 items-center text-center hover:bg-slate-50 transition"
                   >
-                    {u.role}
-                  </span>
+                    <span>{r.id}</span>
+                    <span>{r.telegram_id}</span>
+                    <span>{r.telegram_username}</span>
+                    <span>{r.reviewed_by_admin_id ?? "-"}</span>
 
-                  {/* DATE */}
-                  <span className="text-slate-600 text-xs">
-                    {u.registrationDate}
-                  </span>
+                    <span
+                      className={clsx(
+                        "px-2 py-[3px] rounded-md text-xs mx-auto",
+                        r.status === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : r.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700",
+                      )}
+                    >
+                      {r.status}
+                    </span>
 
-                  {/* STATUS */}
-                  <span
-                    className={clsx(
-                      "px-2 py-[3px] rounded-md text-xs mx-auto",
-                      u.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700",
-                    )}
-                  >
-                    {u.status}
-                  </span>
+                    <span className="text-xs text-slate-600">
+                      {new Date(r.created_at).toLocaleString()}
+                    </span>
 
-                  <span className="text-slate-600 text-xs font-mono">
-                    {u.identifier}
-                  </span>
-                </div>
-              ))}
+                    <div className="flex items-center justify-center gap-2">
+                      {r.status === "pending" && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(r.id)}
+                            className="p-2 rounded-md bg-green-50 hover:bg-green-100 border border-green-200 transition active:scale-95"
+                          >
+                            <IoMdCheckmark className="w-4 h-4 text-green-600" />
+                          </button>
+                          <button
+                            onClick={() => handleReject(r.id)}
+                            className="p-2 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 transition active:scale-95"
+                          >
+                            <IoMdClose className="w-4 h-4 text-red-600" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
 
-          {/* FLOATING ACTION BUTTONS */}
-
-          {/* CREATE USER */}
-          <div
-            data-tooltip-id="add_user"
-            onClick={() => setOpenCreateModal((prev) => !prev)}
-            className="fixed bottom-8 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition cursor-pointer active:scale-95"
-          >
-            <IoClose className="w-6 h-6 rotate-45" />
-            <Tooltip
-              id="add_user"
-              place="left"
-              content="Добавить нового пользователя"
-            />
-          </div>
-
-          {/* TELEGRAM REQUESTS */}
-          <div
-            data-tooltip-id="tg_requests"
-            onClick={() => setTelegramUsersModal((prev) => !prev)}
-            className="fixed bottom-28 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-slate-700 text-white shadow-lg hover:bg-slate-800 transition cursor-pointer active:scale-95"
-          >
-            {!!pendingRequests.length && (
-              <div className="absolute -top-1 -right-1 h-5 min-w-[20px] rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center px-[6px]">
-                {pendingRequests.length}
-              </div>
-            )}
-            <FaUsers className="w-6 h-6" />
-            <Tooltip
-              id="tg_requests"
-              place="left"
-              content="Запросы на регистрацию"
-            />
-          </div>
+          {/* ADD USER FAB */}
+          {openModal === "users" && (
+            <div
+              onClick={() => setOpenCreateModal(true)}
+              className="fixed bottom-8 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition cursor-pointer active:scale-95"
+            >
+              <IoClose className="w-6 h-6 rotate-45" />
+            </div>
+          )}
 
           {notify && toastConfig[notify] && (
             <Toast
@@ -540,99 +574,6 @@ export default function Users() {
                 >
                   Понятно
                 </button>
-              </motion.div>
-            </div>
-          )}
-
-          {/* ---------------- заявки из телеграма ---------------- */}
-          {telegramUsersModal && (
-            <div
-              onClick={() => setTelegramUsersModal(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
-            >
-              <motion.div
-                onClick={(e) => e.stopPropagation()}
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.22 }}
-                className="bg-white rounded-xl shadow-xl p-6 w-[1300px] max-h-[75vh] overflow-hidden flex flex-col gap-4"
-              >
-                {/* HEADER */}
-                <div className="flex items-center justify-between">
-                  <p className="text-[18px] font-semibold text-slate-900">
-                    Заявки из Telegram
-                  </p>
-                  <button
-                    onClick={() => setTelegramUsersModal(false)}
-                    className="text-slate-400 hover:text-slate-600 transition"
-                  >
-                    <IoIosClose className="w-6 h-6" />
-                  </button>
-                </div>
-
-                {/* TABLE HEADER */}
-                <div className="grid grid-cols-7 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 font-medium">
-                  {chapterTitleTg.map((c) => (
-                    <div key={c.id} className="py-2 text-center uppercase">
-                      {c.title}
-                    </div>
-                  ))}
-                </div>
-
-                {/* TABLE BODY */}
-                <div className="flex flex-col divide-y divide-slate-200 overflow-y-auto pr-1">
-                  {allRequests.map((r) => (
-                    <div
-                      key={r.id}
-                      className="grid grid-cols-7 text-xs text-slate-700 py-2 items-center text-center hover:bg-slate-50 transition"
-                    >
-                      <span>{r.id}</span>
-                      <span>{r.telegram_id}</span>
-                      <span>{r.telegram_username}</span>
-                      <span>{r.reviewed_by_admin_id ?? "-"}</span>
-
-                      {/* STATUS */}
-
-                      <span
-                        className={clsx(
-                          "px-[6px] py-[2px] rounded text-[10px] font-medium mx-auto",
-                          r.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : r.status === "approved"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700",
-                        )}
-                      >
-                        {r.status}
-                      </span>
-
-                      {/* DATE */}
-                      <span className="text-[10px] text-slate-600">
-                        {new Date(r.created_at).toLocaleString()}
-                      </span>
-
-                      {/* ACTIONS */}
-                      {r.status == "pending" && (
-                        <div className="flex items-center justify-center gap-3">
-                          <button
-                            data-tooltip-id="approve"
-                            onClick={() => handleApprove(r.id)}
-                            className="p-[6px] rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition active:scale-95"
-                          >
-                            <IoMdCheckmark className="text-green-600 w-4 h-4" />
-                          </button>
-                          <button
-                            data-tooltip-id="reject"
-                            onClick={() => handleReject(r.id)}
-                            className="p-[6px] rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 transition active:scale-95"
-                          >
-                            <IoMdClose className="text-red-600 w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </motion.div>
             </div>
           )}
