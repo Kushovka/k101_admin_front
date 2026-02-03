@@ -150,18 +150,34 @@ const GroupBlock = memo(
                     ))}
                   </select>
 
-                  {/* ACTIONS */}
+                  {/* STATUS + ACTIONS */}
                   <div className="flex items-center justify-end gap-3 text-[13px]">
+                    {file.processing_status === "uploaded" && (
+                      <span className="text-blue-600">Загружен</span>
+                    )}
+                    {file.processing_status === "pending" && (
+                      <span className="text-slate-500">Ожидание...</span>
+                    )}
+                    {file.processing_status === "extracting" && (
+                      <span className="text-cyan-600">Обработка...</span>
+                    )}
+                    {file.processing_status === "extracted" && (
+                      <span className="text-green-600">Готово</span>
+                    )}
+                    {file.processing_status === "failed" && (
+                      <span className="text-red-600">Ошибка</span>
+                    )}
+
                     <button
                       onClick={() => onDelete(file.id)}
-                      className="p-[6px] rounded hover:bg-red-100 text-red-500"
+                      className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                     >
                       <MdDelete className="w-[16px] h-[16px]" />
                     </button>
 
                     <button
                       onClick={() => onRestart(file.id)}
-                      className="p-[6px] rounded hover:bg-green-100 text-green-500"
+                      className="p-[6px] rounded hover:bg-green-100 text-green-500 transition"
                     >
                       <MdRestartAlt className="w-[20px] h-[20px]" />
                     </button>
