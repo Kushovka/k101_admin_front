@@ -50,3 +50,8 @@ export type ApiPriority = {
   position?: number;
   message: string;
 };
+
+export type FileGroup = {
+  name: string;
+  total: number;
+};

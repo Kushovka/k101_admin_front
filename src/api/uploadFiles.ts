@@ -36,6 +36,15 @@ export const getAllFiles = async ({
   return data;
 };
 
+export const getAllGroup = async () => {
+  const { data } = await userApi.get(`/api/v1/files/groups`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  });
+  return data;
+};
+
 export const postUploadFiles = async (
   files: File[],
   onProgress?: (file: File, progress: number) => void,
@@ -190,5 +199,22 @@ export const patchFileGroup = async (id: string, file_group: string) => {
     },
   );
 
+  return data;
+};
+
+export const getFilesByGroup = async ({
+  group,
+  page,
+  pageSize,
+  sort,
+}: {
+  group: string;
+  page: number;
+  pageSize: number;
+  sort: "newest" | "oldest";
+}) => {
+  const { data } = await userApi.get("/api/v1/file-groups", {
+    params: { group, page, pageSize, sort },
+  });
   return data;
 };

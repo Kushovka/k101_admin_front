@@ -1,11 +1,11 @@
 import clsx from "clsx";
-import { AnimatePresence, motion } from "framer-motion";
-import { JSX, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { JSX, useEffect, useState } from "react";
 import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa";
-import { IoIosArrowDown, IoIosArrowForward, IoMdClose } from "react-icons/io";
+import { IoIosArrowDown, IoMdClose } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdRestartAlt } from "react-icons/md";
 import {
   PiFileCsvBold,
   PiFileHtmlBold,
@@ -18,9 +18,12 @@ import { TbJson } from "react-icons/tb";
 import { Tooltip } from "react-tooltip";
 import {
   getAllFiles,
+  getAllGroup,
+  getFilesByGroup,
   getParsingQueue,
   patchFileGroup,
   patchPriorityFile,
+  postRestartFile,
   postToTopFile,
 } from "../../../api/uploadFiles";
 import userApi from "../../../api/userApi";
@@ -29,8 +32,9 @@ import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { useUploadStore } from "../../../store/useUploadStore";
-import type { FileItem, FileItemQueue } from "../../../types/file";
+import type { FileGroup, FileItem, FileItemQueue } from "../../../types/file";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
+import GroupBlock from "./GroupBlock";
 import UploadDropzone from "./UploadDropzone";
 
 type User = {
@@ -58,8 +62,14 @@ const UploadFiles = () => {
   const [notify, setNotify] = useState<string | null>(null);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState<string | null>(null);
-
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const [groups, setGroups] = useState<FileGroup[]>([]);
+  const [filesByGroup, setFilesByGroup] = useState<Record<string, FileItem[]>>(
+    {},
+  );
+  const [pageByGroup, setPageByGroup] = useState<Record<string, number>>({});
+  const [loadingGroup, setLoadingGroup] = useState<Record<string, boolean>>({});
+
   const [queue, setQueue] = useState<any[]>([]);
   const [parsingCurrent, setParsingCurrent] = useState<any[]>([]);
   const [collapsedGroups, setCollapsedGroups] = useState<
@@ -67,7 +77,13 @@ const UploadFiles = () => {
   >({});
 
   const [totalFiles, setTotalFiles] = useState<number | null>(null);
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortByGroup, setSortByGroup] = useState<
+    Record<string, "newest" | "oldest">
+  >({});
+
+  const [searchResults, setSearchResults] = useState<FileItem[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [isProcessingModal, setIsProcessingModal] = useState<boolean>(false);
@@ -114,6 +130,11 @@ const UploadFiles = () => {
         : prev,
     );
   };
+  useEffect(() => {
+    getAllGroup()
+      .then((res) => setGroups(res.groups))
+      .catch(() => setError("Ошибка загрузки групп"));
+  }, []);
 
   const isActiveStatus = (
     status?: FileItemQueue["status"],
@@ -125,6 +146,95 @@ const UploadFiles = () => {
 
   const escapeRegExp = (value: string) =>
     value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const safeSearch = search ? escapeRegExp(search) : "";
+
+  const loadGroupFiles = async (
+    groupName: string,
+    options?: {
+      page?: number;
+      sort?: "newest" | "oldest";
+    },
+  ) => {
+    if (loadingGroup[groupName]) return;
+
+    const page = options?.page ?? pageByGroup[groupName] ?? 1;
+    const sort = options?.sort ?? sortByGroup[groupName] ?? "newest";
+
+    setLoadingGroup((p) => ({ ...p, [groupName]: true }));
+
+    try {
+      const res = await getFilesByGroup({
+        group: groupName,
+        page,
+        pageSize,
+        sort,
+      });
+
+      setFilesByGroup((prev) => ({
+        ...prev,
+        [groupName]:
+          page === 1
+            ? res.files.map((f: FileItem) => ({ ...f, file_group: groupName }))
+            : [
+                ...(prev[groupName] ?? []),
+                ...res.files.map((f: FileItem) => ({
+                  ...f,
+                  file_group: groupName,
+                })),
+              ],
+      }));
+
+      setPageByGroup((prev) => ({
+        ...prev,
+        [groupName]: page + 1,
+      }));
+    } finally {
+      setLoadingGroup((p) => ({ ...p, [groupName]: false }));
+    }
+  };
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const loadSearch = async () => {
+      try {
+        setSearchLoading(true);
+        const res = await getAllFiles({
+          page: 1,
+          pageSize: 50,
+          search,
+        });
+        setSearchResults(res.files);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    const timeout = setTimeout(loadSearch, 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const toggleGroup = (groupName: string) => {
+    setCollapsedGroups((prev) => {
+      const isCollapsed = prev[groupName] ?? true;
+      const nextCollapsed = !isCollapsed;
+
+      if (!nextCollapsed && !filesByGroup[groupName]) {
+        loadGroupFiles(groupName);
+      }
+
+      return {
+        ...prev,
+        [groupName]: nextCollapsed,
+      };
+    });
+  };
 
   /* ---------------- пагинация ---------------- */
 
@@ -138,18 +248,13 @@ const UploadFiles = () => {
       const data = await getAllFiles({
         page: pageToLoad,
         pageSize,
-        sortOrder,
         search,
       });
 
-      const newFiles: FileItem[] = data.files || [];
-      console.log(data);
-      setAllFiles((prev) => (replace ? newFiles : [...prev, ...newFiles]));
+      setAllFiles((prev) => (replace ? data.files : [...prev, ...data.files]));
 
       setTotalFiles(data.total);
-      if (newFiles.length < pageSize) {
-        setHasMore(false);
-      }
+      setHasMore(data.files.length === pageSize);
     } catch (e) {
       console.error(e);
       setError("Произошла ошибка! Попробуйте позже.");
@@ -157,14 +262,10 @@ const UploadFiles = () => {
       setLoadingFiles(false);
     }
   };
-
+  console.log(filesByGroup);
+  console.log(pageByGroup);
+  console.log(groups);
   /* ---------------- initial load ---------------- */
-
-  useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-    loadFiles(1, true);
-  }, [search]);
 
   /* ---------------- queue api ---------------- */
 
@@ -257,11 +358,47 @@ const UploadFiles = () => {
     try {
       await patchFileGroup(id, group);
 
-      setAllFiles((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, file_group: group } : f)),
-      );
+      setFilesByGroup((prev) => {
+        const next = { ...prev };
+        let movedFile: FileItem | null = null;
+
+        // убираем файл из старой группы
+        for (const g in next) {
+          const idx = next[g]?.findIndex((f) => f.id === id);
+          if (idx !== undefined && idx >= 0) {
+            movedFile = next[g][idx];
+            next[g] = next[g].filter((f) => f.id !== id);
+            break;
+          }
+        }
+
+        // добавляем в новую группу
+        if (movedFile) {
+          next[group] = [
+            { ...movedFile, file_group: group },
+            ...(next[group] ?? []),
+          ];
+        }
+
+        return next;
+      });
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleRestartFile = async (id: string) => {
+    try {
+      await postRestartFile(id);
+
+      // после рестарта логично обновить очередь и список файлов
+      await handleAllQueue();
+      setPage(1);
+      setHasMore(true);
+      loadFiles(1, true);
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.response?.data?.detail ?? "Ошибка при перезапуске файла");
     }
   };
 
@@ -277,25 +414,6 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
-  const groupedFiles = useMemo(() => {
-    return allFiles.reduce<Record<string, FileItem[]>>((acc, file) => {
-      const group = file.file_group ?? "Без группы";
-
-      if (!acc[group]) {
-        acc[group] = [];
-      }
-
-      acc[group].push(file);
-      return acc;
-    }, {});
-  }, [allFiles]);
-
-  const toggleGroup = (groupName: string) => {
-    setCollapsedGroups((prev) => ({
-      ...prev,
-      [groupName]: !prev[groupName],
-    }));
-  };
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
@@ -345,7 +463,6 @@ const UploadFiles = () => {
   const shouldAnimate = files.length < DISABLE_ANIMATION_LIMIT;
 
   /* ---------------- рендер ---------------- */
-
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
       {/* ---------------- title ---------------- */}
@@ -636,31 +753,9 @@ const UploadFiles = () => {
             <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
               Загруженные файлы
             </h2>
-            <p className="text-[13px] text-slate-500">Всего: {totalFiles}</p>
           </div>
 
           <div className="flex gap-3 items-center">
-            {/* SORT */}
-            <button
-              data-tooltip-id="sort_order"
-              onClick={() => {
-                const next = sortOrder === "newest" ? "oldest" : "newest";
-                setSortOrder(next);
-                setPage(1);
-                setHasMore(true);
-                loadFiles(1, true);
-              }}
-              className="px-3 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
-            >
-              <IoIosArrowForward
-                className={clsx(
-                  "w-4 h-4 transition-transform duration-200",
-                  sortOrder === "newest" ? "rotate-90" : "-rotate-90",
-                )}
-              />
-            </button>
-            <Tooltip id="sort_order" content="Сортировать по дате" />
-
             {/* SEARCH */}
             <input
               type="text"
@@ -675,180 +770,190 @@ const UploadFiles = () => {
             />
           </div>
         </div>
-
-        {/* GROUPS */}
-        <div className="mt-5 flex flex-col gap-6">
-          {Object.entries(groupedFiles).map(([groupName, files]) => (
-            <div
-              key={groupName}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-            >
-              {/* GROUP HEADER */}
-              <div
-                onClick={() => toggleGroup(groupName)}
-                className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between cursor-pointer select-none hover:bg-slate-100 transition"
-              >
-                <div>
-                  <h3 className="text-[15px] font-semibold text-slate-900">
-                    {groupName}
-                  </h3>
-                  <p className="text-[12px] text-slate-500">
-                    Файлов: {files.length}
-                  </p>
-                </div>
-
-                <IoIosArrowDown
-                  className={clsx(
-                    "w-5 h-5 text-slate-600 transition-transform duration-200",
-                    collapsedGroups[groupName] && "-rotate-90",
-                  )}
-                />
-              </div>
-
-              {/* FILES */}
-              <AnimatePresence initial={false}>
-                {!collapsedGroups[groupName] && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="flex flex-col overflow-hidden"
-                  >
-                    {files.map((file) => {
-                      const percent =
-                        file.progress_percent ??
-                        (file.processing_status === "extracting" ? 100 : 0);
-
-                      const safeSearch = escapeRegExp(search);
-
-                      return (
-                        <div
-                          key={file.id}
-                          className={clsx(
-                            "grid grid-cols-4 gap-4 items-center py-3 px-4 border-b last:border-0 transition",
-                            file.uploaded_by_user_id === currentUser?.id &&
-                              "bg-green-50/60",
-                          )}
-                        >
-                          {/* LEFT */}
-                          <div className="flex flex-col min-w-0">
-                            <p
-                              data-tooltip-id={`name-file_${file.id}`}
-                              className="text-[14px] font-medium text-slate-900 truncate"
-                              dangerouslySetInnerHTML={{
-                                __html: search
-                                  ? file.display_name.replace(
-                                      new RegExp(`(${safeSearch})`, "gi"),
-                                      "<mark class='bg-green-300'>$1</mark>",
-                                    )
-                                  : file.display_name,
-                              }}
-                            />
-                            <Tooltip
-                              place="top"
-                              delayShow={400}
-                              id={`name-file_${file.id}`}
-                              content={file.display_name}
-                            />
-
-                            <div className="flex items-center gap-4 text-[13px] text-slate-500">
-                              <span>{formatFileSize(file.file_size)}</span>
-                              <button
-                                onClick={() => setPreviewFile(file)}
-                                className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
-                              >
-                                Предпросмотр
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* CREATED */}
-                          <p className="text-[13px] text-slate-600 text-center">
-                            {file.created_at
-                              ? new Date(file.created_at).toLocaleDateString()
-                              : "-"}
-                          </p>
-
-                          {/* FILE GROUP */}
-                          <select
-                            value={file.file_group ?? ""}
-                            onChange={(e) =>
-                              handleFileGroup(file.id, e.target.value)
-                            }
-                            className="px-2 py-[4px] w-[250px] rounded border border-gray-300 text-[12px] bg-white hover:border-gray-400 focus:ring-2 focus:ring-cyan-300"
-                          >
-                            <option value="">Без группы</option>
-                            <option value="Личная информация">
-                              Личная информация
-                            </option>
-                            <option value="Документы">Документы</option>
-                            <option value="Финансы">Финансы</option>
-                          </select>
-
-                          {/* STATUS + DELETE */}
-                          <div className="flex items-center justify-end gap-3 text-[13px]">
-                            {file.processing_status === "uploaded" && (
-                              <span className="text-blue-600">
-                                Подготовка...
-                              </span>
-                            )}
-                            {file.processing_status === "pending" && (
-                              <span className="text-slate-500">
-                                Ожидание...
-                              </span>
-                            )}
-                            {file.processing_status === "extracting" && (
-                              <div className="flex flex-col gap-[4px] min-w-[120px]">
-                                <span className="text-cyan-600">
-                                  Обработка...
-                                </span>
-                                <div className="w-full bg-gray-200 h-[6px] rounded overflow-hidden">
-                                  <div
-                                    className="bg-cyan-500 h-full rounded"
-                                    style={{ width: `${percent}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            {file.processing_status === "extracted" && (
-                              <span className="text-green-600">Готово</span>
-                            )}
-                            {file.processing_status === "failed" && (
-                              <span className="text-red-600">Ошибка</span>
-                            )}
-
-                            <button
-                              onClick={() => setDeleteFile(file.id)}
-                              className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
-                            >
-                              <MdDelete className="w-[16px] h-[16px]" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        {/* SEARCH RESULTS */}
+        {search.trim() ? (
+          <div className="mt-5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="px-4 py-3 border-b">
+              <h3 className="text-[15px] font-semibold text-slate-900">
+                Найдено файлов: {searchResults.length}
+              </h3>
             </div>
-          ))}
-        </div>
 
-        {/* PAGINATION */}
-        {hasMore && (
-          <div className="flex justify-center mt-4">
-            <button
-              disabled={loadingFiles}
-              onClick={() => {
-                const nextPage = page + 1;
-                setPage(nextPage);
-                loadFiles(nextPage);
-              }}
-              className="px-4 py-[8px] rounded border border-gray-300 bg-white hover:bg-gray-100 text-[14px] transition disabled:opacity-50"
-            >
-              {loadingFiles ? "Загрузка..." : "Загрузить ещё"}
-            </button>
+            {searchLoading && (
+              <p className="px-4 py-4 text-sm text-slate-500">Поиск...</p>
+            )}
+
+            {!searchLoading && searchResults.length === 0 && (
+              <p className="px-4 py-4 text-sm text-slate-500">
+                Ничего не найдено
+              </p>
+            )}
+
+            {searchResults.map((file) => {
+              return (
+                <div
+                  key={file.id}
+                  className={clsx(
+                    "grid grid-cols-4 gap-4 items-center py-3 px-4 border-b last:border-0 transition",
+                    file.uploaded_by_user_id === currentUser?.id &&
+                      "bg-green-50/60",
+                  )}
+                >
+                  {/* LEFT */}
+                  <div className="flex flex-col min-w-0">
+                    <p
+                      data-tooltip-id={`name-file_${file.id}`}
+                      className="text-[14px] font-medium text-slate-900 truncate"
+                      dangerouslySetInnerHTML={{
+                        __html: search
+                          ? file.display_name.replace(
+                              new RegExp(`(${safeSearch})`, "gi"),
+                              "<mark class='bg-green-300'>$1</mark>",
+                            )
+                          : file.display_name,
+                      }}
+                    />
+                    <Tooltip
+                      place="top"
+                      delayShow={400}
+                      id={`name-file_${file.id}`}
+                      content={file.display_name}
+                    />
+
+                    <div className="flex items-center gap-4 text-[13px] text-slate-500">
+                      <span>{formatFileSize(file.file_size)}</span>
+                      <button
+                        onClick={() => setPreviewFile(file)}
+                        className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
+                      >
+                        Предпросмотр
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CREATED */}
+                  <p className="text-[13px] text-slate-600 text-center">
+                    {file.created_at
+                      ? new Date(file.created_at).toLocaleDateString()
+                      : "-"}
+                  </p>
+
+                  {/* FILE GROUP */}
+                  <select
+                    value={file.file_group ?? ""}
+                    onChange={(e) => handleFileGroup(file.id, e.target.value)}
+                    className="px-2 py-[4px] w-[250px] rounded border border-gray-300 text-[12px] bg-white hover:border-gray-400 focus:ring-2 focus:ring-cyan-300"
+                  >
+                    {groups.map((group) => (
+                      <option key={group.name} value={group.name}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* STATUS + DELETE */}
+                  <div className="flex items-center justify-end gap-3 text-[13px]">
+                    {file.processing_status === "uploaded" && (
+                      <span className="text-blue-600">Загружен</span>
+                    )}
+                    {file.processing_status === "pending" && (
+                      <span className="text-slate-500">Ожидание...</span>
+                    )}
+                    {file.processing_status === "extracting" && (
+                      <span className="text-cyan-600">Обработка...</span>
+                    )}
+                    {file.processing_status === "extracted" && (
+                      <span className="text-green-600">Готово</span>
+                    )}
+                    {file.processing_status === "failed" && (
+                      <span className="text-red-600">Ошибка</span>
+                    )}
+
+                    <button
+                      onClick={() => setDeleteFile(file.id)}
+                      className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                    >
+                      <MdDelete className="w-[16px] h-[16px]" />
+                    </button>
+                    <button
+                      onClick={() => handleRestartFile(file.id)}
+                      className="p-[6px] rounded hover:bg-red-100 text-green-500 transition"
+                    >
+                      <MdRestartAlt className="w-[20px] h-[20px]" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* GROUPS */
+          <div className="mt-5 flex flex-col gap-6">
+            {groups.map((group) => {
+              const groupName = group.name;
+
+              return (
+                <GroupBlock
+                  key={groupName}
+                  group={group}
+                  files={filesByGroup[groupName] ?? []}
+                  collapsed={collapsedGroups[groupName] ?? true}
+                  sort={sortByGroup[groupName] ?? "newest"}
+                  loading={loadingGroup[groupName] ?? false}
+                  currentUserId={currentUser?.id}
+                  groups={groups}
+                  search={search}
+                  safeSearch={safeSearch}
+                  formatFileSize={formatFileSize}
+                  onToggle={() => {
+                    setCollapsedGroups((prev) => {
+                      const next = !(prev[groupName] ?? true);
+
+                      // если открываем и файлов ещё нет — грузим
+                      if (!next && !filesByGroup[groupName]) {
+                        loadGroupFiles(groupName);
+                      }
+
+                      return {
+                        ...prev,
+                        [groupName]: next,
+                      };
+                    });
+                  }}
+                  onToggleSort={() => {
+                    const nextSort =
+                      (sortByGroup[groupName] ?? "newest") === "newest"
+                        ? "oldest"
+                        : "newest";
+
+                    setSortByGroup((prev) => ({
+                      ...prev,
+                      [groupName]: nextSort,
+                    }));
+
+                    setFilesByGroup((prev) => ({
+                      ...prev,
+                      [groupName]: [],
+                    }));
+
+                    setPageByGroup((prev) => ({
+                      ...prev,
+                      [groupName]: 1,
+                    }));
+
+                    loadGroupFiles(groupName, {
+                      page: 1,
+                      sort: nextSort,
+                    });
+                  }}
+                  onLoadMore={() => loadGroupFiles(groupName)}
+                  onChangeGroup={handleFileGroup}
+                  onPreview={(file) => setPreviewFile(file)}
+                  onDelete={(id) => setDeleteFile(id)}
+                  onRestart={handleRestartFile}
+                />
+              );
+            })}
           </div>
         )}
       </motion.div>
