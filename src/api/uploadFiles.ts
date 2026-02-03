@@ -9,7 +9,6 @@ const getHeaders = (): Record<string, string> => {
   return {
     Authorization: `Bearer ${token}`,
     Accept: "application/json",
-    "Content-Type": "application/json",
   };
 };
 
@@ -51,36 +50,59 @@ export const postUploadFiles = async (
 ) => {
   const token = localStorage.getItem("access_token");
   if (!token) throw new Error("No token");
+
   const CHUNK_THRESHOLD = 100 * 1024 * 1024;
+
+  const regularFiles: File[] = [];
+  const chunkedFiles: File[] = [];
 
   for (const file of files) {
     if (file.size > CHUNK_THRESHOLD) {
-      await uploadChunked(file, token, onProgress);
+      chunkedFiles.push(file);
     } else {
-      await uploadRegular(file, token, onProgress);
+      regularFiles.push(file);
     }
   }
+
+  let results: any[] = [];
+
+  // обычная загрузка
+  if (regularFiles.length) {
+    const res = await uploadRegular(regularFiles, onProgress);
+    results.push(...(res?.results ?? []));
+  }
+
+  // чанковая загрузка
+  for (const file of chunkedFiles) {
+    const res = await uploadChunked(file, token, onProgress);
+    if (res) results.push(res);
+  }
+
+  return {
+    results,
+  };
 };
 
 async function uploadRegular(
-  file: File,
-  token: string,
+  files: File[],
   onProgress?: (file: File, p: number) => void,
 ) {
   const formData = new FormData();
-  formData.append("files", file);
 
-  await userApi.post("/api/v1/files/upload", formData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const { data } = await userApi.post("/api/v1/files/upload", formData, {
     onUploadProgress: (e) => {
       if (!e.total || !onProgress) return;
 
       const percent = Math.round((e.loaded / e.total) * 100);
-      onProgress(file, percent);
+      files.forEach((file) => onProgress(file, percent));
     },
   });
+
+  return data;
 }
 
 async function uploadChunked(
@@ -92,7 +114,7 @@ async function uploadChunked(
     filename: file.name,
     file_size: file.size,
   });
-  console.log(initRes.data);
+
   const { upload_id, chunk_size, total_chunks } = initRes.data;
 
   let uploadedChunks = 0;
@@ -121,7 +143,11 @@ async function uploadChunked(
     uploadedChunks++;
   }
 
-  await userApi.post(`/api/v1/upload/chunked/${upload_id}/complete`);
+  const { data } = await userApi.post(
+    `/api/v1/upload/chunked/${upload_id}/complete`,
+  );
+
+  return data; // ← ВАЖНО
 }
 
 export const patchPriorityFile = async (

@@ -101,7 +101,10 @@ const Search = () => {
     const isEmail = /\S+@\S+\.\S+/.test(raw);
     const isPhone = digit.length >= 7;
     const isId = /^\d+$/.test(raw) && !isEmail;
-    const isName = !isEmail && !isPhone && !isId;
+    const isAddress =
+      !isEmail && !isPhone && !isId && /\d/.test(raw) && raw.length > 10;
+      
+    const isName = !isEmail && !isPhone && !isId && !isAddress;
 
     if (!isPagination) setResult([]);
     setLoading(true);
@@ -117,11 +120,11 @@ const Search = () => {
       let endpoint = "";
 
       if (isName) {
-        // ---- Обычный поиск по имени ----
+        // обычный поиск по ФИО
         endpoint = "/admin/search";
         baseParams.name = raw;
       } else {
-        // ---- Каскадный поиск ----
+        // каскадный поиск
         endpoint = "/admin/cascade/search";
 
         if (isPhone) {
@@ -130,6 +133,8 @@ const Search = () => {
           baseParams.email = raw;
         } else if (isId) {
           baseParams.person_id = raw;
+        } else if (isAddress) {
+          baseParams.address = raw;
         }
       }
 

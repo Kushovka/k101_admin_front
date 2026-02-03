@@ -2,6 +2,11 @@
 import { create } from "zustand";
 import { postUploadFiles } from "../api/uploadFiles";
 
+type UploadSuccessResult = {
+  created: any[];
+  duplicates: any[];
+};
+
 type UploadState = {
   files: File[];
   uploading: boolean;
@@ -11,7 +16,7 @@ type UploadState = {
   removeFile: (index: number) => void;
   clearFiles: () => void;
   handleUpload: (opts?: {
-    onSuccess?: () => void;
+    onSuccess?: (result: UploadSuccessResult) => void;
     onError?: (msg: string) => void;
   }) => Promise<void>;
 };
@@ -43,7 +48,7 @@ export const useUploadStore = create<UploadState>((set, get) => ({
     set({ uploading: true, progress: {} });
 
     try {
-      await postUploadFiles(files, (file, percent) => {
+      const res = await postUploadFiles(files, (file, percent) => {
         set((state) => ({
           progress: {
             ...state.progress,
@@ -52,10 +57,18 @@ export const useUploadStore = create<UploadState>((set, get) => ({
         }));
       });
 
-      // Успешно
+      const results = res?.results ?? [];
+
+      const created = results.filter((r: any) => r.created);
+      const duplicates = results.filter((r: any) => r.is_duplicate);
+
       get().clearFiles();
       set({ uploading: false });
-      onSuccess?.();
+
+      onSuccess?.({
+        created,
+        duplicates,
+      });
     } catch (e) {
       console.error(e);
       set({ uploading: false });

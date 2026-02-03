@@ -1,7 +1,6 @@
 import { CgDanger } from "react-icons/cg";
-import api from "../../api/adminApi";
-import type { FileItem } from "../../types/file";
 import userApi from "../../api/userApi";
+import type { FileItem } from "../../types/file";
 
 type DeleteModalProps = {
   deleteFile: string | null;
@@ -13,6 +12,8 @@ type DeleteModalProps = {
   allFiles: FileItem[];
   setAllFiles: React.Dispatch<React.SetStateAction<FileItem[]>>;
   setToastFile: React.Dispatch<React.SetStateAction<FileItem | null>>;
+
+  onDeleted(file: FileItem): void;
 
   token: string;
   title: string;
@@ -30,25 +31,25 @@ const DeleteModal = ({
   token,
   title,
   description,
+  onDeleted,
 }: DeleteModalProps) => {
   /* ---------------- удаление ---------------- */
 
   const handleDelete = async (id: string): Promise<void> => {
     setNotify(null);
     setError(null);
+
     try {
       await userApi.delete(`/api/v1/files/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const deleted = allFiles.find((f) => f.id === id) ?? null;
 
-      setToastFile(deleted);
       setNotify("delete_file");
+
       setAllFiles((prev) => prev.filter((f) => f.id !== id));
-    } catch (err) {
-      setError("Не удалось найти файл");
+      onDeleted({ id } as FileItem);
+    } catch {
+      setError("Не удалось удалить файл");
     }
   };
 

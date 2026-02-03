@@ -84,6 +84,8 @@ const UploadFiles = () => {
   const [searchResults, setSearchResults] = useState<FileItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  const [duplicateMessages, setDuplicateMessages] = useState<string[]>([]);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [isProcessingModal, setIsProcessingModal] = useState<boolean>(false);
@@ -194,6 +196,29 @@ const UploadFiles = () => {
     }
   };
 
+  const handleFileDeleted = (file: FileItem) => {
+    // группы
+    setFilesByGroup((prev) => {
+      const next = { ...prev };
+      for (const group in next) {
+        next[group] = next[group]?.filter((f) => f.id !== file.id) ?? [];
+      }
+      return next;
+    });
+
+    // счётчик групп
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.name === file.file_group
+          ? { ...g, total: Math.max(0, g.total - 1) }
+          : g,
+      ),
+    );
+
+    setSearchResults((prev) => prev.filter((f) => f.id !== file.id));
+  };
+
+  console.log(searchResults);
   useEffect(() => {
     if (!search.trim()) {
       setSearchResults([]);
@@ -391,11 +416,54 @@ const UploadFiles = () => {
     try {
       await postRestartFile(id);
 
-      // после рестарта логично обновить очередь и список файлов
+      // 1. очередь
       await handleAllQueue();
-      setPage(1);
-      setHasMore(true);
-      loadFiles(1, true);
+
+      // 2. allFiles
+      setAllFiles((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? {
+                ...f,
+                processing_status: "uploaded",
+                progress_percent: 0,
+              }
+            : f,
+        ),
+      );
+
+      // 3. searchResults
+      setSearchResults((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? {
+                ...f,
+                processing_status: "uploaded",
+                progress_percent: 0,
+              }
+            : f,
+        ),
+      );
+
+      // 4. filesByGroup
+      setFilesByGroup((prev) => {
+        const next = { ...prev };
+
+        for (const group in next) {
+          next[group] = next[group].map((f) =>
+            f.id === id
+              ? {
+                  ...f,
+                  processing_status: "uploaded",
+                  progress_percent: 0,
+                }
+              : f,
+          );
+        }
+        setNotify("restart success");
+
+        return next;
+      });
     } catch (e: any) {
       console.error(e);
       setError(e?.response?.data?.detail ?? "Ошибка при перезапуске файла");
@@ -414,6 +482,7 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
+  console.log(searchResults);
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
@@ -473,11 +542,10 @@ const UploadFiles = () => {
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
 
-      {notify === "upload_file" && (
+      {notify === "restart success" && (
         <Toast
-          key="upload"
           type="access"
-          message="Файлы успешно загружены"
+          message="Успешно !"
           onClose={() => setNotify(null)}
         />
       )}
@@ -490,6 +558,17 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
+
+      {duplicateMessages.map((msg, i) => (
+        <Toast
+          key={i}
+          type="error"
+          message={msg}
+          onClose={() =>
+            setDuplicateMessages((prev) => prev.filter((_, idx) => idx !== i))
+          }
+        />
+      ))}
 
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -545,8 +624,19 @@ const UploadFiles = () => {
             <button
               onClick={() =>
                 handleUpload({
-                  onSuccess: () => {
-                    setNotify("upload_file");
+                  onSuccess: ({ created, duplicates }) => {
+                    if (created.length > 0) {
+                      setNotify("upload_file");
+                    }
+
+                    if (duplicates.length > 0) {
+                      setDuplicateMessages(
+                        duplicates.map(
+                          (d: any) => `Файл "${d.file_name}": ${d.message}`,
+                        ),
+                      );
+                    }
+
                     setPage(1);
                     setHasMore(true);
                     loadFiles(1, true);
@@ -711,7 +801,7 @@ const UploadFiles = () => {
                   <div className="flex items-center gap-3 justify-end">
                     {item.status == "cancelled" && (
                       <button
-                        onClick={() => setDeleteFile(item.id)}
+                        onClick={() => setDeleteFile(item.raw_file_id)}
                         className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                       >
                         <MdDelete className="w-[26px] h-[26px]" />
@@ -981,6 +1071,7 @@ const UploadFiles = () => {
           allFiles={allFiles}
           token={token}
           title={"Удалить файл?"}
+          onDeleted={handleFileDeleted}
           description={"Файл будет удалён без возможности восстановления."}
         />
       )}
