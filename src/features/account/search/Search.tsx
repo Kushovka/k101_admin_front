@@ -2,12 +2,22 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import adminApi from "../../../api/adminApi";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { useSearch } from "./SearchContext";
 
+import userApi from "../../../api/userApi";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
+
+type SearchMode = "name" | "phone" | "email" | "address" | "id";
+
+const SEARCH_TABS: { key: SearchMode; label: string; placeholder: string }[] = [
+  { key: "name", label: "ФИО", placeholder: "Фамилия Имя Отчество" },
+  { key: "phone", label: "Телефон", placeholder: "+7 999 123-45-67" },
+  { key: "email", label: "Email", placeholder: "example@mail.ru" },
+  { key: "address", label: "Адрес", placeholder: "Город, улица, дом" },
+  { key: "id", label: "ID", placeholder: "ID персоны" },
+];
 
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -22,6 +32,8 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
   const [additionalOption, setAdditionalOption] = useState(false);
+  const [mode, setMode] = useState<SearchMode>("name");
+  const [value, setValue] = useState("");
 
   const { isOpen } = useSidebar();
 
@@ -87,98 +99,82 @@ const Search = () => {
     e?: React.FormEvent,
     page: number = 1,
     isPagination: boolean = false,
-  ): Promise<void> => {
+  ) => {
     if (e) e.preventDefault();
 
-    const raw = query.trim();
-
-    if (!raw) {
-      setError("Введите запрос");
+    if (!value.trim()) {
+      setError("Введите значение для поиска");
       return;
     }
 
-    const digit = raw.replace(/\D/g, "");
-    const isEmail = /\S+@\S+\.\S+/.test(raw);
-    const isPhone = digit.length >= 7;
-    const isId = /^\d+$/.test(raw) && !isEmail;
-    const isAddress =
-      !isEmail && !isPhone && !isId && /\d/.test(raw) && raw.length > 10;
-      
-    const isName = !isEmail && !isPhone && !isId && !isAddress;
-
     if (!isPagination) setResult([]);
+
     setLoading(true);
     setError(null);
     setSeeSearch(false);
 
     try {
-      const baseParams: Record<string, string> = {
+      const params: Record<string, string> = {
         page: String(page),
         page_size: String(pageSize),
       };
 
-      let endpoint = "";
+      let endpoint = "api/v1/search/by-name";
 
-      if (isName) {
-        // обычный поиск по ФИО
-        endpoint = "/admin/search";
-        baseParams.name = raw;
-      } else {
-        // каскадный поиск
-        endpoint = "/admin/cascade/search";
+      switch (mode) {
+        case "name":
+          params.name = value;
+          break;
 
-        if (isPhone) {
-          baseParams.phone = normalizePhone(raw);
-        } else if (isEmail) {
-          baseParams.email = raw;
-        } else if (isId) {
-          baseParams.person_id = raw;
-        } else if (isAddress) {
-          baseParams.address = raw;
-        }
+        case "phone":
+          endpoint = "/api/v1/search";
+          params.phone = normalizePhone(value);
+          break;
+
+        case "email":
+          endpoint = "/api/v1/search";
+          params.email = value;
+          break;
+
+        case "address":
+          endpoint = "/api/v1/search";
+          params.address = value;
+          break;
+
+        case "id":
+          endpoint = "/api/v1/search";
+          params.person_id = value;
+          break;
       }
 
-      const qs = new URLSearchParams(baseParams).toString();
+      const qs = new URLSearchParams(params).toString();
 
-      const response = await adminApi.post<SearchResponse>(
+      const response = await userApi.post<SearchResponse>(
         `${endpoint}?${qs}`,
         null,
         { headers: getHeaders() },
       );
 
       setSeeSearch(true);
+      setRes(response.data);
 
       if ("entity" in response.data) {
-        setRes(response.data);
-
-        // если ничего не найдено — показываем пусто
-        if (response.data.total_records_found === 0) {
-          setResult([]);
-        } else {
-          setResult([response.data.entity as any]);
-        }
-
-        setTotalPages(response.data.total_pages ?? 1);
-        setCurrentPage(page);
-        return;
+        setResult(
+          response.data.total_records_found === 0
+            ? []
+            : [response.data.entity as any],
+        );
+      } else {
+        setResult(response.data.results ?? []);
       }
 
-      console.log(response.data);
-      setRes(response.data);
-      setResult(response.data.results ?? []);
       setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
-    } catch (err: unknown) {
-      console.error(err);
-
-      const maybeAxiosErr = err as { response?: { status?: number } };
-
-      const status = maybeAxiosErr.response?.status;
-
+    } catch (err: any) {
       setError(
-        status === 500
-          ? "Сервер временно недоступен. Попробуйте позже."
-          : "Ошибка при загрузке пользователей",
+        err?.response?.status === 500
+          ? "Сервер временно недоступен"
+          : "Ошибка поиска",
       );
     } finally {
       setLoading(false);
@@ -214,28 +210,41 @@ const Search = () => {
           transition={{ duration: 0.25 }}
           className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-5"
         >
-          <form
-            onSubmit={handleSubmit}
-            className="flex items-center gap-3 w-full"
-          >
-            <div className="relative flex-1">
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="ФИО, email, телефон или ID"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full h-[42px] pl-10 pr-3 border border-gray-300 rounded-lg 
-                       focus:outline-none focus:ring-2 focus:ring-cyan transition-all"
-              />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
-            </div>
+          <div className="flex gap-2">
+            {SEARCH_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setMode(tab.key);
+                  setValue("");
+                  setResult([]);
+                  setSeeSearch(false);
+                }}
+                className={clsx(
+                  "px-4 py-2 rounded-lg text-[14px] transition",
+                  mode === tab.key
+                    ? "bg-cyan-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex gap-3">
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={SEARCH_TABS.find((t) => t.key === mode)?.placeholder}
+              className="flex-1 h-[42px] px-4 border border-gray-300 rounded-lg
+               focus:outline-none focus:ring-2 focus:ring-cyan"
+            />
 
             <button
-              className="px-5 h-[42px] bg-cyan-500 text-white rounded-lg text-[14px]
-                     hover:bg-cyan-600 active:bg-cyan-600 transition"
+              className="px-6 h-[42px] bg-cyan-500 text-white rounded-lg
+               hover:bg-cyan-600 transition"
             >
               Найти
             </button>

@@ -40,8 +40,7 @@ export const useUploadStore = create<UploadState>((set, get) => ({
 
   clearFiles: () => set({ files: [], progress: {} }),
 
-  handleUpload: async (opts) => {
-    const { onSuccess, onError } = opts || {};
+  handleUpload: async ({ onSuccess, onError } = {}) => {
     const { files } = get();
     if (!files.length) return;
 
@@ -57,17 +56,16 @@ export const useUploadStore = create<UploadState>((set, get) => ({
         }));
       });
 
+      // ❗ ВАЖНО: ждём результаты
       const results = res?.results ?? [];
 
-      const created = results.filter((r: any) => r.created);
-      const duplicates = results.filter((r: any) => r.is_duplicate);
-
-      get().clearFiles();
       set({ uploading: false });
 
+      get().clearFiles();
+
       onSuccess?.({
-        created,
-        duplicates,
+        created: results.filter((r) => r.created),
+        duplicates: results.filter((r) => r.is_duplicate),
       });
     } catch (e) {
       console.error(e);

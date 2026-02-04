@@ -132,10 +132,18 @@ const UploadFiles = () => {
         : prev,
     );
   };
+
+  const loadGroups = async () => {
+    try {
+      const res = await getAllGroup();
+      setGroups(res.groups);
+    } catch {
+      setError("Ошибка загрузки групп");
+    }
+  };
+
   useEffect(() => {
-    getAllGroup()
-      .then((res) => setGroups(res.groups))
-      .catch(() => setError("Ошибка загрузки групп"));
+    loadGroups();
   }, []);
 
   const isActiveStatus = (
@@ -218,7 +226,7 @@ const UploadFiles = () => {
     setSearchResults((prev) => prev.filter((f) => f.id !== file.id));
   };
 
-  console.log(searchResults);
+  // console.log(searchResults);
   useEffect(() => {
     if (!search.trim()) {
       setSearchResults([]);
@@ -287,9 +295,9 @@ const UploadFiles = () => {
       setLoadingFiles(false);
     }
   };
-  console.log(filesByGroup);
-  console.log(pageByGroup);
-  console.log(groups);
+  // console.log(filesByGroup);
+  // console.log(pageByGroup);
+  // console.log(groups);
   /* ---------------- initial load ---------------- */
 
   /* ---------------- queue api ---------------- */
@@ -482,7 +490,7 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
-  console.log(searchResults);
+  // console.log(searchResults);
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
@@ -526,7 +534,7 @@ const UploadFiles = () => {
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
-
+  // console.log(duplicateMessages);
   // console.log(queue);
   const DISABLE_ANIMATION_LIMIT = 50;
   const shouldAnimate = files.length < DISABLE_ANIMATION_LIMIT;
@@ -605,11 +613,17 @@ const UploadFiles = () => {
                     </span>
                   </div>
 
-                  {uploading && progress[file.name] != null && (
-                    <span className="text-[13px] text-slate-600 shrink-0">
-                      {progress[file.name]}%
-                    </span>
-                  )}
+                  {uploading &&
+                    progress[file.name] != null &&
+                    (progress[file.name] >= 90 && progress[file.name] < 100 ? (
+                      <span className="text-[13px] text-orange-500 shrink-0">
+                        Сборка файла…
+                      </span>
+                    ) : (
+                      <span className="text-[13px] text-slate-600 shrink-0">
+                        {progress[file.name]}%
+                      </span>
+                    ))}
 
                   <button
                     onClick={() => removeFile(i)}
@@ -640,6 +654,7 @@ const UploadFiles = () => {
                     setPage(1);
                     setHasMore(true);
                     loadFiles(1, true);
+                    loadGroups();
                   },
                   onError: (msg) => setError(msg),
                 })
