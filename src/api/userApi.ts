@@ -21,6 +21,11 @@ userApi.interceptors.response.use(
     const status = error.response?.status;
     const original = error.config;
 
+    if (status === 401 && original?.url?.includes("/upload")) {
+      window.dispatchEvent(new CustomEvent("session-expired"));
+      return Promise.reject(error);
+    }
+
     // нам интересует только access 401
     if (status !== 401) {
       return Promise.reject(error);

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useBankIdleLogout(timeoutMs = 10 * 60 * 1000, isBusy = false) {
+export function useBankIdleLogout(timeoutMs = 10000 * 60 * 1000, isBusy = false) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetTimer = () => {

@@ -626,7 +626,7 @@ const UploadFiles = () => {
 
                   {uploading &&
                     progress[file.name] != null &&
-                    (progress[file.name] >= 90 && progress[file.name] < 100 ? (
+                    (progress[file.name] >= 95 && progress[file.name] < 100 ? (
                       <span className="text-[13px] text-orange-500 shrink-0">
                         Сборка файла…
                       </span>
@@ -827,14 +827,14 @@ const UploadFiles = () => {
 
                   {/* ACTIONS */}
                   <div className="flex items-center gap-3 justify-end">
-                    {item.status == "cancelled" && (
+                    
                       <button
                         onClick={() => setDeleteFile(item.raw_file_id)}
                         className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                       >
                         <MdDelete className="w-[26px] h-[26px]" />
                       </button>
-                    )}
+                   
                     {item.position !== null && (
                       <span className="text-[12px] text-slate-500">
                         pos: {item.position}

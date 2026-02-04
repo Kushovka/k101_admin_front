@@ -1,6 +1,7 @@
 // src/store/useUploadStore.ts
 import { create } from "zustand";
 import { postUploadFiles } from "../api/uploadFiles";
+import { refreshTokens } from "../features/auth/auth";
 
 type UploadSuccessResult = {
   created: any[];
@@ -43,6 +44,8 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   handleUpload: async ({ onSuccess, onError } = {}) => {
     const { files } = get();
     if (!files.length) return;
+
+    await refreshTokens();
 
     set({ uploading: true, progress: {} });
 
