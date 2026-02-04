@@ -490,7 +490,7 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
-  // console.log(searchResults);
+  console.log(searchResults);
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
