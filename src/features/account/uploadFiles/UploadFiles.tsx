@@ -549,7 +549,6 @@ const UploadFiles = () => {
       {error && (
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
-
       {notify === "restart success" && (
         <Toast
           type="access"
@@ -557,7 +556,13 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
-
+      {notify === "upload_file" && (
+        <Toast
+          type="access"
+          message="Файлы успешно загружены"
+          onClose={() => setNotify(null)}
+        />
+      )}
       {notify === "delete_file" && (
         <Toast
           key="delete"
@@ -566,7 +571,6 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
-
       {duplicateMessages.map((msg, i) => (
         <Toast
           key={i}
@@ -577,6 +581,13 @@ const UploadFiles = () => {
           }
         />
       ))}
+      {notify === "duplicates_only" && (
+        <Toast
+          type="error"
+          message="Все файлы уже были загружены ранее"
+          onClose={() => setNotify(null)}
+        />
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -641,6 +652,8 @@ const UploadFiles = () => {
                   onSuccess: ({ created, duplicates }) => {
                     if (created.length > 0) {
                       setNotify("upload_file");
+                    } else if (duplicates.length > 0) {
+                      setNotify("duplicates_only");
                     }
 
                     if (duplicates.length > 0) {
