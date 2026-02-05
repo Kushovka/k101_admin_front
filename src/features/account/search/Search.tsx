@@ -315,9 +315,10 @@ const Search = () => {
                 <span className="text-center">{item.first_name || "-"}</span>
                 <span className="text-center">{item.middle_name || "-"}</span>
                 <span className="text-center truncate">
-                  {item.emails[0] || "-"}
+                  {item.emails?.[0] ?? "-"}
                 </span>
-                <span className="text-center">{item.phones[0] || "-"}</span>
+
+                <span className="text-center">{item.phones?.[0] ?? "-"}</span>
 
                 <span
                   className="text-cyan-600 font-medium text-center"

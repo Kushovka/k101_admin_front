@@ -39,9 +39,7 @@ export function useBankIdleLogout(
 
     return () => {
       clearTimer();
-      events.forEach((ev) =>
-        window.removeEventListener(ev, handleActivity),
-      );
+      events.forEach((ev) => window.removeEventListener(ev, handleActivity));
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [timeoutMs, isBusy]);

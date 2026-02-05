@@ -30,7 +30,7 @@ import { useUploadStore } from "./store/useUploadStore";
 const App: React.FC = () => {
   const isAuth = Boolean(localStorage.getItem("access_token"));
   const { uploading } = useUploadStore();
-  useBankIdleLogout(10000 * 60 * 1000, uploading);
+  useBankIdleLogout(1000 * 60 * 1000, uploading);
 
   const [sessionExpired, setSessionExpired] = useState(false);
 
