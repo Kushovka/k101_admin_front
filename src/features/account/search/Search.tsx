@@ -211,25 +211,39 @@ const Search = () => {
           className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-5"
         >
           <div className="flex gap-2">
-            {SEARCH_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setMode(tab.key);
-                  setValue("");
-                  setResult([]);
-                  setSeeSearch(false);
-                }}
-                className={clsx(
-                  "px-4 py-2 rounded-lg text-[14px] transition",
-                  mode === tab.key
-                    ? "bg-cyan-500 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {SEARCH_TABS.map((tab) => {
+              const isDisabled = tab.key === "address";
+
+              return (
+                <button
+                  key={tab.key}
+                  disabled={isDisabled}
+                  onClick={() => {
+                    if (isDisabled) return;
+
+                    setMode(tab.key);
+                    setValue("");
+                    setResult([]);
+                    setSeeSearch(false);
+                  }}
+                  className={clsx(
+                    "px-4 py-2 rounded-lg text-[14px] transition",
+                    isDisabled
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : mode === tab.key
+                        ? "bg-cyan-500 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+                  )}
+                  title={
+                    isDisabled
+                      ? "Поиск по адресу скоро будет доступен"
+                      : undefined
+                  }
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           <form onSubmit={handleSubmit} className="flex gap-3">
