@@ -47,7 +47,7 @@ type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
 
 const UploadFiles = () => {
   const { isOpen } = useSidebar();
-  const { files, removeFile, progress, uploading, handleUpload } =
+  const { files, removeFile, totalProgress, uploading, handleUpload } =
     useUploadStore();
 
   const [page, setPage] = useState<number>(1);
@@ -490,7 +490,7 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
-  console.log(searchResults);
+  // console.log(searchResults);
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
@@ -624,18 +624,6 @@ const UploadFiles = () => {
                     </span>
                   </div>
 
-                  {uploading &&
-                    progress[file.name] != null &&
-                    (progress[file.name] >= 95 && progress[file.name] < 100 ? (
-                      <span className="text-[13px] text-orange-500 shrink-0">
-                        Сборка файла…
-                      </span>
-                    ) : (
-                      <span className="text-[13px] text-slate-600 shrink-0">
-                        {progress[file.name]}%
-                      </span>
-                    ))}
-
                   <button
                     onClick={() => removeFile(i)}
                     className="text-slate-500 hover:text-red-500 transition"
@@ -645,6 +633,28 @@ const UploadFiles = () => {
                 </li>
               ))}
             </ul>
+
+            {uploading && (
+              <div className="mt-4">
+                <div className="flex justify-between text-[13px] text-slate-600 mb-1">
+                  <span>Загрузка файлов</span>
+                  <span>{totalProgress}%</span>
+                </div>
+
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-cyan-500 transition-all duration-200"
+                    style={{ width: `${totalProgress}%` }}
+                  />
+                </div>
+
+                {totalProgress >= 95 && totalProgress < 100 && (
+                  <p className="text-[12px] text-orange-500 mt-1">
+                    Завершаем загрузку…
+                  </p>
+                )}
+              </div>
+            )}
 
             <button
               onClick={() =>
@@ -827,14 +837,13 @@ const UploadFiles = () => {
 
                   {/* ACTIONS */}
                   <div className="flex items-center gap-3 justify-end">
-                    
-                      <button
-                        onClick={() => setDeleteFile(item.raw_file_id)}
-                        className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
-                      >
-                        <MdDelete className="w-[26px] h-[26px]" />
-                      </button>
-                   
+                    <button
+                      onClick={() => setDeleteFile(item.raw_file_id)}
+                      className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                    >
+                      <MdDelete className="w-[26px] h-[26px]" />
+                    </button>
+
                     {item.position !== null && (
                       <span className="text-[12px] text-slate-500">
                         pos: {item.position}

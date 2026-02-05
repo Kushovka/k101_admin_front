@@ -12,6 +12,7 @@ type UploadState = {
   files: File[];
   uploading: boolean;
   progress: Record<string, number>;
+  totalProgress: number;
   setFiles: (files: File[]) => void;
   addFiles: (files: File[]) => void;
   removeFile: (index: number) => void;
@@ -26,6 +27,7 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   files: [],
   uploading: false,
   progress: {},
+  totalProgress: 0,
 
   setFiles: (files) => set({ files }),
 
@@ -47,22 +49,17 @@ export const useUploadStore = create<UploadState>((set, get) => ({
 
     await refreshTokens();
 
-    set({ uploading: true, progress: {} });
+    set({ uploading: true, totalProgress: 0 });
 
     try {
-      const res = await postUploadFiles(files, (file, percent) => {
-        set((state) => ({
-          progress: {
-            ...state.progress,
-            [file.name]: percent,
-          },
-        }));
+      const res = await postUploadFiles(files, (_, percent) => {
+        set({ totalProgress: percent });
       });
 
       // ❗ ВАЖНО: ждём результаты
       const results = res?.results ?? [];
 
-      set({ uploading: false });
+      set({ uploading: false, totalProgress: 0 });
 
       get().clearFiles();
 
