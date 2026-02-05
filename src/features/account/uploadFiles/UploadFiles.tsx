@@ -490,7 +490,7 @@ const UploadFiles = () => {
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
   // console.log(queue);
-  // console.log(searchResults);
+  console.log(searchResults);
 
   /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
 
@@ -718,9 +718,9 @@ const UploadFiles = () => {
             <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
               Очередь обработки
             </h2>
-            <p className="text-[13px] text-slate-500 mt-[2px]">
+            {/* <p className="text-[13px] text-slate-500 mt-[2px]">
               В очереди: {queue.length}
-            </p>
+            </p> */}
           </div>
 
           <IoIosArrowDown
@@ -740,124 +740,130 @@ const UploadFiles = () => {
                 item.file_description || item.file_name || "Без имени";
               // console.log(item);
               return (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-5 gap-4 items-center border-b last:border-0 py-3"
-                >
-                  {/* NAME + INFO */}
-                  <div className="min-w-0 flex flex-col">
-                    <p className="truncate font-medium text-[15px] text-slate-900">
-                      {name}
-                    </p>
-                    <p className="text-[13px] text-slate-500">
-                      {formatFileSize(item.file_size)}
-                    </p>
-                  </div>
+                <>
+                  {item.status !== "completed" && (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-5 gap-4 items-center border-b last:border-0 py-3"
+                    >
+                      {/* NAME + INFO */}
+                      <div className="min-w-0 flex flex-col">
+                        <p className="truncate font-medium text-[15px] text-slate-900">
+                          {name}
+                        </p>
+                        <p className="text-[13px] text-slate-500">
+                          {formatFileSize(item.file_size)}
+                        </p>
+                      </div>
 
-                  <div>
-                    {isActiveStatus(item.status) && (
-                      <div className="flex items-center gap-2 shrink-0 text-slate-600">
-                        {(item.status === "paused" ||
-                          item.status === "cancelled") && (
-                          <button
-                            onClick={() => queueApi.resume(item.raw_file_id)}
-                            className="p-[6px] rounded hover:bg-slate-200 transition"
-                          >
-                            <FaPlay className="w-[20px] h-[20px]" />
-                          </button>
+                      <div>
+                        {isActiveStatus(item.status) && (
+                          <div className="flex items-center gap-2 shrink-0 text-slate-600">
+                            {(item.status === "paused" ||
+                              item.status === "cancelled") && (
+                              <button
+                                onClick={() =>
+                                  queueApi.resume(item.raw_file_id)
+                                }
+                                className="p-[6px] rounded hover:bg-slate-200 transition"
+                              >
+                                <FaPlay className="w-[20px] h-[20px]" />
+                              </button>
+                            )}
+                            {item.status === "queued" && (
+                              <button
+                                onClick={() => queueApi.pause(item.raw_file_id)}
+                                className="p-[6px] rounded hover:bg-slate-200 transition"
+                              >
+                                <FaStop className="w-[20px] h-[20px]" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => queueApi.cancel(item.raw_file_id)}
+                              className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
+                            >
+                              <IoClose className="w-[30px] h-[30px]" />
+                            </button>
+                          </div>
                         )}
+                      </div>
+
+                      {/* STATUS */}
+                      <div className="text-[13px] text-center">
                         {item.status === "queued" && (
-                          <button
-                            onClick={() => queueApi.pause(item.raw_file_id)}
-                            className="p-[6px] rounded hover:bg-slate-200 transition"
-                          >
-                            <FaStop className="w-[20px] h-[20px]" />
-                          </button>
+                          <span className="text-blue-600">В очереди...</span>
                         )}
+                        {item.status === "paused" && (
+                          <span className="text-cyan-600">На паузе</span>
+                        )}
+                        {item.status === "cancelled" && (
+                          <span className="text-red-600">Отменен</span>
+                        )}
+                        {item.status === "completed" && (
+                          <span className="text-green-600">Выполнен</span>
+                        )}
+                        {item.status === "processing" && (
+                          <span className="text-green-600">Идет обработка</span>
+                        )}
+                        {item.status === "failed" && (
+                          <span className="text-red-600">Ошибка</span>
+                        )}
+                      </div>
+
+                      {/* PRIORITY SELECT */}
+                      {["uploaded", "queued"].includes(item.status ?? "") ? (
+                        <select
+                          value={String(item.priority ?? 100)}
+                          onChange={(e) =>
+                            handleChangePriority(
+                              item.raw_file_id,
+                              Number(e.target.value),
+                            )
+                          }
+                          className="px-3 py-[6px] rounded-md text-[13px] bg-white border border-gray-300 hover:border-gray-400 shadow-sm focus:ring-2 focus:ring-cyan-300 select-none"
+                        >
+                          <option value={1} className="text-red-600">
+                            Высокий (1)
+                          </option>
+                          <option value={50} className="text-orange-500">
+                            Средний (50)
+                          </option>
+                          <option value={100}>Обычный (100)</option>
+                          <option value={999} className="text-slate-500">
+                            Низкий (999)
+                          </option>
+                        </select>
+                      ) : (
+                        <div className="text-[13px] text-slate-500 text-center">
+                          {item.priority}
+                        </div>
+                      )}
+
+                      {/* ACTIONS */}
+                      <div className="flex items-center gap-3 justify-end">
                         <button
-                          onClick={() => queueApi.cancel(item.raw_file_id)}
+                          onClick={() => setDeleteFile(item.raw_file_id)}
                           className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
                         >
-                          <IoClose className="w-[30px] h-[30px]" />
+                          <MdDelete className="w-[26px] h-[26px]" />
+                        </button>
+
+                        {item.position !== null && (
+                          <span className="text-[12px] text-slate-500">
+                            pos: {item.position}
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleMoveToTop(item.raw_file_id)}
+                          className="px-2 py-[3px] rounded border border-gray-300 text-[12px] text-slate-700 hover:bg-gray-100 transition"
+                        >
+                          ↑ в топ
                         </button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* STATUS */}
-                  <div className="text-[13px] text-center">
-                    {item.status === "queued" && (
-                      <span className="text-blue-600">В очереди...</span>
-                    )}
-                    {item.status === "paused" && (
-                      <span className="text-cyan-600">На паузе</span>
-                    )}
-                    {item.status === "cancelled" && (
-                      <span className="text-red-600">Отменен</span>
-                    )}
-                    {item.status === "completed" && (
-                      <span className="text-green-600">Выполнен</span>
-                    )}
-                    {item.status === "processing" && (
-                      <span className="text-green-600">Идет обработка</span>
-                    )}
-                    {item.status === "failed" && (
-                      <span className="text-red-600">Ошибка</span>
-                    )}
-                  </div>
-
-                  {/* PRIORITY SELECT */}
-                  {["uploaded", "queued"].includes(item.status ?? "") ? (
-                    <select
-                      value={String(item.priority ?? 100)}
-                      onChange={(e) =>
-                        handleChangePriority(
-                          item.raw_file_id,
-                          Number(e.target.value),
-                        )
-                      }
-                      className="px-3 py-[6px] rounded-md text-[13px] bg-white border border-gray-300 hover:border-gray-400 shadow-sm focus:ring-2 focus:ring-cyan-300 select-none"
-                    >
-                      <option value={1} className="text-red-600">
-                        Высокий (1)
-                      </option>
-                      <option value={50} className="text-orange-500">
-                        Средний (50)
-                      </option>
-                      <option value={100}>Обычный (100)</option>
-                      <option value={999} className="text-slate-500">
-                        Низкий (999)
-                      </option>
-                    </select>
-                  ) : (
-                    <div className="text-[13px] text-slate-500 text-center">
-                      {item.priority}
                     </div>
                   )}
-
-                  {/* ACTIONS */}
-                  <div className="flex items-center gap-3 justify-end">
-                    <button
-                      onClick={() => setDeleteFile(item.raw_file_id)}
-                      className="p-[6px] rounded hover:bg-red-100 text-red-500 transition"
-                    >
-                      <MdDelete className="w-[26px] h-[26px]" />
-                    </button>
-
-                    {item.position !== null && (
-                      <span className="text-[12px] text-slate-500">
-                        pos: {item.position}
-                      </span>
-                    )}
-
-                    <button
-                      onClick={() => handleMoveToTop(item.raw_file_id)}
-                      className="px-2 py-[3px] rounded border border-gray-300 text-[12px] text-slate-700 hover:bg-gray-100 transition"
-                    >
-                      ↑ в топ
-                    </button>
-                  </div>
-                </div>
+                </>
               );
             })}
           </div>
