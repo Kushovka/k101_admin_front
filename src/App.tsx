@@ -52,7 +52,7 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      {sessionExpired && (
+      {sessionExpired && !uploading && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[3px] flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-white w-[380px] rounded-2xl shadow-2xl border border-gray-100 animate-scaleIn p-6">
             <div className="flex flex-col items-center gap-3">
