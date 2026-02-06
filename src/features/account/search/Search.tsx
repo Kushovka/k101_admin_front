@@ -274,7 +274,7 @@ const Search = () => {
               {res.count === 10
                 ? "Очень много совпадений, уточните запрос"
                 : res.count || res.total_pages > 0
-                  ? res.total_pages
+                  ? res.total
                   : 0}
             </div>
           )}

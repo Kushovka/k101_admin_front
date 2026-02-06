@@ -7,7 +7,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import userApi from "../../../api/userApi";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
-import type { SearchUser } from "../../../types/searchDetails.types";
+import type {
+  GroupedData,
+  SearchUser,
+  SourceFile,
+} from "../../../types/searchDetails.types";
 
 /* semantic helpers */
 const isLatLon = (v: any) => {
@@ -202,6 +206,28 @@ const SearchDetails: React.FC = () => {
   const { isOpen } = useSidebar();
 
   const user = location.state as SearchUser | null;
+
+  const groupedData: GroupedData = user?.grouped_data ?? {};
+
+  const sortGroups = (a: any, b: any) => {
+    if (a.group_name === "Другие источники") return 1;
+    if (b.group_name === "Другие источники") return -1;
+    return 0;
+  };
+
+  const getSourceLabel = (sources: SourceFile[]) => {
+    if (!sources.length) return null;
+
+    if (sources.length === 1) {
+      return (
+        sources[0].display_name ||
+        sources[0].file_name ||
+        sources[0].raw_file_id
+      );
+    }
+
+    return `${sources.length} источника`;
+  };
 
   const [notify, setNotify] = useState(false);
   const [openMain, setOpenMain] = useState(true);
@@ -430,38 +456,65 @@ const SearchDetails: React.FC = () => {
 
           {openDossier && (
             <div className="px-4 py-4 border-t border-gray-200 space-y-6">
-              {Object.entries(buckets).map(([bucket, data]) => {
-                if (Object.keys(data).length === 0) return null;
+              {Object.entries(groupedData)
+                .sort(([, a], [, b]) => sortGroups(a, b))
+                .map(([groupKey, group]) => {
+                  const fields = group.fields ?? {};
+                  if (Object.keys(fields).length === 0) return null;
 
-                return (
-                  <div key={bucket} className="space-y-2">
-                    <div className="font-medium text-slate-800">
-                      {titleMap[bucket as keyof typeof titleMap]}
-                    </div>
+                  return (
+                    <div key={groupKey} className="space-y-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="font-medium text-slate-800">
+                          {group.group_name}
+                        </div>
 
-                    <div className="flex flex-col gap-1 text-[14px]">
-                      {Object.entries(data).map(([field, val]) => {
-                        const keyNormalized = field.toLowerCase();
-                        const label = fieldLabels[keyNormalized] ?? field;
-
-                        return (
+                        {group.sources?.length > 0 && (
                           <div
-                            key={field}
-                            className="flex gap-2 text-slate-700"
+                            className="text-xs text-slate-400 truncate max-w-[360px]"
+                            title={group.sources
+                              .map(
+                                (s) =>
+                                  s.display_name ||
+                                  s.file_name ||
+                                  s.raw_file_id,
+                              )
+                              .join(", ")}
                           >
-                            <span className="min-w-[180px] text-slate-500">
-                              {label}:
-                            </span>
-                            <span className="text-slate-800">
-                              {String(val)}
-                            </span>
+                            Источник: {getSourceLabel(group.sources)}
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1 text-[14px]">
+                        {Object.entries(fields).map(([fieldKey, fieldData]) => {
+                          const label =
+                            fieldLabels[fieldKey.toLowerCase()] ?? fieldKey;
+
+                          const value =
+                            typeof fieldData === "object" &&
+                            "value" in fieldData
+                              ? fieldData.value
+                              : fieldData;
+
+                          return (
+                            <div
+                              key={fieldKey}
+                              className="flex gap-2 text-slate-700"
+                            >
+                              <span className="min-w-[180px] text-slate-500">
+                                {label}:
+                              </span>
+                              <span className="text-slate-800">
+                                {String(value)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         </motion.div>

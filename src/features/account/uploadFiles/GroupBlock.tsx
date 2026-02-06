@@ -164,6 +164,11 @@ const GroupBlock = memo(
                     {file.processing_status === "extracted" && (
                       <span className="text-green-600">Готово</span>
                     )}
+                    {file.processing_status === "reprocessing" && (
+                      <span className="text-green-600">
+                        Повторная обработка
+                      </span>
+                    )}
                     {file.processing_status === "failed" && (
                       <>
                         <span

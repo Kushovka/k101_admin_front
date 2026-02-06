@@ -8,6 +8,20 @@ export interface UserAdditionalData {
   number?: UserAdditionalDataField;
 }
 
+export type GroupedFieldValue =
+  | string
+  | {
+      value?: string;
+    };
+
+export interface GroupedDataGroup {
+  group_name: string;
+  sources: SourceFile[];
+  fields: Record<string, GroupedFieldValue>;
+}
+
+export type GroupedData = Record<string, GroupedDataGroup>;
+
 export interface SourceFile {
   raw_file_id: string;
   file_name: string | null;
@@ -27,12 +41,14 @@ export interface SearchUser {
   birthdays?: string[];
   birthday?: string;
 
+  grouped_data?: GroupedData;
+
   phones?: string[];
   emails?: string[];
   cities?: string[];
   addresses?: string[];
   snils?: string[];
-  source_files?: SourceFile[];
 
+  source_files?: SourceFile[];
   additional_data?: UserAdditionalData;
 }
