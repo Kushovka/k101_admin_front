@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Tooltip } from "react-tooltip";
 import userApi from "../../../api/userApi";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
@@ -12,13 +13,6 @@ import type {
   SearchUser,
   SourceFile,
 } from "../../../types/searchDetails.types";
-
-/* semantic helpers */
-const isLatLon = (v: any) => {
-  if (typeof v !== "string" && typeof v !== "number") return false;
-  const n = parseFloat(String(v).replace(",", "."));
-  return !isNaN(n) && n >= -180 && n <= 180;
-};
 
 const fieldLabels: Record<string, string> = {
   height: "Рост",
@@ -61,133 +55,6 @@ const fieldLabels: Record<string, string> = {
   "user agent": "Устройство пользователя",
 };
 
-const semanticGroups = {
-  contacts: ["phones", "emails", "rfcont", "rfcont_name"],
-  personal: [
-    "грудь",
-    "breast",
-    "размер одежды",
-    "clothing size",
-    "рост",
-    "height",
-    "девушка",
-    "nickname",
-    "вес",
-    "weight",
-    "размер обуви",
-    "shoes size",
-    "номер анкеты",
-    "anketa_id",
-    "район",
-    "area",
-    "метро",
-    "metro",
-    "дата обновления",
-    "updated ",
-  ],
-  docs: ["passport", "паспорт", "serial", "number", "snils"],
-  work: [
-    "fb",
-    "facebook",
-    "fb_profile_id",
-    "fb_work",
-    "external_share_link",
-    "pic_max",
-    "дата резюме",
-    "зарплата",
-    "образование",
-    "профессия",
-  ],
-  transport: [
-    "gibdd",
-    "gibdd2",
-    "car",
-    "vin",
-    "plate",
-    "год вып",
-    "кпп",
-    "Кол-во хозяев по ПТС",
-    "модель",
-    "модификация",
-    "наличие / таможня",
-    "номер владельца",
-    "обмен",
-    "привод",
-    "пробег",
-    "руль",
-    "состояние",
-    "тип кузова/цвет",
-    "цена",
-    "кол-во хозяев по птс",
-  ],
-  delivery: [
-    "delivery",
-    "delivery2",
-    "yandex",
-    "comment",
-    "commission",
-    "currency code",
-    "date added",
-    "ip",
-    "order id",
-    "order status id",
-    "password",
-    "payment code",
-    "payment country",
-    "payment method",
-    "payment postcode",
-    "payment zone",
-    "shipping address 1",
-    "shipping city",
-    "shipping country",
-    "shipping method",
-    "status",
-    "user agent",
-    "accept language",
-  ],
-  marketplace: ["avito", "wildberries", "wb"],
-  geo: ["lat", "lon", "широта", "долгота"],
-  security: ["password", "checkword", "external_auth_id", "login"],
-  crm: [
-    "lid",
-    "crm",
-    "активность",
-    "активные сделки",
-    "должности контактных лиц",
-    "должность",
-    "избранное",
-    "информация о контактных лицах",
-    "количество активных коммуникаций",
-    "количество завершенных сделок",
-    "количество коммуникаций",
-    "количество неоплаченных счетов",
-    "количество сделок",
-    "количество счетов",
-    "компания",
-    "непрочитанные комментарии",
-    "плательщики",
-    "создана",
-    "сумма активных сделок",
-    "сумма всех сделок",
-    "сумма всех счетов",
-    "сумма завершенных сделок",
-    "сумма неоплаченных счетов",
-    "счетчик дел",
-    "тип",
-  ],
-};
-
-const prefixLabels: Record<string, string> = {
-  delivery: "Доставка",
-  delivery2: "Доставка (вторичная)",
-  yandex: "Доставка Яндекс",
-  avito: "Маркетплейсы (Avito)",
-  wildberries: "Маркетплейсы (Wildberries)",
-  beeline: "Сотовая связь (Beeline)",
-  fb: "Работа/Соцсети (Facebook)",
-  gibdd: "Транспорт (ГИБДД)",
-  rfcont: "Контакты (RF)",
-};
 const getHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("access_token");
   if (!token) {
@@ -205,6 +72,13 @@ const SearchDetails: React.FC = () => {
   const navigate = useNavigate();
   const { isOpen } = useSidebar();
 
+  const [notify, setNotify] = useState(false);
+  const [openMain, setOpenMain] = useState(true);
+  const [openDossier, setOpenDossier] = useState(false);
+  const [aiDossier, setAIDossier] = useState("");
+  const [dossierLoading, setDossierLoading] = useState(false);
+
+  /* ---------------- helpers ---------------- */
   const user = location.state as SearchUser | null;
 
   const groupedData: GroupedData = user?.grouped_data ?? {};
@@ -229,12 +103,6 @@ const SearchDetails: React.FC = () => {
     return `${sources.length} источника`;
   };
 
-  const [notify, setNotify] = useState(false);
-  const [openMain, setOpenMain] = useState(true);
-  const [openDossier, setOpenDossier] = useState(false);
-  const [aiDossier, setAIDossier] = useState("");
-  const [dossierLoading, setDossierLoading] = useState(false);
-
   if (!user) {
     return (
       <p className={clsx("pl-[336px] py-6 text-slate-700")}>
@@ -243,51 +111,7 @@ const SearchDetails: React.FC = () => {
     );
   }
 
-  const cascade = user.additional_data ?? {};
   const sourceFiles = user.source_files ?? [];
-
-  const buckets = {
-    contacts: {},
-    personal: {},
-    docs: {},
-    work: {},
-    transport: {},
-    delivery: {},
-    marketplace: {},
-    geo: {},
-    security: {},
-    crm: {},
-    misc: {},
-  } as Record<string, Record<string, any>>;
-
-  Object.entries(cascade).forEach(([key, raw]) => {
-    const value = raw?.value ?? raw;
-    const prefix = key.split("_")[0].toLowerCase();
-    const normalizedKey = key.toLowerCase();
-
-    let target = "misc";
-
-    for (const [bucket, patterns] of Object.entries(semanticGroups)) {
-      if (
-        patterns.some((p) => normalizedKey.includes(p) || prefix.includes(p))
-      ) {
-        target = bucket;
-        break;
-      }
-    }
-
-    if (target === "misc") {
-      if (
-        isLatLon(value) ||
-        normalizedKey.includes("lat") ||
-        normalizedKey.includes("lon")
-      ) {
-        target = "misc";
-      }
-    }
-
-    buckets[target][key] = value;
-  });
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -312,22 +136,7 @@ const SearchDetails: React.FC = () => {
     }
   };
 
-  // const isValidName = (val: string) => /^[a-zA-Zа-яА-ЯёЁ-]+$/.test(val);
   const isValidName = (val: string) => /^\p{L}+$/u.test(val);
-
-  const titleMap = {
-    contacts: "Контакты",
-    personal: "Личная информация",
-    docs: "Документы",
-    work: "Работа / Соц сети",
-    transport: "Транспорт",
-    marketplace: "Маркетплейсы",
-    delivery: "Доставка",
-    geo: "Гео",
-    security: "Безопасность",
-    crm: "Бизнес / CRM",
-    misc: "Прочее",
-  };
 
   const personId = user.entity_id;
 
@@ -461,6 +270,7 @@ const SearchDetails: React.FC = () => {
                 .map(([groupKey, group]) => {
                   const fields = group.fields ?? {};
                   if (Object.keys(fields).length === 0) return null;
+                  const tooltipId = `sources-${groupKey}`;
 
                   return (
                     <div key={groupKey} className="space-y-2">
@@ -470,19 +280,31 @@ const SearchDetails: React.FC = () => {
                         </div>
 
                         {group.sources?.length > 0 && (
-                          <div
-                            className="text-xs text-slate-400 truncate max-w-[360px]"
-                            title={group.sources
-                              .map(
-                                (s) =>
-                                  s.display_name ||
-                                  s.file_name ||
-                                  s.raw_file_id,
-                              )
-                              .join(", ")}
-                          >
-                            Источник: {getSourceLabel(group.sources)}
-                          </div>
+                          <>
+                            <div
+                              data-tooltip-id={tooltipId}
+                              data-tooltip-place="top"
+                              className="text-xs text-slate-400 truncate max-w-[360px] cursor-help"
+                            >
+                              Источник: {getSourceLabel(group.sources)}
+                            </div>
+
+                            <Tooltip
+                              id={tooltipId}
+                              delayShow={300}
+                              className="max-w-[420px] !text-xs"
+                            >
+                              <div className="flex flex-col gap-1">
+                                {group.sources.map((s) => (
+                                  <div key={s.raw_file_id} className="truncate">
+                                    {s.display_name ||
+                                      s.file_name ||
+                                      s.raw_file_id}
+                                  </div>
+                                ))}
+                              </div>
+                            </Tooltip>
+                          </>
                         )}
                       </div>
 
