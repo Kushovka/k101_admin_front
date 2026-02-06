@@ -20,19 +20,17 @@ import {
   getAllFiles,
   getAllGroup,
   getFilesByGroup,
-  getParsingQueue,
   patchFileGroup,
-  patchPriorityFile,
   postRestartFile,
-  postToTopFile,
 } from "../../../api/uploadFiles";
 import userApi from "../../../api/userApi";
 import { getCurrentUser } from "../../../api/users";
 import DeleteModal from "../../../components/deleteModal/DeleteModal";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
+import { useParsingQueue } from "../../../hooks/uploadFiles/useParsingQueue";
 import { useUploadStore } from "../../../store/useUploadStore";
-import type { FileGroup, FileItem, FileItemQueue } from "../../../types/file";
+import type { FileGroup, FileItem } from "../../../types/file";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
 import GroupBlock from "./GroupBlock";
 import UploadDropzone from "./UploadDropzone";
@@ -41,18 +39,26 @@ type User = {
   id: string;
 };
 
-const ACTIVE_STATUSES = ["queued", "paused", "processing"] as const;
-
-type ActiveStatus = (typeof ACTIVE_STATUSES)[number];
-
 const UploadFiles = () => {
   const { isOpen } = useSidebar();
   const { files, removeFile, totalProgress, uploading, handleUpload } =
     useUploadStore();
 
-  const [page, setPage] = useState<number>(1);
+  const {
+    processingQueue,
+    waitingQueue,
+    completedQueue,
+    failedQueue,
+    queueLimit,
+    setQueueLimit,
+    pause,
+    resume,
+    cancel,
+    moveToTop,
+    changePriority,
+  } = useParsingQueue();
+
   const [pageSize] = useState<number>(20);
-  const [hasMore, setHasMore] = useState<boolean>(true);
   const [loadingFiles, setLoadingFiles] = useState<boolean>(false);
 
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
@@ -60,7 +66,6 @@ const UploadFiles = () => {
   const [toastFile, setToastFile] = useState<FileItem | null>(null);
 
   const [notify, setNotify] = useState<string | null>(null);
-  const [toast, setToast] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [groups, setGroups] = useState<FileGroup[]>([]);
@@ -70,13 +75,10 @@ const UploadFiles = () => {
   const [pageByGroup, setPageByGroup] = useState<Record<string, number>>({});
   const [loadingGroup, setLoadingGroup] = useState<Record<string, boolean>>({});
 
-  const [queue, setQueue] = useState<any[]>([]);
-  const [parsingCurrent, setParsingCurrent] = useState<any[]>([]);
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
 
-  const [totalFiles, setTotalFiles] = useState<number | null>(null);
   const [sortByGroup, setSortByGroup] = useState<
     Record<string, "newest" | "oldest">
   >({});
@@ -92,13 +94,7 @@ const UploadFiles = () => {
 
   const [search, setSearch] = useState<string>("");
 
-  const [queueLimit, setQueueLimit] = useState(20);
-
-  const visibleQueue = queue.slice(0, queueLimit);
-
   const token = localStorage.getItem("access_token") ?? "";
-
-  const auth = { headers: { Authorization: `Bearer ${token}` } };
 
   /* ---------------- user ---------------- */
 
@@ -137,16 +133,6 @@ const UploadFiles = () => {
     );
   };
 
-  const processingQueue = parsingCurrent;
-
-  const waitingQueue = queue.filter(
-    (item) => item.status === "queued" || item.status === "paused",
-  );
-
-  const failedQueue = queue.filter((item) => item.status === "failed");
-
-  const completedQueue = queue.filter((item) => item.status === "completed");
-
   const loadGroups = async () => {
     try {
       const res = await getAllGroup();
@@ -159,14 +145,6 @@ const UploadFiles = () => {
   useEffect(() => {
     loadGroups();
   }, []);
-
-  const isActiveStatus = (
-    status?: FileItemQueue["status"],
-  ): status is ActiveStatus => {
-    return (
-      status !== undefined && ACTIVE_STATUSES.includes(status as ActiveStatus)
-    );
-  };
 
   const escapeRegExp = (value: string) =>
     value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -240,7 +218,6 @@ const UploadFiles = () => {
     setSearchResults((prev) => prev.filter((f) => f.id !== file.id));
   };
 
-  // console.log(searchResults);
   useEffect(() => {
     if (!search.trim()) {
       setSearchResults([]);
@@ -267,22 +244,6 @@ const UploadFiles = () => {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  const toggleGroup = (groupName: string) => {
-    setCollapsedGroups((prev) => {
-      const isCollapsed = prev[groupName] ?? true;
-      const nextCollapsed = !isCollapsed;
-
-      if (!nextCollapsed && !filesByGroup[groupName]) {
-        loadGroupFiles(groupName);
-      }
-
-      return {
-        ...prev,
-        [groupName]: nextCollapsed,
-      };
-    });
-  };
-
   /* ---------------- пагинация ---------------- */
 
   const loadFiles = async (pageToLoad = 1, replace = false): Promise<void> => {
@@ -299,9 +260,6 @@ const UploadFiles = () => {
       });
 
       setAllFiles((prev) => (replace ? data.files : [...prev, ...data.files]));
-
-      setTotalFiles(data.total);
-      setHasMore(data.files.length === pageSize);
     } catch (e) {
       console.error(e);
       setError("Произошла ошибка! Попробуйте позже.");
@@ -309,95 +267,6 @@ const UploadFiles = () => {
       setLoadingFiles(false);
     }
   };
-  // console.log(filesByGroup);
-  // console.log(pageByGroup);
-  // console.log(groups);
-  /* ---------------- initial load ---------------- */
-
-  /* ---------------- queue api ---------------- */
-
-  const queueApi = {
-    pause: async (id: string) => {
-      try {
-        await userApi.post(`/api/v1/parsing-queue/${id}/pause`, {}, auth);
-        await handleAllQueue();
-      } catch (e: any) {
-        console.error(e);
-        setError(e.response?.data?.detail ?? "Ошибка при паузе файла");
-      }
-    },
-    resume: async (id: string) => {
-      try {
-        await userApi.post(`/api/v1/parsing-queue/${id}/resume`, {}, auth);
-        await handleAllQueue();
-      } catch (e: any) {
-        console.error(e);
-        setError(e.response?.data?.detail ?? "Ошибка при возобновлении файла");
-      }
-    },
-    cancel: async (id: string) => {
-      try {
-        await userApi.post(`/api/v1/parsing-queue/${id}/cancel`, {}, auth);
-        await handleAllQueue();
-      } catch (e: any) {
-        console.error(e);
-        setError(e.response?.data?.detail ?? "Ошибка при отмене файла");
-      }
-    },
-  };
-
-  const handleChangePriority = async (id: string, priority: number) => {
-    try {
-      const res = await patchPriorityFile(id, { priority });
-      // обновляем локально
-      setQueue((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? { ...f, priority: res.priority, position: res.position }
-            : f,
-        ),
-      );
-    } catch (e) {
-      console.error(e);
-      setError("Ошибка при изменении приоритета");
-    }
-  };
-
-  const handleAllQueue = async () => {
-    const res = await getParsingQueue();
-
-    setParsingCurrent(res.currently_processing ?? []);
-    setQueue(res.entries ?? []);
-  };
-
-  const handleMoveToTop = async (id: string) => {
-    try {
-      await postToTopFile(id);
-      await handleAllQueue(); // подтянуть новую позицию
-    } catch (err) {
-      console.log(err);
-      setError("Не удалось поднять в топ");
-    }
-  };
-
-  useEffect(() => {
-    const handleParsingCurrent = async () => {
-      try {
-        const res = await getParsingQueue();
-        setParsingCurrent(res.currently_processing);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    handleParsingCurrent();
-  }, []);
-  // console.log(parsingCurrent);
-
-  useEffect(() => {
-    handleAllQueue();
-    const interval = setInterval(handleAllQueue, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleFileGroup = async (id: string, group: string) => {
     try {
@@ -435,9 +304,6 @@ const UploadFiles = () => {
   const handleRestartFile = async (id: string) => {
     try {
       await postRestartFile(id);
-
-      // 1. очередь
-      await handleAllQueue();
 
       // 2. allFiles
       setAllFiles((prev) =>
@@ -490,7 +356,6 @@ const UploadFiles = () => {
     }
   };
 
-  // console.log(queue);
   /* ---------------- форматер размера файла ---------------- */
 
   const formatFileSize = (bytes?: number): string => {
@@ -501,14 +366,6 @@ const UploadFiles = () => {
 
     return `${(kb / 1024).toFixed(2)} МБ`;
   };
-  console.log(queue);
-  // console.log(searchResults);
-
-  /* ---------------- загрузка персент процент через /api/v1/files/${f.id}/status  ---------------- */
-
-  // в будущем нужно будет менять на подгрузку в
-  // реальном времени через SSE или подключать WEB-SOCKET
-  //  и двухсторонне общаться с бэком
 
   useEffect(() => {
     if (!currentUser) return;
@@ -530,8 +387,6 @@ const UploadFiles = () => {
             }),
           ),
         );
-        // потом включить на тест
-        // console.log(updates.map((u) => u.data.progress_percent));
         setAllFiles((prev) =>
           prev.map((file) => {
             const fresh = updates.find((u) => u.data.file_id === file.id)?.data;
@@ -546,12 +401,6 @@ const UploadFiles = () => {
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
-  // console.log(duplicateMessages);
-  // console.log(queue);
-  // console.log(queue.map((q) => q.status));
-
-  const DISABLE_ANIMATION_LIMIT = 50;
-  const shouldAnimate = files.length < DISABLE_ANIMATION_LIMIT;
 
   /* ---------------- рендер ---------------- */
   return (
@@ -687,9 +536,6 @@ const UploadFiles = () => {
                         ),
                       );
                     }
-
-                    setPage(1);
-                    setHasMore(true);
                     loadFiles(1, true);
                     loadGroups();
                   },
@@ -718,7 +564,6 @@ const UploadFiles = () => {
       {/* загруженные файлы */}
 
       {/* PROCESSING QUEUE */}
-      {/* PROCESSING QUEUE */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -733,8 +578,12 @@ const UploadFiles = () => {
             <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
               Очередь обработки
             </h2>
-            <p className="text-[13px] text-slate-500 mt-[2px]">
-              В очереди: {queue.length}
+            <p>
+              В очереди:{" "}
+              {processingQueue.length +
+                waitingQueue.length +
+                completedQueue.length +
+                failedQueue.length}
             </p>
           </div>
 
@@ -758,7 +607,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-green-200 rounded-xl divide-y">
                   {processingQueue.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.raw_file_id}
                       className="grid grid-cols-3 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -796,7 +645,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-blue-200 rounded-xl divide-y">
                   {waitingQueue.slice(0, queueLimit).map((item) => (
                     <div
-                      key={item.id}
+                      key={item.raw_file_id}
                       className="grid grid-cols-6 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -823,7 +672,7 @@ const UploadFiles = () => {
                       <select
                         value={item.priority}
                         onChange={(e) =>
-                          handleChangePriority(
+                          changePriority(
                             item.raw_file_id,
                             Number(e.target.value),
                           )
@@ -845,7 +694,7 @@ const UploadFiles = () => {
                       {/* ACTIONS */}
                       <div className="flex justify-end gap-2 col-span-2">
                         <button
-                          onClick={() => handleMoveToTop(item.raw_file_id)}
+                          onClick={() => moveToTop(item.raw_file_id)}
                           className="px-2 py-[3px] rounded border border-gray-300 text-[12px] hover:bg-gray-100 transition"
                         >
                           ↑ в топ
@@ -853,7 +702,7 @@ const UploadFiles = () => {
 
                         {item.status === "paused" && (
                           <button
-                            onClick={() => queueApi.resume(item.raw_file_id)}
+                            onClick={() => resume(item.raw_file_id)}
                             className="p-1 rounded hover:bg-slate-200"
                           >
                             <FaPlay />
@@ -862,7 +711,7 @@ const UploadFiles = () => {
 
                         {item.status === "queued" && (
                           <button
-                            onClick={() => queueApi.pause(item.raw_file_id)}
+                            onClick={() => pause(item.raw_file_id)}
                             className="p-1 rounded hover:bg-slate-200"
                           >
                             <FaStop />
@@ -870,7 +719,7 @@ const UploadFiles = () => {
                         )}
 
                         <button
-                          onClick={() => queueApi.cancel(item.raw_file_id)}
+                          onClick={() => cancel(item.raw_file_id)}
                           className="p-1 rounded hover:bg-red-100 text-red-500"
                         >
                           <IoClose />
@@ -901,7 +750,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-emerald-200 rounded-xl divide-y">
                   {completedQueue.slice(0, queueLimit).map((item) => (
                     <div
-                      key={item.id}
+                      key={item.raw_file_id}
                       className="grid grid-cols-4 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -937,8 +786,7 @@ const UploadFiles = () => {
                   ))}
                 </div>
 
-                {queue.filter((i) => i.status === "completed").length >
-                  queueLimit && (
+                {completedQueue.length > queueLimit && (
                   <button
                     onClick={() => setQueueLimit((p) => p + 20)}
                     className="mt-3 text-sm text-cyan-600 hover:underline"
@@ -959,7 +807,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-red-200 rounded-xl divide-y">
                   {failedQueue.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.raw_file_id}
                       className="grid grid-cols-5 gap-4 items-center px-4 py-3"
                     >
                       <div className="min-w-0">
@@ -984,7 +832,7 @@ const UploadFiles = () => {
                         </button>
 
                         <button
-                          onClick={() => queueApi.cancel(item.raw_file_id)}
+                          onClick={() => cancel(item.raw_file_id)}
                           className="p-1 rounded hover:bg-red-100 text-red-500"
                         >
                           <IoClose />
@@ -1027,8 +875,6 @@ const UploadFiles = () => {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setPage(1);
-                setHasMore(true);
               }}
               placeholder="Поиск по названию файла"
               className="w-64 px-3 py-2 text-[14px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"

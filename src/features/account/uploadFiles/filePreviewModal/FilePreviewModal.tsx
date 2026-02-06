@@ -96,6 +96,10 @@ const FilePreviewModal = ({
   const columns =
     Array.isArray(rows) && rows.length > 0 ? Object.keys(typedRows[0]) : [];
 
+  const isTxtPreview =
+    file.file_name?.toLowerCase().endsWith(".txt") ||
+    (columns.length === 1 && columns[0] === "line");
+
   /* ---------------- skeleton ---------------- */
 
   const Skeleton = () => (
@@ -116,6 +120,33 @@ const FilePreviewModal = ({
   );
 
   console.log(typedRows);
+
+  type TxtLineProps = {
+    value: string;
+  };
+
+  const TxtLine = ({ value }: TxtLineProps) => {
+    const parts = value.split(":");
+
+    return (
+      <div className="flex gap-2 px-2 py-1 border rounded hover:bg-gray-50 whitespace-nowrap">
+        {parts.map((part, i) => (
+          <span
+            key={i}
+            className={clsx(
+              "break-all",
+              i === 0 && "text-blue-600",
+              i === 1 && "text-green-600",
+              i === 2 && "text-red-600",
+              i > 2 && "text-gray-600",
+            )}
+          >
+            {part}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   /* ---------------- render ---------------- */
   return (
@@ -189,72 +220,82 @@ const FilePreviewModal = ({
 
         {/* table container (fixed height) */}
         <div className="h-[60vh] border rounded overflow-auto p-2">
-          {loading && <Skeleton />}
+          <div className="h-full overflow-y-auto overflow-x-auto p-2">
+            {loading && <Skeleton />}
 
-          {!loading && rows.length === 0 && (
-            <p className="text-gray-500 text-center mt-10">
-              Нет данных для предпросмотра
-            </p>
-          )}
+            {!loading && rows.length === 0 && (
+              <p className="text-gray-500 text-center mt-10">
+                Нет данных для предпросмотра
+              </p>
+            )}
 
-          {!loading && rows.length > 0 && (
-            <table className="w-full table-fixed border-collapse text-sm overflow-y-hidden">
-              <thead>
-                <tr>
-                  {columns.map((col) => (
-                    <th
-                      key={col}
-                      data-tooltip-id="alias-file_tooltip"
-                      className="border px-2 py-1 bg-gray-100 cursor-pointer  hover:bg-blue-50"
-                      onClick={() => {
-                        setEditingField(col);
-                        setAliasValue(aliases[col]?.display_name ?? "");
-                      }}
-                    >
-                      {aliases[col]?.display_name ?? col}
-                      <Tooltip
-                        id="alias-file_tooltip"
-                        place="top"
-                        delayShow={400}
-                        content="Кликните, чтобы задать алиас"
-                      />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+            {!loading && rows.length > 0 && isTxtPreview && (
+              <div className="space-y-1 font-mono text-sm min-w-max">
                 {typedRows.map((row, i) => (
-                  <tr key={i} className="">
+                  <TxtLine key={i} value={String(row.line ?? "")} />
+                ))}
+              </div>
+            )}
+
+            {!loading && rows.length > 0 && !isTxtPreview && (
+              <table className="min-w-max border-collapse text-sm">
+                <thead>
+                  <tr>
                     {columns.map((col) => (
-                      <td
+                      <th
                         key={col}
-                        className={clsx(
-                          "border px-2 py-1 ",
-                          col === "additional_data" && "cursor-pointer",
-                        )}
-                        data-tooltip-id={`cell-tooltip-${i}-${col}`}
+                        data-tooltip-id="alias-file_tooltip"
+                        className="border px-2 py-1 bg-gray-100 cursor-pointer  hover:bg-blue-50"
+                        onClick={() => {
+                          setEditingField(col);
+                          setAliasValue(aliases[col]?.display_name ?? "");
+                        }}
                       >
-                        {renderCellValue(row[col])}
-                        {col === "additional_data" && row[col] != null && (
-                          <Tooltip
-                            id={`cell-tooltip-${i}-${col}`}
-                            place="top"
-                            delayShow={400}
-                            className="max-w-[500px] whitespace-normal break-words"
-                            render={() => (
-                              <pre className="whitespace-pre-wrap text-xs">
-                                {JSON.stringify(row[col], null, 2)}
-                              </pre>
-                            )}
-                          />
-                        )}
-                      </td>
+                        {aliases[col]?.display_name ?? col}
+                        <Tooltip
+                          id="alias-file_tooltip"
+                          place="top"
+                          delayShow={400}
+                          content="Кликните, чтобы задать алиас"
+                        />
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {typedRows.map((row, i) => (
+                    <tr key={i} className="">
+                      {columns.map((col) => (
+                        <td
+                          key={col}
+                          className={clsx(
+                            "border px-2 py-1 ",
+                            col === "additional_data" && "cursor-pointer",
+                          )}
+                          data-tooltip-id={`cell-tooltip-${i}-${col}`}
+                        >
+                          {renderCellValue(row[col])}
+                          {col === "additional_data" && row[col] != null && (
+                            <Tooltip
+                              id={`cell-tooltip-${i}-${col}`}
+                              place="top"
+                              delayShow={400}
+                              className="max-w-[500px] whitespace-normal break-words"
+                              render={() => (
+                                <pre className="whitespace-pre-wrap text-xs">
+                                  {JSON.stringify(row[col], null, 2)}
+                                </pre>
+                              )}
+                            />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
         {/* footer */}
