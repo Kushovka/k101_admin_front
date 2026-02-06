@@ -165,7 +165,20 @@ const GroupBlock = memo(
                       <span className="text-green-600">Готово</span>
                     )}
                     {file.processing_status === "failed" && (
-                      <span className="text-red-600">Ошибка</span>
+                      <>
+                        <span
+                          data-tooltip-id={`error-file_${file.id}`}
+                          className="text-red-600 cursor-help"
+                        >
+                          Ошибка
+                        </span>
+                        <Tooltip
+                          place="top"
+                          delayShow={400}
+                          id={`error-file_${file.id}`}
+                          content={file.error_message}
+                        />
+                      </>
                     )}
 
                     <button

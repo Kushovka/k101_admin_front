@@ -78,7 +78,7 @@ const UploadFiles = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
-
+  
   const [sortByGroup, setSortByGroup] = useState<
     Record<string, "newest" | "oldest">
   >({});
@@ -374,7 +374,9 @@ const UploadFiles = () => {
       (f) =>
         f.uploaded_by_user_id === currentUser.id &&
         f.processing_status !== undefined &&
-        ["queued", "extracting", "uploaded"].includes(f.processing_status),
+        ["queued", "extracting", "uploaded", "reprocessing"].includes(
+          f.processing_status,
+        ),
     );
     if (!active.length) return;
 
@@ -401,6 +403,8 @@ const UploadFiles = () => {
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
+
+  console.log(searchResults);
 
   /* ---------------- рендер ---------------- */
   return (
@@ -976,8 +980,26 @@ const UploadFiles = () => {
                     {file.processing_status === "extracted" && (
                       <span className="text-green-600">Готово</span>
                     )}
+                    {file.processing_status === "reprocessing" && (
+                      <span className="text-green-600">
+                        Повторная обработка
+                      </span>
+                    )}
                     {file.processing_status === "failed" && (
-                      <span className="text-red-600">Ошибка</span>
+                      <>
+                        <span
+                          data-tooltip-id={`error-file_${file.id}`}
+                          className="text-red-600 cursor-help"
+                        >
+                          Ошибка
+                        </span>
+                        <Tooltip
+                          place="top"
+                          delayShow={400}
+                          id={`error-file_${file.id}`}
+                          content={file.error_message}
+                        />
+                      </>
                     )}
 
                     <button

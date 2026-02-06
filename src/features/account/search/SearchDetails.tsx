@@ -218,6 +218,7 @@ const SearchDetails: React.FC = () => {
   }
 
   const cascade = user.additional_data ?? {};
+  const sourceFiles = user.source_files ?? [];
 
   const buckets = {
     contacts: {},
@@ -501,6 +502,42 @@ const SearchDetails: React.FC = () => {
             </motion.div>
           )}
         </motion.div>
+
+        {/* SOURCE FILES */}
+        {sourceFiles.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          >
+            <div className="px-4 py-3 border-b border-gray-200">
+              <div className="font-medium text-slate-800">Источники данных</div>
+            </div>
+
+            <div className="px-4 py-3 space-y-2 text-[14px]">
+              {sourceFiles.map((file) => {
+                const name =
+                  file.display_name && file.display_name !== "unknown"
+                    ? file.display_name
+                    : file.file_name;
+
+                return (
+                  <div
+                    key={file.raw_file_id}
+                    className="flex justify-between items-center text-slate-700"
+                  >
+                    <span>{name || "Неизвестный файл"}</span>
+
+                    <span className="text-xs text-slate-400">
+                      {file.raw_file_id}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

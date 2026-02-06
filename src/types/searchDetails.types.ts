@@ -8,6 +8,14 @@ export interface UserAdditionalData {
   number?: UserAdditionalDataField;
 }
 
+export interface SourceFile {
+  raw_file_id: string;
+  file_name: string | null;
+  display_name: string | null;
+  file_description: string | null;
+  upload_date: string | null;
+}
+
 export interface SearchUser {
   first_name?: string;
   last_name?: string;
@@ -24,6 +32,7 @@ export interface SearchUser {
   cities?: string[];
   addresses?: string[];
   snils?: string[];
+  source_files?: SourceFile[];
 
   additional_data?: UserAdditionalData;
 }

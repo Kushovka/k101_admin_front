@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import Loader from "../../../components/loader/Loader";
-import { systemStatistics } from "../../../api/systemStatistics";
-import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import clsx from "clsx";
-import Toast from "../../../components/toast/Toast";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { systemStatistics } from "../../../api/systemStatistics";
+import Loader from "../../../components/loader/Loader";
+import { useSidebar } from "../../../components/sidebar/SidebarContext";
+import Toast from "../../../components/toast/Toast";
 
 import type { SystemStatisticsResponse } from "../../../types/systemStatistics";
 
@@ -121,7 +121,7 @@ const SystemStatistics = () => {
                 <div className="flex justify-between">
                   <span>Записей извлечено</span>
                   <span className="font-medium">
-                    {stats.files.total_records_parsed}
+                    {stats.files.total_records_parsed.toLocaleString("ru-RU")}
                   </span>
                 </div>
 

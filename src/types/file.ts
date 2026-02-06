@@ -14,7 +14,8 @@ export type FileItem = {
     | "pending"
     | "extracting"
     | "failed"
-    | "extracted";
+    | "extracted"
+    | "reprocessing";
   progress_percent?: number;
   error_message?: string;
   priority?: number;
