@@ -78,7 +78,7 @@ const UploadFiles = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
-  
+
   const [sortByGroup, setSortByGroup] = useState<
     Record<string, "newest" | "oldest">
   >({});
@@ -404,7 +404,6 @@ const UploadFiles = () => {
     return () => clearInterval(interval);
   }, [currentUser, token]);
 
-  console.log(searchResults);
 
   /* ---------------- рендер ---------------- */
   return (
@@ -611,7 +610,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-green-200 rounded-xl divide-y">
                   {processingQueue.map((item) => (
                     <div
-                      key={item.raw_file_id}
+                      key={`processing-${item.raw_file_id}`}
                       className="grid grid-cols-3 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -649,7 +648,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-blue-200 rounded-xl divide-y">
                   {waitingQueue.slice(0, queueLimit).map((item) => (
                     <div
-                      key={item.raw_file_id}
+                      key={`waiting-${item.raw_file_id}`}
                       className="grid grid-cols-6 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -754,7 +753,7 @@ const UploadFiles = () => {
                 <div className="bg-white border border-emerald-200 rounded-xl divide-y">
                   {completedQueue.slice(0, queueLimit).map((item) => (
                     <div
-                      key={item.raw_file_id}
+                      key={`completed-${item.raw_file_id}`}
                       className="grid grid-cols-4 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -809,41 +808,54 @@ const UploadFiles = () => {
                 </h3>
 
                 <div className="bg-white border border-red-200 rounded-xl divide-y">
-                  {failedQueue.map((item) => (
-                    <div
-                      key={item.raw_file_id}
-                      className="grid grid-cols-5 gap-4 items-center px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-900">
-                          {item.file_name}
-                        </p>
-                        <p className="text-[13px] text-slate-500">
-                          {formatFileSize(item.file_size)}
-                        </p>
-                      </div>
+                  {failedQueue.map((item) => {
+                    const tooltipId = `error-q-file_${item.raw_file_id}_failed`;
 
-                      <span className="text-red-600 text-sm text-center">
-                        Ошибка
-                      </span>
+                    return (
+                      <div
+                        key={`failed-${item.raw_file_id}`}
+                        className="grid grid-cols-5 gap-4 items-center px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">
+                            {item.file_name}
+                          </p>
+                          <p className="text-[13px] text-slate-500">
+                            {formatFileSize(item.file_size)}
+                          </p>
+                        </div>
 
-                      <div className="col-span-3 flex justify-end gap-2">
-                        <button
-                          onClick={() => handleRestartFile(item.raw_file_id)}
-                          className="px-2 py-1 text-[12px] rounded border border-green-300 text-green-600 hover:bg-green-50 transition"
+                        <span
+                          data-tooltip-id={tooltipId}
+                          className="text-red-600 cursor-help"
                         >
-                          <MdRestartAlt className="w-5 h-5" />
-                        </button>
+                          Ошибка
+                        </span>
+                        <Tooltip
+                          place="top"
+                          delayShow={400}
+                          id={tooltipId}
+                          content={item.error_message}
+                        />
 
-                        <button
-                          onClick={() => cancel(item.raw_file_id)}
-                          className="p-1 rounded hover:bg-red-100 text-red-500"
-                        >
-                          <IoClose />
-                        </button>
+                        <div className="col-span-3 flex justify-end gap-2">
+                          <button
+                            onClick={() => handleRestartFile(item.raw_file_id)}
+                            className="px-2 py-1 text-[12px] rounded border border-green-300 text-green-600 hover:bg-green-50 transition"
+                          >
+                            <MdRestartAlt className="w-5 h-5" />
+                          </button>
+
+                          <button
+                            onClick={() => cancel(item.raw_file_id)}
+                            className="p-1 rounded hover:bg-red-100 text-red-500"
+                          >
+                            <IoClose />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -905,6 +917,8 @@ const UploadFiles = () => {
             )}
 
             {searchResults.map((file) => {
+              const tooltipId = `error-file_${file.id}_search`;
+
               return (
                 <div
                   key={file.id}
@@ -988,7 +1002,7 @@ const UploadFiles = () => {
                     {file.processing_status === "failed" && (
                       <>
                         <span
-                          data-tooltip-id={`error-file_${file.id}`}
+                          data-tooltip-id={tooltipId}
                           className="text-red-600 cursor-help"
                         >
                           Ошибка
@@ -996,7 +1010,7 @@ const UploadFiles = () => {
                         <Tooltip
                           place="top"
                           delayShow={400}
-                          id={`error-file_${file.id}`}
+                          id={tooltipId}
                           content={file.error_message}
                         />
                       </>

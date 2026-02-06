@@ -19,6 +19,7 @@ export type ParsingQueueItem = {
   file_name: string;
   file_size?: number;
   status?: QueueStatus;
+  error_message?: string;
   priority?: number;
   position?: number;
   progress_percent?: number;
@@ -46,6 +47,16 @@ export const useParsingQueue = () => {
     [token],
   );
 
+  const normalizeQueue = (items: ParsingQueueItem[]) => {
+    const map = new Map<string, ParsingQueueItem>();
+
+    for (const item of items) {
+      map.set(item.raw_file_id, item);
+    }
+
+    return Array.from(map.values());
+  };
+
   const processingQueue = parsingCurrent;
 
   const waitingQueue = useMemo(
@@ -70,8 +81,9 @@ export const useParsingQueue = () => {
     try {
       const res = (await getParsingQueue()) as ParsingQueueResponse;
 
-      setParsingCurrent(res.currently_processing ?? []);
-      setQueue(res.entries ?? []);
+      setParsingCurrent(normalizeQueue(res.currently_processing ?? []));
+
+      setQueue(normalizeQueue(res.entries ?? []));
     } catch (e: any) {
       setError(e?.response?.data?.detail ?? "Ошибка загрузки очереди");
     } finally {
