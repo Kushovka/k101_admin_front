@@ -39,6 +39,7 @@ export interface SearchUser {
   entity_id: string;
 
   birthdays?: string[];
+  ipn?: string[];
   birthday?: string;
 
   grouped_data?: GroupedData;

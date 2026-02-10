@@ -234,6 +234,7 @@ const SearchDetails: React.FC = () => {
               ))}
 
               {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
+              {user.ipn?.[0] && <p>ipn: {user.ipn[0]}</p>}
 
               {user.addresses?.map((a, i) => (
                 <p key={i}>
