@@ -90,7 +90,7 @@ const Search = () => {
 
     return "+" + phone;
   };
-
+  console.log(result);
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -109,20 +109,26 @@ const Search = () => {
 
     if (!isPagination) setResult([]);
 
+    if (!isPagination) {
+      setCurrentPage(1);
+      setTotalPages(1);
+    }
+
     setLoading(true);
     setError(null);
     setSeeSearch(false);
 
     try {
+      let endpoint = "";
+
       const params: Record<string, string> = {
         page: String(page),
         page_size: String(pageSize),
       };
 
-      let endpoint = "api/v1/search/by-name";
-
       switch (mode) {
         case "name":
+          endpoint = "/api/v1/search/by-name";
           params.name = value;
           break;
 
@@ -136,17 +142,16 @@ const Search = () => {
           params.email = value;
           break;
 
-        case "address":
-          endpoint = "/api/v1/search";
-          params.address = value;
-          break;
-
         case "id":
           endpoint = "/api/v1/search";
           params.person_id = value;
           break;
-      }
 
+        case "address":
+          endpoint = "/api/v1/search/by-address";
+          params.address = value;
+          break;
+      }
       const qs = new URLSearchParams(params).toString();
 
       const response = await userApi.post<SearchResponse>(
@@ -212,7 +217,7 @@ const Search = () => {
         >
           <div className="flex gap-2">
             {SEARCH_TABS.map((tab) => {
-              const isDisabled = tab.key === "address";
+              const isDisabled = false;
 
               return (
                 <button
@@ -263,6 +268,13 @@ const Search = () => {
               Найти
             </button>
           </form>
+
+          {mode === "address" && (
+            <p className="text-xs text-slate-500">
+              Пример: Екатеринбург, улица Начдива Онуфриева, 8, подъезд 4, кв.
+              156, этаж 8
+            </p>
+          )}
 
           <p className="text-[13px] text-slate-500">
             Система автоматически определит тип данных
@@ -335,7 +347,7 @@ const Search = () => {
           </div>
 
           {/* pagination */}
-          {totalPages > 1 && (
+          {!loading && result.length > 0 && totalPages > 1 && (
             <div className="flex items-center justify-center gap-1 pt-4">
               {visiblePages.map((page) => (
                 <button

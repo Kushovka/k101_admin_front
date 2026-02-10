@@ -220,6 +220,7 @@ const SearchDetails: React.FC = () => {
               {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
               {user.age && <p>Возраст: {user.age}</p>}
               {user.gender && <p>Пол: {user.gender}</p>}
+              {user.birthdays?.[0] && <p>Дата рождения: {user.birthdays[0]}</p>}
               {user.emails?.map((e, i) => (
                 <p key={i}>
                   Email {i + 1}:{" "}
