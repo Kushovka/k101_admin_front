@@ -264,11 +264,11 @@ const Search = () => {
             </button>
           </form>
 
-          {mode === "address" && (
+          {/* {mode === "address" && (
             <p className="text-xs text-slate-500">
               Пример: Москва, ул. Ильинка, д. 23/16
             </p>
-          )}
+          )} */}
 
           <p className="text-[13px] text-slate-500">
             Система автоматически определит тип данных
