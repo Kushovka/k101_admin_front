@@ -16,7 +16,7 @@ const SEARCH_TABS: { key: SearchMode; label: string; placeholder: string }[] = [
   { key: "phone", label: "Телефон", placeholder: "+7 999 123-45-67" },
   { key: "email", label: "Email", placeholder: "example@mail.ru" },
   { key: "address", label: "Адрес", placeholder: "Город, улица, дом" },
-  { key: "id", label: "ID", placeholder: "ID персоны" },
+  // { key: "id", label: "ID", placeholder: "ID персоны" },
 ];
 
 const getHeaders = () => ({
@@ -142,10 +142,10 @@ const Search = () => {
           params.email = value;
           break;
 
-        case "id":
-          endpoint = "/api/v1/search";
-          params.person_id = value;
-          break;
+        // case "id":
+        //   endpoint = "/api/v1/search";
+        //   params.person_id = value;
+        //   break;
 
         case "address":
           endpoint = "/api/v1/search/by-address";

@@ -242,7 +242,7 @@ const SearchDetails: React.FC = () => {
                 </p>
               ))}
 
-              {user.entity_id && <p>ID: {user.entity_id}</p>}
+              {/* {user.entity_id && <p>ID: {user.entity_id}</p>} */}
             </div>
           )}
         </motion.div>
