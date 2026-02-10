@@ -9,13 +9,22 @@ import { useSearch } from "./SearchContext";
 import userApi from "../../../api/userApi";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 
-type SearchMode = "name" | "phone" | "email" | "address" | "id";
+type SearchMode =
+  | "name"
+  | "phone"
+  | "email"
+  | "address"
+  | "id"
+  | "snils"
+  | "ipn";
 
 const SEARCH_TABS: { key: SearchMode; label: string; placeholder: string }[] = [
   { key: "name", label: "ФИО", placeholder: "Фамилия Имя Отчество" },
   { key: "phone", label: "Телефон", placeholder: "+7 999 123-45-67" },
   { key: "email", label: "Email", placeholder: "example@mail.ru" },
   { key: "address", label: "Адрес", placeholder: "Город, улица, дом" },
+  { key: "snils", label: "СНИЛС", placeholder: "123-456-789 00" },
+  { key: "ipn", label: "ИНН", placeholder: "123456789000" },
   // { key: "id", label: "ID", placeholder: "ID персоны" },
 ];
 
@@ -140,6 +149,16 @@ const Search = () => {
         case "email":
           endpoint = "/api/v1/search";
           params.email = value;
+          break;
+
+        case "snils":
+          endpoint = "/api/v1/search";
+          params.snils = value;
+          break;
+
+        case "ipn":
+          endpoint = "/api/v1/search";
+          params.ipn = value;
           break;
 
         // case "id":
