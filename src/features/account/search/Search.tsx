@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { useSearch } from "./SearchContext";
@@ -35,6 +35,7 @@ const getHeaders = () => ({
 
 const Search = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [notify, setNotify] = useState<null | string>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -104,6 +105,14 @@ const Search = () => {
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (location.state?.restore) {
+      setValue(location.state.searchValue);
+      setCurrentPage(location.state.page);
+      handleSubmit(undefined, location.state.page, true);
+    }
+  }, [location.key]);
+
   const handleSubmit = async (
     e?: React.FormEvent,
     page: number = 1,
@@ -115,8 +124,8 @@ const Search = () => {
       setError("Введите значение для поиска");
       return;
     }
-
-    if (!isPagination) setResult([]);
+    if (location.state?.restore && value.trim())
+      if (!isPagination) setResult([]);
 
     if (!isPagination) {
       setCurrentPage(1);
@@ -349,7 +358,11 @@ const Search = () => {
                   className="text-cyan-600 font-medium text-center"
                   onClick={() =>
                     navigate(`/account/search/${item.entity_id}`, {
-                      state: item,
+                      state: {
+                        item,
+                        searchValue: value,
+                        page: currentPage,
+                      },
                     })
                   }
                 >

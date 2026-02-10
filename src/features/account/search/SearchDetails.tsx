@@ -55,6 +55,12 @@ const fieldLabels: Record<string, string> = {
   "user agent": "Устройство пользователя",
 };
 
+type SearchDetailsState = {
+  item: SearchUser;
+  searchValue?: string;
+  page?: number;
+};
+
 const getHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("access_token");
   if (!token) {
@@ -79,7 +85,8 @@ const SearchDetails: React.FC = () => {
   const [dossierLoading, setDossierLoading] = useState(false);
 
   /* ---------------- helpers ---------------- */
-  const user = location.state as SearchUser | null;
+  const state = location.state as SearchDetailsState | null;
+  const user = state?.item ?? null;
 
   const groupedData: GroupedData = user?.grouped_data ?? {};
 
@@ -158,7 +165,15 @@ const SearchDetails: React.FC = () => {
 
         {/* back button */}
         <button
-          onClick={() => navigate("/account/search")}
+          onClick={() =>
+            navigate("/account/search", {
+              state: {
+                restore: true,
+                searchValue: location.state?.searchValue,
+                page: location.state?.page,
+              },
+            })
+          }
           className="flex items-center gap-3 h-[40px] w-fit border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition px-3 text-[14px]"
         >
           <IoExitOutline className="rotate-180 h-[20px] w-[20px] text-slate-600" />
