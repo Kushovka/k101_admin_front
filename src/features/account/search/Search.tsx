@@ -239,11 +239,6 @@ const Search = () => {
                         ? "bg-cyan-500 text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200",
                   )}
-                  title={
-                    isDisabled
-                      ? "Поиск по адресу скоро будет доступен"
-                      : undefined
-                  }
                 >
                   {tab.label}
                 </button>
@@ -271,8 +266,7 @@ const Search = () => {
 
           {mode === "address" && (
             <p className="text-xs text-slate-500">
-              Пример: Екатеринбург, улица Начдива Онуфриева, 8, подъезд 4, кв.
-              156, этаж 8
+              Пример: Москва, ул. Ильинка, д. 23/16
             </p>
           )}
 
