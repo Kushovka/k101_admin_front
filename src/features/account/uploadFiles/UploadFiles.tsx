@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { JSX, useEffect, useState } from "react";
 import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa6";
-import { IoIosArrowDown, IoMdClose } from "react-icons/io";
+import { IoIosArrowDown, IoIosClose, IoMdClose } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { MdDelete, MdRestartAlt } from "react-icons/md";
 import {
@@ -26,6 +26,7 @@ import {
 import userApi from "../../../api/userApi";
 import { getCurrentUser } from "../../../api/users";
 import DeleteModal from "../../../components/deleteModal/DeleteModal";
+import { InfoRow } from "../../../components/info/InfoRow";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { useParsingQueue } from "../../../hooks/uploadFiles/useParsingQueue";
@@ -86,7 +87,9 @@ const UploadFiles = () => {
   const [searchResults, setSearchResults] = useState<FileItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const [duplicateMessages, setDuplicateMessages] = useState<string[]>([]);
+  const [duplicatesCount, setDuplicatesCount] = useState(0);
+
+  const [openAddFile, setOpenAddFile] = useState<FileItem | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -95,6 +98,8 @@ const UploadFiles = () => {
   const [search, setSearch] = useState<string>("");
 
   const token = localStorage.getItem("access_token") ?? "";
+
+  console.log(filesByGroup);
 
   /* ---------------- user ---------------- */
 
@@ -133,6 +138,52 @@ const UploadFiles = () => {
     );
   };
 
+  const formatDateTime = (value?: string) =>
+    value ? new Date(value).toLocaleString() : "-";
+
+  const renderProcessingStatus = (file: FileItem) => {
+    switch (file.processing_status) {
+      case "uploaded":
+        return <span className="text-blue-600">Загружен</span>;
+
+      case "pending":
+        return <span className="text-slate-500">Ожидание…</span>;
+
+      case "extracting":
+        return <span className="text-cyan-600">Обработка…</span>;
+
+      case "extracted":
+        return <span className="text-green-600">Готово</span>;
+
+      case "reprocessing":
+        return <span className="text-green-600">Повторная обработка</span>;
+
+      case "failed":
+        return (
+          <>
+            <span
+              data-tooltip-id={`error-file-modal_${file.id}`}
+              className="text-red-600 cursor-help"
+            >
+              Ошибка
+            </span>
+            {file.error_message && (
+              <Tooltip
+                id={`error-file-modal_${file.id}`}
+                place="top"
+                delayShow={400}
+                content={file.error_message}
+              />
+            )}
+          </>
+        );
+
+      default:
+        return <span className="text-slate-400">—</span>;
+    }
+  };
+
+  /* ---------------- API ---------------- */
   const loadGroups = async () => {
     try {
       const res = await getAllGroup();
@@ -404,7 +455,6 @@ const UploadFiles = () => {
     return () => clearInterval(interval);
   }, [currentUser, token]);
 
-
   /* ---------------- рендер ---------------- */
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
@@ -437,16 +487,15 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
-      {duplicateMessages.map((msg, i) => (
+
+      {duplicatesCount > 0 && (
         <Toast
-          key={i}
           type="error"
-          message={msg}
-          onClose={() =>
-            setDuplicateMessages((prev) => prev.filter((_, idx) => idx !== i))
-          }
+          message={`Не удалось загрузить ${duplicatesCount} файлов`}
+          onClose={() => setDuplicatesCount(0)}
         />
-      ))}
+      )}
+
       {notify === "duplicates_only" && (
         <Toast
           type="error"
@@ -533,11 +582,7 @@ const UploadFiles = () => {
                     }
 
                     if (duplicates.length > 0) {
-                      setDuplicateMessages(
-                        duplicates.map(
-                          (d: any) => `Файл "${d.file_name}": ${d.message}`,
-                        ),
-                      );
+                      setDuplicatesCount(duplicates.length);
                     }
                     loadFiles(1, true);
                     loadGroups();
@@ -1098,6 +1143,7 @@ const UploadFiles = () => {
                   onPreview={(file) => setPreviewFile(file)}
                   onDelete={(id) => setDeleteFile(id)}
                   onRestart={handleRestartFile}
+                  onAddFile={(file) => setOpenAddFile(file)}
                 />
               );
             })}
@@ -1131,6 +1177,109 @@ const UploadFiles = () => {
           onDeleted={handleFileDeleted}
           description={"Файл будет удалён без возможности восстановления."}
         />
+      )}
+      {/* ---------------- модалка подтверждения удаления файла ---------------- */}
+      {openAddFile && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22 }}
+            className="bg-white p-6 rounded-xl w-[1200px] shadow-xl flex flex-col gap-5"
+          >
+            {/* HEADER */}
+            <div className="flex items-center justify-between">
+              <p className="text-[18px] font-semibold text-slate-900">
+                Дополнительная информация
+              </p>
+              <button
+                onClick={() => setOpenAddFile(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <IoIosClose className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* ОСНОВНАЯ ИНФА */}
+            <div className="flex flex-col gap-2 text-sm">
+              <InfoRow label="Название" value={openAddFile.display_name} />
+              <InfoRow label="Тип файла" value={openAddFile.file_type} />
+              <InfoRow
+                label="Размер"
+                value={formatFileSize(openAddFile.file_size)}
+              />
+              <InfoRow label="Группа" value={openAddFile.file_group ?? "-"} />
+              <InfoRow
+                label="Статус"
+                value={renderProcessingStatus(openAddFile)}
+              />
+            </div>
+
+            {/* СТАТИСТИКА */}
+            <div className="border rounded-lg p-3 bg-slate-50">
+              <p className="text-xs uppercase text-slate-500 mb-2">
+                Статистика обработки
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <InfoRow label="Всего строк" value={openAddFile.total_rows} />
+                <InfoRow label="Валидные" value={openAddFile.valid_rows} />
+                <InfoRow label="Невалидные" value={openAddFile.invalid_rows} />
+                <InfoRow
+                  label="Извлечённые сущности"
+                  value={openAddFile.extracted_entities}
+                />
+              </div>
+            </div>
+
+            {/* ДАТЫ */}
+            <div className="border rounded-lg p-3 bg-slate-50">
+              <p className="text-xs uppercase text-slate-500 mb-2">Время</p>
+
+              <div className="flex flex-col gap-1 text-sm">
+                <InfoRow
+                  label="Загружен"
+                  value={formatDateTime(openAddFile.upload_date)}
+                />
+                <InfoRow
+                  label="Начало обработки"
+                  value={formatDateTime(openAddFile.processing_started_at)}
+                />
+                <InfoRow
+                  label="Завершение обработки"
+                  value={formatDateTime(openAddFile.processing_completed_at)}
+                />
+                <InfoRow
+                  label="Обновлён"
+                  value={formatDateTime(openAddFile.updated_at)}
+                />
+              </div>
+            </div>
+
+            {/* ТЕХНИЧКА */}
+            <div className="border rounded-lg p-3 bg-slate-50">
+              <p className="text-xs uppercase text-slate-500 mb-2">
+                Техническая информация
+              </p>
+
+              <InfoRow label="ID файла" mono value={openAddFile.id} />
+              <InfoRow label="S3 bucket" mono value={openAddFile.s3_bucket} />
+              <InfoRow label="S3 key" mono value={openAddFile.s3_key} />
+              <InfoRow
+                label="ID администратора"
+                value={openAddFile.uploaded_by_user_id}
+              />
+            </div>
+
+            {/* ERROR */}
+            {openAddFile.error_message && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                {openAddFile.error_message}
+              </div>
+            )}
+          </motion.div>
+        </div>
       )}
     </section>
   );

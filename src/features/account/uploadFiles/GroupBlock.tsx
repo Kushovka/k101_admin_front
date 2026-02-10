@@ -2,7 +2,7 @@ import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo } from "react";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
-import { MdDelete, MdRestartAlt } from "react-icons/md";
+import { MdDelete, MdMoreVert, MdRestartAlt } from "react-icons/md";
 import { Tooltip } from "react-tooltip";
 import type { FileGroup, FileItem } from "../../../types/file";
 
@@ -27,6 +27,7 @@ type Props = {
   onPreview(file: FileItem): void;
   onDelete(id: string): void;
   onRestart(id: string): void;
+  onAddFile(file: FileItem): void;
 };
 
 const GroupBlock = memo(
@@ -48,6 +49,7 @@ const GroupBlock = memo(
     onPreview,
     onDelete,
     onRestart,
+    onAddFile,
   }: Props) => {
     return (
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -121,6 +123,7 @@ const GroupBlock = memo(
 
                     <div className="flex items-center gap-4 text-[13px] text-slate-500">
                       <span>{formatFileSize(file.file_size)}</span>
+                      {/* <span>{file.total_rows}</span> */}
                       <button
                         onClick={() => onPreview(file)}
                         className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2"
@@ -198,6 +201,14 @@ const GroupBlock = memo(
                       className="p-[6px] rounded hover:bg-green-100 text-green-500 transition"
                     >
                       <MdRestartAlt className="w-[20px] h-[20px]" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddFile(file);
+                      }}
+                    >
+                      <MdMoreVert className="w-5 h-5" />
                     </button>
                   </div>
                 </div>

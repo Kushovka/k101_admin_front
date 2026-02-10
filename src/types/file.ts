@@ -6,6 +6,17 @@ export type FileItem = {
   file_size?: number;
   created_at?: string;
   file_group: string;
+  invalid_rows?: number;
+  total_rows?: number;
+  valid_rows?: number;
+  s3_key?: string;
+  s3_bucket?: string;
+  updated_at?: string;
+  processing_completed_at?: string;
+  processing_started_at?: string;
+  upload_date?: string;
+  extracted_entities?: number;
+  file_type?: string;
 
   uploaded_by_user_id?: string;
   processing_status?:

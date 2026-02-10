@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaPen } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { Tooltip } from "react-tooltip";
@@ -29,6 +29,12 @@ const FilePreviewModal = ({
   onUpdateFile,
 }: FilePreviewModalProps) => {
   const token = localStorage.getItem("access_token") ?? "";
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState<number>(10);
   const [activeBtn, setActiveBtn] = useState<string>("10");
@@ -59,6 +65,27 @@ const FilePreviewModal = ({
     setAliasValue,
     saveAlias,
   } = useFieldAliases({ file, token, onNotify: setNotify, onError: setError });
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+
+    e.preventDefault();
+    setIsDragging(true);
+    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    scrollLeft.current = scrollRef.current.scrollLeft;
+  };
+
+  const onMouseLeave = () => setIsDragging(false);
+  const onMouseUp = () => setIsDragging(false);
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = x - startX.current;
+    scrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
 
   /* ---------------- lock scroll ---------------- */
 
@@ -219,8 +246,11 @@ const FilePreviewModal = ({
         )}
 
         {/* table container (fixed height) */}
-        <div className="h-[60vh] border rounded overflow-auto p-2">
-          <div className="h-full overflow-y-auto overflow-x-auto p-2">
+        <div
+          className="h-[60vh] border rounded overflow-auto  p-2 overscroll-contain"
+          style={{ scrollbarGutter: "stable both-edges" }}
+        >
+          <div className="min-w-max">
             {loading && <Skeleton />}
 
             {!loading && rows.length === 0 && (
