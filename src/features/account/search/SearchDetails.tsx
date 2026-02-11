@@ -294,7 +294,9 @@ const SearchDetails: React.FC = () => {
                     <div key={group.group_name} className="space-y-4">
                       {/* Заголовок группы */}
                       <div className="font-medium text-slate-800">
-                        {group.group_name}
+                        {group.group_name === "other"
+                          ? "Другие источники"
+                          : `${group.group_name}`}
                       </div>
 
                       {/* Источники внутри группы */}
