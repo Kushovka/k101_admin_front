@@ -43,6 +43,7 @@ export interface SearchUser {
   birthday?: string;
 
   grouped_data?: GroupedData;
+  grouped_sources?: GroupedSource[];
 
   phones?: string[];
   emails?: string[];
@@ -53,3 +54,15 @@ export interface SearchUser {
   source_files?: SourceFile[];
   additional_data?: UserAdditionalData;
 }
+
+export type GroupedSource = {
+  group_name: string;
+  sources: SourceWithFields[];
+};
+
+export type SourceWithFields = {
+  raw_file_id: string;
+  display_name?: string;
+  upload_date?: string | null;
+  fields: Record<string, unknown>;
+};

@@ -4,12 +4,10 @@ import React, { useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Tooltip } from "react-tooltip";
 import userApi from "../../../api/userApi";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import type {
-  GroupedData,
   SearchUser,
   SourceFile,
 } from "../../../types/searchDetails.types";
@@ -88,11 +86,11 @@ const SearchDetails: React.FC = () => {
   const state = location.state as SearchDetailsState | null;
   const user = state?.item ?? null;
 
-  const groupedData: GroupedData = user?.grouped_data ?? {};
+  const groupedSources = user?.grouped_sources ?? [];
 
-  const sortGroups = (a: any, b: any) => {
-    if (a.group_name === "Другие источники") return 1;
-    if (b.group_name === "Другие источники") return -1;
+  const sortGroups = (a: { group_name: string }, b: { group_name: string }) => {
+    if (a.group_name === "other") return 1;
+    if (b.group_name === "other") return -1;
     return 0;
   };
 
@@ -234,7 +232,9 @@ const SearchDetails: React.FC = () => {
               )}
               {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
               {user.age && <p>Возраст: {user.age}</p>}
-              {user.gender && <p>Пол: {user.gender}</p>}
+              {user.gender && (
+                <p>Пол: {user.gender === "male" ? "Мужской" : "Женский"}</p>
+              )}
               {user.birthdays?.[0] && <p>Дата рождения: {user.birthdays[0]}</p>}
               {user.emails?.map((e, i) => (
                 <p key={i}>
@@ -284,75 +284,61 @@ const SearchDetails: React.FC = () => {
 
           {openDossier && (
             <div className="px-4 py-4 border-t border-gray-200 space-y-6">
-              {Object.entries(groupedData)
-                .sort(([, a], [, b]) => sortGroups(a, b))
-                .map(([groupKey, group]) => {
-                  const fields = group.fields ?? {};
-                  if (Object.keys(fields).length === 0) return null;
-                  const tooltipId = `sources-${groupKey}`;
+              {groupedSources
+                .slice()
+                .sort(sortGroups)
+                .map((group) => {
+                  if (!group.sources?.length) return null;
 
                   return (
-                    <div key={groupKey} className="space-y-2">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="font-medium text-slate-800">
-                          {group.group_name}
-                        </div>
-
-                        {group.sources?.length > 0 && (
-                          <>
-                            <div
-                              data-tooltip-id={tooltipId}
-                              data-tooltip-place="top"
-                              className="text-xs text-slate-400 truncate max-w-[360px] cursor-help"
-                            >
-                              Источник: {getSourceLabel(group.sources)}
-                            </div>
-
-                            <Tooltip
-                              id={tooltipId}
-                              delayShow={300}
-                              className="max-w-[420px] !text-xs"
-                            >
-                              <div className="flex flex-col gap-1">
-                                {group.sources.map((s) => (
-                                  <div key={s.raw_file_id} className="truncate">
-                                    {s.display_name ||
-                                      s.file_name ||
-                                      s.raw_file_id}
-                                  </div>
-                                ))}
-                              </div>
-                            </Tooltip>
-                          </>
-                        )}
+                    <div key={group.group_name} className="space-y-4">
+                      {/* Заголовок группы */}
+                      <div className="font-medium text-slate-800">
+                        {group.group_name}
                       </div>
 
-                      <div className="flex flex-col gap-1 text-[14px]">
-                        {Object.entries(fields).map(([fieldKey, fieldData]) => {
-                          const label =
-                            fieldLabels[fieldKey.toLowerCase()] ?? fieldKey;
+                      {/* Источники внутри группы */}
+                      {group.sources.map((source) => {
+                        const sourceName =
+                          source.display_name || source.raw_file_id;
 
-                          const value =
-                            typeof fieldData === "object" &&
-                            "value" in fieldData
-                              ? fieldData.value
-                              : fieldData;
-
-                          return (
-                            <div
-                              key={fieldKey}
-                              className="flex gap-2 text-slate-700"
-                            >
-                              <span className="min-w-[180px] text-slate-500">
-                                {label}:
-                              </span>
-                              <span className="text-slate-800">
-                                {String(value)}
-                              </span>
+                        return (
+                          <div
+                            key={source.raw_file_id}
+                            className="border border-gray-200 rounded-lg p-3 space-y-2"
+                          >
+                            {/* Источник */}
+                            <div className="text-xs text-slate-500">
+                              Источник: {sourceName}
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            {/* Поля источника */}
+                            <div className="flex flex-col gap-1 text-[14px]">
+                              {Object.entries(source.fields).map(
+                                ([fieldKey, fieldValue]) => {
+                                  const label =
+                                    fieldLabels[fieldKey.toLowerCase()] ??
+                                    fieldKey;
+
+                                  return (
+                                    <div
+                                      key={fieldKey}
+                                      className="flex gap-2 text-slate-700"
+                                    >
+                                      <span className="min-w-[180px] text-slate-500">
+                                        {label}:
+                                      </span>
+                                      <span className="text-slate-800 break-all">
+                                        {String(fieldValue)}
+                                      </span>
+                                    </div>
+                                  );
+                                },
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
