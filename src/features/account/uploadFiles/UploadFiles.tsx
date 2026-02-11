@@ -1223,13 +1223,14 @@ const UploadFiles = () => {
               </p>
 
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <InfoRow label="Всего строк" value={openAddFile.total_rows} />
-                <InfoRow label="Валидные" value={openAddFile.valid_rows} />
-                <InfoRow label="Невалидные" value={openAddFile.invalid_rows} />
-                <InfoRow
-                  label="Извлечённые сущности"
-                  value={openAddFile.extracted_entities}
-                />
+                <InfoRow label="Всего строк" value={"-"} />
+                {/* openAddFile.total_rows */}
+                <InfoRow label="Валидные" value={"-"} />
+                {/* openAddFile.valid_rows */}
+                <InfoRow label="Невалидные" value={"-"} />
+                {/* openAddFile.invalid_rows */}
+                <InfoRow label="Извлечённые сущности" value={"-"} />
+                {/* openAddFile.extracted_entities */}
               </div>
             </div>
 
