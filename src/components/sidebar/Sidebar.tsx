@@ -1,18 +1,22 @@
-import { FaRegCircleUser } from "react-icons/fa6";
-import { MdDownloading, MdOutlineAnalytics } from "react-icons/md";
-import { IoDocumentTextOutline, IoExitOutline } from "react-icons/io5";
-import { IoIosSearch } from "react-icons/io";
-import { RxHamburgerMenu } from "react-icons/rx";
-import { GoChevronRight } from "react-icons/go";
-import { MdAttachMoney } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
+import { FaRegCircleUser } from "react-icons/fa6";
+import { GoChevronRight } from "react-icons/go";
+import { IoIosSearch } from "react-icons/io";
+import { IoDocumentTextOutline, IoExitOutline } from "react-icons/io5";
+import {
+  MdAttachMoney,
+  MdDownloading,
+  MdOutlineAnalytics,
+} from "react-icons/md";
+import { RxHamburgerMenu } from "react-icons/rx";
 
 import clsx from "clsx";
-import { useLocation, useNavigate } from "react-router-dom";
 import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
+import { FiMessageSquare } from "react-icons/fi";
 
 interface SidebarLink {
   name: string;
@@ -44,6 +48,11 @@ const Sidebar: React.FC = () => {
       name: "Системная статистика",
       icon: <MdOutlineAnalytics />,
       path: "/account/system-stats",
+    },
+    {
+      name: "Обращения",
+      icon: <FiMessageSquare />,
+      path: "/account/complaints",
     },
     {
       name: "Тарифы",

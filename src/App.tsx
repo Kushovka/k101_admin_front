@@ -12,6 +12,7 @@ import PaymentSuccess from "./components/paymentSuccess/PaymentSuccess";
 import ProtectedRoute from "./components/protected-route/ProtectedRoute";
 import SidebarLayout from "./components/sidebar-layout/SidebarLayout";
 import { SidebarProvider } from "./components/sidebar/SidebarContext";
+import Complaints from "./features/account/complaints/Complaints";
 import HealthCheck from "./features/account/healthCheck/HealthCheck";
 import Plans from "./features/account/plans/Plans";
 import Profile from "./features/account/profile/Profile";
@@ -102,6 +103,7 @@ const App: React.FC = () => {
           <Route path="users/:id" element={<UserDetails />} />
           <Route path="health-check" element={<HealthCheck />} />
           <Route path="system-stats" element={<SystemStatistics />} />
+          <Route path="complaints" element={<Complaints />} />
           <Route path="plans" element={<Plans />} />
 
           <Route
