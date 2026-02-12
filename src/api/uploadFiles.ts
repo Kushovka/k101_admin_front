@@ -173,3 +173,32 @@ export const getFilesByGroup = async ({
   });
   return data;
 };
+
+export const pauseAllFiles = async () => {
+  const { data } = await userApi.post(
+    "/api/v1/parsing-queue/pause-all",
+    {},
+    {
+      headers: getHeaders(),
+    },
+  );
+  return data;
+};
+
+export const resumeAllFiles = async () => {
+  const { data } = await userApi.post(
+    "/api/v1/parsing-queue/resume-all",
+    {},
+    {
+      headers: getHeaders(),
+    },
+  );
+  return data;
+};
+
+export const statusAllFiles = async () => {
+  const { data } = await userApi.get("/api/v1/parsing-queue/global-status", {
+    headers: getHeaders(),
+  });
+  return data;
+};

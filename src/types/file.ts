@@ -67,3 +67,31 @@ export type FileGroup = {
   name: string;
   total: number;
 };
+
+export type GlobalPauseStatus = {
+  is_paused: boolean;
+  paused_by: string | null;
+  paused_at: string | null;
+  globally_paused_count: number;
+  manually_paused_count: number;
+  queued_count: number;
+  processing_count: number;
+};
+
+export type PauseAllResponse = {
+  success: boolean;
+  paused_by: string;
+  paused_processing: number;
+  paused_queued: number;
+  revoked_celery_tasks: number;
+  total_paused: number;
+  message: string;
+};
+
+export type ResumeAllResponse = {
+  success: boolean;
+  resumed_count: number;
+  failed_count: number;
+  skipped_manual: number;
+  message: string;
+};

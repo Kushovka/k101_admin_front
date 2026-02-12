@@ -57,6 +57,9 @@ const UploadFiles = () => {
     cancel,
     moveToTop,
     changePriority,
+    pauseAll,
+    resumeAll,
+    globalStatus,
   } = useParsingQueue();
 
   const [pageSize] = useState<number>(20);
@@ -645,6 +648,37 @@ const UploadFiles = () => {
 
         {isProcessingModal && (
           <div className="mt-6 flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                {!globalStatus?.is_paused ? (
+                  <button
+                    onClick={pauseAll}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg
+                 bg-red-500 text-white hover:bg-red-600 transition"
+                  >
+                    <FaStop />
+                    Пауза для всех
+                  </button>
+                ) : (
+                  <button
+                    onClick={resumeAll}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg
+                 bg-green-500 text-white hover:bg-green-600 transition"
+                  >
+                    <FaPlay />
+                    Возобновить
+                  </button>
+                )}
+              </div>
+
+              {globalStatus && (
+                <p className="text-sm text-slate-500 mt-1">
+                  {globalStatus.is_paused
+                    ? `Глобальная пауза (в очереди: ${globalStatus.queued_count})`
+                    : "Очередь работает"}
+                </p>
+              )}
+            </div>
             {/* ================= PROCESSING ================= */}
             {processingQueue.length > 0 && (
               <div className="mt-6">

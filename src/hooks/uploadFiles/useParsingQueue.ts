@@ -3,9 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getParsingQueue,
   patchPriorityFile,
+  pauseAllFiles,
   postToTopFile,
+  resumeAllFiles,
+  statusAllFiles,
 } from "../../api/uploadFiles";
 import userApi from "../../api/userApi";
+import { GlobalPauseStatus } from "../../types/file";
 
 export type QueueStatus =
   | "queued"
@@ -40,6 +44,9 @@ export const useParsingQueue = () => {
   const [queueLimit, setQueueLimit] = useState<number>(20);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [globalStatus, setGlobalStatus] = useState<GlobalPauseStatus | null>(
+    null,
+  );
 
   const token = localStorage.getItem("access_token") ?? "";
   const auth = useMemo(
@@ -127,6 +134,25 @@ export const useParsingQueue = () => {
     }
   };
 
+  const loadGlobalStatus = async () => {
+    const data = await statusAllFiles();
+    setGlobalStatus(data);
+  };
+
+  const pauseAll = async () => {
+    await pauseAllFiles();
+    await loadGlobalStatus();
+  };
+
+  const resumeAll = async () => {
+    await resumeAllFiles();
+    await loadGlobalStatus();
+  };
+
+  useEffect(() => {
+    loadGlobalStatus();
+  }, []);
+
   const changePriority = async (rawFileId: string, priority: number) => {
     try {
       const res = await patchPriorityFile(rawFileId, { priority });
@@ -177,5 +203,9 @@ export const useParsingQueue = () => {
     cancel,
     moveToTop,
     changePriority,
+
+    pauseAll,
+    resumeAll,
+    globalStatus,
   };
 };
