@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import {
+  deleteFieldValue,
   getDocumentPreview,
   remapFields,
-  updateDocument,
+  updateAdditionalData,
+  updateMainInfo,
 } from "../../../api/complaints";
+import Toast from "../../../components/toast/Toast";
 
 type Props = {
   docId: string;
@@ -24,12 +27,19 @@ const mainFields = [
   "birthday",
   "ipn",
   "snils",
+  "ww",
 ];
 
 export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
-  const [data, setData] = useState<Record<string, any> | null>(null);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+  type NotifyType = "reason_required_delete" | "reason_required_save" | null;
+  const [notify, setNotify] = useState<NotifyType>(null);
+
+  const [data, setData] = useState<Record<string, any> | null>(null);
+  const [originalData, setOriginalData] = useState<Record<string, any> | null>(
+    null,
+  );
 
   const [remapTarget, setRemapTarget] = useState<{
     fromField: string;
@@ -43,7 +53,9 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
     const fetchPreview = async () => {
       const res = await getDocumentPreview(docId);
       setData(res.current_data);
+      setOriginalData(res.current_data);
     };
+
     fetchPreview();
   }, [docId]);
 
@@ -52,6 +64,20 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
       ...prev!,
       [key]: value,
     }));
+  };
+
+  const getMainInfoDiff = () => {
+    if (!data || !originalData) return {};
+
+    const diff: Record<string, any> = {};
+
+    mainFields.forEach((field) => {
+      if (data[field] !== originalData[field]) {
+        diff[field] = data[field];
+      }
+    });
+
+    return diff;
   };
 
   const handleRemap = async () => {
@@ -73,6 +99,7 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
 
       const refreshed = await getDocumentPreview(docId);
       setData(refreshed.current_data);
+      setOriginalData(refreshed.current_data);
 
       setRemapTarget(null);
       setRemapToField("");
@@ -85,26 +112,103 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
   };
 
   const handleSubmit = async () => {
-    if (!data) return;
-
-    const filtered: Record<string, any> = {};
-
-    mainFields.forEach((field) => {
-      if (data[field] !== undefined) {
-        filtered[field] = data[field];
-      }
-    });
+    if (!data || !reason.trim()) {
+      setNotify("reason_required_save");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      await updateDocument(docId, filtered, reason);
+      const mainDiff = getMainInfoDiff();
+      const additionalDiff = getAdditionalDataDiff();
+
+      if (Object.keys(mainDiff).length > 0) {
+        await updateMainInfo(docId, mainDiff, reason);
+      }
+
+      if (additionalDiff.length > 0) {
+        await updateAdditionalData(docId, additionalDiff, reason);
+      }
 
       onUpdated();
       onClose();
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAdditionalDataDiff = () => {
+    if (!data?.additional_data || !originalData?.additional_data) return [];
+
+    const updates: {
+      old_key: string;
+      new_value?: string;
+    }[] = [];
+
+    const current = data.additional_data;
+    const original = originalData.additional_data;
+
+    // изменённые или новые поля
+    Object.entries(current).forEach(([key, value]) => {
+      if (original[key] !== value) {
+        updates.push({
+          old_key: key,
+          new_value: value as string,
+        });
+      }
+    });
+
+    // удалённые поля
+    Object.keys(original).forEach((key) => {
+      if (!(key in current)) {
+        updates.push({
+          old_key: key,
+          new_value: "", // или null — зависит от API
+        });
+      }
+    });
+
+    return updates;
+  };
+
+  const handleDeleteField = async (field: string) => {
+    if (!reason.trim()) {
+      setNotify("reason_required_delete");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await deleteFieldValue(docId, field, reason);
+
+      const refreshed = await getDocumentPreview(docId);
+      setData(refreshed.current_data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAdditionalField = (key: string) => {
+    if (!reason.trim()) {
+      setNotify("reason_required_delete");
+      return;
+    }
+
+    setData((prev) => {
+      const updated = { ...prev!.additional_data };
+      delete updated[key];
+
+      return {
+        ...prev!,
+        additional_data: updated,
+      };
+    });
   };
 
   if (!data) return null;
@@ -115,6 +219,18 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
         onClick={onClose}
         className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
       >
+        {notify && (
+          <Toast
+            type="error"
+            message={
+              notify === "reason_required_delete"
+                ? "Укажите причину, чтобы удалить поле"
+                : "Укажите причину, чтобы сохранить изменения"
+            }
+            onClose={() => setNotify(null)}
+          />
+        )}
+
         <div
           onClick={(e) => e.stopPropagation()}
           className="bg-white w-[600px] max-h-[80vh] overflow-y-auto p-6 rounded-xl shadow-xl flex flex-col gap-4"
@@ -125,13 +241,27 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
           {mainFields.map((field) => (
             <div key={field} className="flex flex-col gap-1">
               <label className="text-xs text-slate-500">{field}</label>
-              <input
-                value={data[field] ?? ""}
-                onChange={(e) => handleChange(field, e.target.value)}
-                className="border rounded px-2 py-1 text-sm"
-              />
+
+              <div className="flex gap-2">
+                <input
+                  value={data[field] ?? ""}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  className="border rounded px-2 py-1 text-sm flex-1"
+                />
+
+                {data[field] && (
+                  <button
+                    onClick={() => handleDeleteField(field)}
+                    disabled={loading}
+                    className="px-2 text-xs bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                  >
+                    Удалить
+                  </button>
+                )}
+              </div>
             </div>
           ))}
+
           {data.additional_data && (
             <>
               <h4 className="font-semibold mt-6">Additional data</h4>
@@ -143,7 +273,29 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
                 >
                   <div>
                     <div className="text-xs text-slate-500">{key}</div>
-                    <div className="text-sm font-medium">{value as string}</div>
+                    <div className="flex gap-2 flex-1">
+                      <input
+                        value={(data.additional_data?.[key] as string) ?? ""}
+                        onChange={(e) =>
+                          setData((prev) => ({
+                            ...prev!,
+                            additional_data: {
+                              ...prev!.additional_data,
+                              [key]: e.target.value,
+                            },
+                          }))
+                        }
+                        className="border rounded px-2 py-1 text-sm flex-1"
+                      />
+
+                      <button
+                        onClick={() => handleDeleteAdditionalField(key)}
+                        disabled={loading || !reason.trim()}
+                        className="px-2 text-xs bg-red-500 text-white rounded disabled:opacity-50"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </div>
 
                   <button

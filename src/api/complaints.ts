@@ -45,25 +45,40 @@ export const getDocumentPreview = async (docId: string) => {
   return data;
 };
 
-export const updateDocument = async (
+export const updateMainInfo = async (
   docId: string,
   fieldUpdates: Record<string, any>,
   reason: string,
 ) => {
   const { data } = await userApi.patch(
-    `/api/v1/corrections/${docId}`,
+    `/api/v1/corrections/${docId}/main-info`,
     {
-      apply_scope: "single",
       field_updates: fieldUpdates,
       reason,
     },
     { headers: getHeaders() },
   );
-  console.log({
-    apply_scope: "single",
-    field_updates: data,
-    reason,
-  });
+
+  return data;
+};
+
+export const updateAdditionalData = async (
+  docId: string,
+  updates: {
+    old_key: string;
+    new_key?: string;
+    new_value?: string;
+  }[],
+  reason: string,
+) => {
+  const { data } = await userApi.patch(
+    `/api/v1/corrections/${docId}/additional-data`,
+    {
+      updates,
+      reason,
+    },
+    { headers: getHeaders() },
+  );
 
   return data;
 };
@@ -83,6 +98,22 @@ export const remapFields = async (
       remappings,
     },
     { headers: getHeaders() },
+  );
+
+  return data;
+};
+
+export const deleteFieldValue = async (
+  docId: string,
+  fieldName: string,
+  reason: string,
+) => {
+  const { data } = await userApi.delete(
+    `/api/v1/corrections/${docId}/field/${fieldName}`,
+    {
+      params: { reason },
+      headers: getHeaders(),
+    },
   );
 
   return data;
