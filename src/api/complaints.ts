@@ -37,3 +37,53 @@ export const reviewComplaint = async (
   console.log(data);
   return data;
 };
+
+export const getDocumentPreview = async (docId: string) => {
+  const { data } = await userApi.get(`/api/v1/corrections/${docId}`, {
+    headers: getHeaders(),
+  });
+  return data;
+};
+
+export const updateDocument = async (
+  docId: string,
+  fieldUpdates: Record<string, any>,
+  reason: string,
+) => {
+  const { data } = await userApi.patch(
+    `/api/v1/corrections/${docId}`,
+    {
+      apply_scope: "single",
+      field_updates: fieldUpdates,
+      reason,
+    },
+    { headers: getHeaders() },
+  );
+  console.log({
+    apply_scope: "single",
+    field_updates: data,
+    reason,
+  });
+
+  return data;
+};
+
+export const remapFields = async (
+  docId: string,
+  remappings: {
+    from_field: string;
+    to_field: string;
+  }[],
+  reason: string,
+) => {
+  const { data } = await userApi.post(
+    `/api/v1/corrections/${docId}/remap`,
+    {
+      reason,
+      remappings,
+    },
+    { headers: getHeaders() },
+  );
+
+  return data;
+};

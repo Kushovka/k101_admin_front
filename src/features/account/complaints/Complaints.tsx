@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { getAllComplaints, reviewComplaint } from "../../../api/complaints";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { Complaint } from "../../../types/complaints.types";
+import { CorrectionModal } from "./CorrectionModal";
 import { ReviewComplaintModal } from "./ReviewComplaintModal";
 
 const Complaints = () => {
   const { isOpen } = useSidebar();
   const [allComplaints, setAllComplaints] = useState<Complaint[]>([]);
+  const [correctionDocId, setCorrectionDocId] = useState<string | null>(null);
 
   const [reviewTarget, setReviewTarget] = useState<{
     id: number;
@@ -22,10 +24,14 @@ const Complaints = () => {
       console.error(err);
     }
   };
-
+  console.log(allComplaints);
   useEffect(() => {
     fetchComplaints();
   }, []);
+
+  const handleOpenCorrection = (docId: string) => {
+    setCorrectionDocId(docId);
+  };
 
   const handleReview = async (
     id: number,
@@ -175,6 +181,12 @@ const Complaints = () => {
                       >
                         Отклонить
                       </button>
+                      <button
+                        onClick={() => handleOpenCorrection(item.doc_id)}
+                        className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600"
+                      >
+                        Редактировать документ
+                      </button>
                     </div>
                   )}
                 </div>
@@ -191,6 +203,13 @@ const Complaints = () => {
           onSubmit={(comment) =>
             handleReview(reviewTarget.id, reviewTarget.status, comment)
           }
+        />
+      )}
+      {correctionDocId && (
+        <CorrectionModal
+          docId={correctionDocId}
+          onClose={() => setCorrectionDocId(null)}
+          onUpdated={fetchComplaints}
         />
       )}
     </section>
