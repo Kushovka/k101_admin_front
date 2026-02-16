@@ -61,6 +61,7 @@ export type GroupedSource = {
 };
 
 export type SourceWithFields = {
+  doc_id: string;
   raw_file_id: string;
   display_name?: string;
   upload_date?: string | null;

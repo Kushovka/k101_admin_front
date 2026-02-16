@@ -11,6 +11,7 @@ import type {
   SearchUser,
   SourceFile,
 } from "../../../types/searchDetails.types";
+import { CorrectionModal } from "../complaints/CorrectionModal";
 
 const fieldLabels: Record<string, string> = {
   height: "Рост",
@@ -81,6 +82,9 @@ const SearchDetails: React.FC = () => {
   const [openDossier, setOpenDossier] = useState(false);
   const [aiDossier, setAIDossier] = useState("");
   const [dossierLoading, setDossierLoading] = useState(false);
+  const [openCorrection, setOpenCorrection] = useState<{
+    docId: string;
+  } | null>(null);
 
   /* ---------------- helpers ---------------- */
   const state = location.state as SearchDetailsState | null;
@@ -138,6 +142,26 @@ const SearchDetails: React.FC = () => {
       console.error(err);
     } finally {
       setDossierLoading(false);
+    }
+  };
+
+  const refetchSearchDetails = async () => {
+    try {
+      const response = await userApi.post(
+        "/api/v1/search/by-entity",
+        { entity_id: user.entity_id },
+        { headers: getHeaders() },
+      );
+
+      navigate(".", {
+        replace: true,
+        state: {
+          ...location.state,
+          item: response.data,
+        },
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -311,8 +335,21 @@ const SearchDetails: React.FC = () => {
                             className="border border-gray-200 rounded-lg p-3 space-y-2"
                           >
                             {/* Источник */}
-                            <div className="text-xs text-slate-500">
-                              Источник: {sourceName}
+                            {/* Верхняя строка */}
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs text-slate-500">
+                                Источник: {sourceName}
+                              </div>
+
+                              <button
+                                onClick={() => {
+                                  if (!source.doc_id) return;
+                                  setOpenCorrection({ docId: source.doc_id });
+                                }}
+                                className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition"
+                              >
+                                Исправить
+                              </button>
                             </div>
 
                             {/* Поля источника */}
@@ -422,6 +459,14 @@ const SearchDetails: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {openCorrection && (
+        <CorrectionModal
+          docId={openCorrection.docId}
+          onClose={() => setOpenCorrection(null)}
+          onUpdated={refetchSearchDetails}
+        />
+      )}
     </section>
   );
 };

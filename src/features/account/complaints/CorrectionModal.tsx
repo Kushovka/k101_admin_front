@@ -27,7 +27,6 @@ const mainFields = [
   "birthday",
   "ipn",
   "snils",
-  "ww",
 ];
 
 export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
