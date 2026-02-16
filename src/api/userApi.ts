@@ -48,6 +48,8 @@ userApi.interceptors.response.use(
       window.dispatchEvent(new CustomEvent("session-expired"));
       return Promise.reject(error);
     }
+    console.log("401 received, trying refresh...");
+    console.log("Refresh result:", ok);
 
     // повторяем запрос 1 раз
     original.__isRetry = true;
