@@ -39,6 +39,7 @@ const DatasetsList = () => {
       try {
         const data = await getDatasetById(id);
         setDetails((prev) => ({ ...prev, [id]: data }));
+        console.log(data);
       } catch {
         setError("Ошибка загрузки информации о датасете");
       }
@@ -108,38 +109,115 @@ const DatasetsList = () => {
 
               {/* BODY */}
               {openedDataset === ds.id && details[ds.id] && (
-                <div className="px-5 pb-5 border-t bg-slate-50">
-                  {/* STATUS */}
-                  <div className="text-sm mb-4">
-                    <p>
-                      Статус:{" "}
-                      <span
+                <div className="px-5 py-6 border-t bg-slate-50 flex flex-col gap-6">
+                  {/* ОСНОВНАЯ ИНФОРМАЦИЯ */}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs uppercase text-slate-500 mb-1">
+                        Статус
+                      </p>
+                      <p
                         className={clsx(
                           "font-medium",
                           ds.status === "failed" && "text-red-600",
                           ds.status === "completed" && "text-green-600",
                           ds.status === "processing" && "text-blue-600",
+                          ds.status === "pending" && "text-slate-500",
                         )}
                       >
                         {ds.status}
-                      </span>
-                    </p>
-
-                    {ds.error_message && (
-                      <p className="text-red-600 text-xs mt-1">
-                        {ds.error_message}
                       </p>
-                    )}
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase text-slate-500 mb-1">
+                        Linking column
+                      </p>
+                      <p className="font-medium text-slate-900">
+                        {ds.linking_column_name ?? "Не выбрана"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase text-slate-500 mb-1">
+                        Confirmed
+                      </p>
+                      <p className="font-medium">
+                        {ds.linking_column_confirmed ? "Да" : "Нет"}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* FILES */}
+                  {/* СТАТИСТИКА */}
+                  <div className="border rounded-lg bg-white p-4">
+                    <p className="text-xs uppercase text-slate-500 mb-3">
+                      Статистика
+                    </p>
+
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-xs">Всего файлов</p>
+                        <p className="font-semibold text-slate-900">
+                          {ds.total_files}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500 text-xs">Unique IDs</p>
+                        <p className="font-semibold text-slate-900">
+                          {ds.unique_linking_ids}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500 text-xs">
+                          Merged entities
+                        </p>
+                        <p className="font-semibold text-green-600">
+                          {ds.merged_entities_count}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-slate-500 text-xs">Unlinked rows</p>
+                        <p className="font-semibold text-orange-600">
+                          {ds.unlinked_rows_count}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ОШИБКА */}
+                  {ds.error_message && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                      {ds.error_message}
+                    </div>
+                  )}
+
+                 
+                  {/* ДАТЫ */}
+                  <div className="text-sm">
+                    <p className="text-xs uppercase text-slate-500 mb-2">
+                      Дата
+                    </p>
+                    <div className="flex flex-col gap-1">
+                      <span>
+                        Создан: {new Date(ds.created_at).toLocaleDateString()}
+                      </span>
+                      <span>
+                        Обновлён: {new Date(ds.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ФАЙЛЫ */}
                   <div className="border rounded-lg bg-white divide-y">
                     {details[ds.id].files.map((file: any) => (
                       <div
                         key={file.id}
                         className="px-4 py-3 flex justify-between items-center"
                       >
-                        <div>
+                        <div className="flex flex-col">
                           <p className="text-sm font-medium text-slate-900">
                             {file.file_name}
                           </p>
@@ -148,9 +226,10 @@ const DatasetsList = () => {
                           </p>
                         </div>
 
-                        <span className="text-xs text-slate-600">
-                          {file.processing_status}
-                        </span>
+                        <div className="text-xs text-slate-600 text-right">
+                          <p>{file.processing_status}</p>
+                          <p>{(file.file_size / 1024).toFixed(1)} KB</p>
+                        </div>
                       </div>
                     ))}
                   </div>
