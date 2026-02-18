@@ -1,4 +1,9 @@
-import { ApiPriority, FilePosition, FilePriority } from "../types/file";
+import {
+  ApiPriority,
+  DatasetUploadPayload,
+  FilePosition,
+  FilePriority,
+} from "../types/file";
 import userApi from "./userApi";
 
 type UploadResultItem = {
@@ -13,6 +18,8 @@ type UploadResult = {
 };
 
 type UploadProgressFn = (file: File, percent: number) => void;
+
+const token = localStorage.getItem("access_token");
 
 const getHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("access_token");
@@ -201,4 +208,116 @@ export const statusAllFiles = async () => {
     headers: getHeaders(),
   });
   return data;
+};
+
+export const postUploadDataset = async ({
+  dataset_name,
+  description,
+  linking_column,
+  files,
+}: DatasetUploadPayload) => {
+  const formData = new FormData();
+
+  formData.append("dataset_name", dataset_name);
+
+  if (description) {
+    formData.append("description", description);
+  }
+
+  if (linking_column) {
+    formData.append("linking_column", linking_column);
+  }
+
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const { data } = await userApi.post("/api/v1/datasets/upload", formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    timeout: 0,
+  });
+
+  return data;
+};
+
+export const getDatasets = async (limit = 100, offset = 0) => {
+  const { data } = await userApi.get("/api/v1/datasets", {
+    params: { limit, offset },
+  });
+  return data;
+};
+
+export const getDatasetById = async (id: string) => {
+  const { data } = await userApi.get(`/api/v1/datasets/${id}`);
+  return data;
+};
+
+export const confirmDataset = async (
+  id: string,
+  linking_column_name?: string | null,
+) => {
+  const { data } = await userApi.post(`/api/v1/datasets/${id}/confirm`, null, {
+    params: { linking_column_name },
+  });
+  return data;
+};
+
+export const getDatasetEntities = async (
+  id: string,
+  limit = 100,
+  offset = 0,
+) => {
+  const { data } = await userApi.get(`/api/v1/datasets/${id}/entities`, {
+    params: { limit, offset },
+  });
+  return data;
+};
+
+export const addFileToDataset = async (id: string, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await userApi.post(
+    `/api/v1/datasets/${id}/add-file`,
+    formData,
+  );
+
+  return data;
+};
+
+export const restartDatasetMerge = async (id: string) => {
+  const { data } = await userApi.post(`/api/v1/datasets/${id}/merge`);
+  return data;
+};
+
+export const getServerPaths = async () => {
+  const res = await userApi.get("/api/v1/files/server/paths");
+  return res.data;
+};
+export const addServerPath = async (path: string) => {
+  const res = await userApi.post("/api/v1/files/server/paths", { path });
+  return res.data;
+};
+export const removeServerPath = async (path: string) => {
+  const res = await userApi.delete("/api/v1/files/server/paths", {
+    params: { path },
+  });
+  return res.data;
+};
+
+export const browseServerPath = async (path: string) => {
+  const res = await userApi.get("/api/v1/files/server/browse", {
+    params: { path },
+  });
+  return res.data;
+};
+
+export const uploadServerFiles = async (files: string[], priority = 100) => {
+  const res = await userApi.post("/api/v1/files/server/upload", {
+    files,
+    priority,
+  });
+  return res.data;
 };

@@ -95,3 +95,21 @@ export type ResumeAllResponse = {
   skipped_manual: number;
   message: string;
 };
+
+export type DatasetUploadPayload = {
+  dataset_name: string;
+  description?: string;
+  linking_column?: string;
+  files: File[];
+};
+
+export type DatasetUploadResponse = {
+  status: string;
+  dataset_id: string;
+  dataset_name: string;
+  files: any[];
+  message: string;
+  linking_column: string;
+  detected_linking_column: string;
+  name: string
+};

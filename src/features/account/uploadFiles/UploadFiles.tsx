@@ -32,8 +32,12 @@ import Toast from "../../../components/toast/Toast";
 import { useParsingQueue } from "../../../hooks/uploadFiles/useParsingQueue";
 import { useUploadStore } from "../../../store/useUploadStore";
 import type { FileGroup, FileItem } from "../../../types/file";
+import DatasetModal from "./DatasetModal";
+import DatasetUploadBlock from "./DatasetUploadBlock";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
 import GroupBlock from "./GroupBlock";
+import ServerFileBrowser from "./serverManager/ServerFileBrowser";
+import ServerPathManager from "./serverManager/ServerPathManager";
 import UploadDropzone from "./UploadDropzone";
 
 type User = {
@@ -99,6 +103,8 @@ const UploadFiles = () => {
   const [isProcessingModal, setIsProcessingModal] = useState<boolean>(false);
 
   const [search, setSearch] = useState<string>("");
+
+  const [datasetModal, setDatasetModal] = useState<any | null>(null);
 
   const token = localStorage.getItem("access_token") ?? "";
 
@@ -514,8 +520,20 @@ const UploadFiles = () => {
         className="flex gap-8 items-start"
       >
         {/* Upload Dropzone */}
-
-        <UploadDropzone />
+        <div className="flex flex-col gap-10">
+          <UploadDropzone />
+          <ServerFileBrowser
+            onUploaded={() => {
+              loadFiles(1, true);
+              loadGroups();
+              setNotify("upload_file");
+            }}
+          />
+          <ServerPathManager />
+          <DatasetUploadBlock
+            onCreated={(dataset) => setDatasetModal(dataset)}
+          />
+        </div>
 
         {/* Selected files */}
         {files.length > 0 && (
@@ -629,13 +647,7 @@ const UploadFiles = () => {
             <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
               Очередь обработки
             </h2>
-            <p>
-              В очереди:{" "}
-              {processingQueue.length +
-                waitingQueue.length +
-                completedQueue.length +
-                failedQueue.length}
-            </p>
+            <p>В очереди: {processingQueue.length + waitingQueue.length}</p>
           </div>
 
           <IoIosArrowDown
@@ -823,61 +835,62 @@ const UploadFiles = () => {
             )}
 
             {/* ================= COMPLETED ================= */}
-            {completedQueue.length > 0 && (
-              <div>
-                <h3 className="text-[15px] font-semibold text-emerald-600 mb-3">
-                  Готово
-                </h3>
 
-                <div className="bg-white border border-emerald-200 rounded-xl divide-y">
-                  {completedQueue.slice(0, queueLimit).map((item) => (
-                    <div
-                      key={`completed-${item.raw_file_id}`}
-                      className="grid grid-cols-4 gap-4 items-center px-4 py-3"
+            {/* {completedQueue.length > 0 && (
+                <div>
+                  <h3 className="text-[15px] font-semibold text-emerald-600 mb-3">
+                    Готово
+                  </h3>
+
+                  <div className="bg-white border border-emerald-200 rounded-xl divide-y">
+                    {completedQueue.slice(0, queueLimit).map((item) => (
+                      <div
+                        key={`completed-${item.raw_file_id}`}
+                        className="grid grid-cols-4 gap-4 items-center px-4 py-3"
+                      >
+                       
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">
+                            {item.file_name}
+                          </p>
+                          <p className="text-[13px] text-slate-500">
+                            {formatFileSize(item.file_size)}
+                          </p>
+                        </div>
+
+                       
+                        <span className="text-emerald-600 text-sm text-center">
+                          Обработка завершена
+                        </span>
+
+                       
+                        <div className="text-center text-[12px] text-slate-400">
+                          pos: {item.position ?? "-"}
+                        </div>
+
+                       
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleRestartFile(item.raw_file_id)}
+                            className="px-2 py-1 text-[12px] rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition"
+                          >
+                            <MdRestartAlt className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {completedQueue.length > queueLimit && (
+                    <button
+                      onClick={() => setQueueLimit((p) => p + 20)}
+                      className="mt-3 text-sm text-cyan-600 hover:underline"
                     >
-                      {/* NAME */}
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-900">
-                          {item.file_name}
-                        </p>
-                        <p className="text-[13px] text-slate-500">
-                          {formatFileSize(item.file_size)}
-                        </p>
-                      </div>
-
-                      {/* STATUS */}
-                      <span className="text-emerald-600 text-sm text-center">
-                        Обработка завершена
-                      </span>
-
-                      {/* POSITION */}
-                      <div className="text-center text-[12px] text-slate-400">
-                        pos: {item.position ?? "-"}
-                      </div>
-
-                      {/* ACTIONS */}
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleRestartFile(item.raw_file_id)}
-                          className="px-2 py-1 text-[12px] rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition"
-                        >
-                          <MdRestartAlt className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                      Показать ещё
+                    </button>
+                  )}
                 </div>
-
-                {completedQueue.length > queueLimit && (
-                  <button
-                    onClick={() => setQueueLimit((p) => p + 20)}
-                    className="mt-3 text-sm text-cyan-600 hover:underline"
-                  >
-                    Показать ещё
-                  </button>
-                )}
-              </div>
-            )}
+              )} */}
 
             {/* ================= FAILED ================= */}
             {failedQueue.length > 0 && (
@@ -1315,6 +1328,13 @@ const UploadFiles = () => {
             )}
           </motion.div>
         </div>
+      )}
+
+      {datasetModal && (
+        <DatasetModal
+          dataset={datasetModal}
+          onClose={() => setDatasetModal(null)}
+        />
       )}
     </section>
   );
