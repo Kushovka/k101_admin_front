@@ -529,7 +529,7 @@ const UploadFiles = () => {
           {/* SERVER */}
           <div
             className={clsx(
-              "w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm"
+              "w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm",
             )}
           >
             {/* HEADER */}
@@ -577,7 +577,7 @@ const UploadFiles = () => {
           </div>
 
           {/* DATASET */}
-          <div className="w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm w-full">
+          <div className="w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm">
             {/* HEADER */}
             <button
               type="button"
