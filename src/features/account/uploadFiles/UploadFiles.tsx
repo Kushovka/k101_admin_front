@@ -83,6 +83,9 @@ const UploadFiles = () => {
   const [pageByGroup, setPageByGroup] = useState<Record<string, number>>({});
   const [loadingGroup, setLoadingGroup] = useState<Record<string, boolean>>({});
 
+  const [openServerModal, setOpenServerModal] = useState<boolean>(false);
+  const [openDatasetModalBlock, setOpenDatasetModalBlock] = useState(false);
+
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
   >({});
@@ -520,19 +523,98 @@ const UploadFiles = () => {
         className="flex gap-8 items-start"
       >
         {/* Upload Dropzone */}
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-10 w-full">
           <UploadDropzone />
-          <ServerFileBrowser
-            onUploaded={() => {
-              loadFiles(1, true);
-              loadGroups();
-              setNotify("upload_file");
-            }}
-          />
-          <ServerPathManager />
-          <DatasetUploadBlock
-            onCreated={(dataset) => setDatasetModal(dataset)}
-          />
+
+          {/* SERVER */}
+          <div
+            className={clsx(
+              "w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm"
+            )}
+          >
+            {/* HEADER */}
+            <button
+              type="button"
+              onClick={() => setOpenServerModal((prev) => !prev)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition rounded-xl"
+            >
+              <div className="flex flex-col">
+                <span className="text-[15px] font-semibold text-slate-900">
+                  Загрузка напрямую на сервер
+                </span>
+                <span className="text-[13px] text-slate-500">
+                  Выбрать файлы из директорий сервера
+                </span>
+              </div>
+
+              <IoIosArrowDown
+                className={clsx(
+                  "w-5 h-5 text-slate-600 transition-transform duration-200",
+                  openServerModal && "rotate-180",
+                )}
+              />
+            </button>
+
+            {/* BODY */}
+            {openServerModal && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                transition={{ duration: 0.25 }}
+                className="px-5 pb-5 flex flex-col gap-6 border-gray-100"
+              >
+                <ServerFileBrowser
+                  onUploaded={() => {
+                    loadFiles(1, true);
+                    loadGroups();
+                    setNotify("upload_file");
+                  }}
+                />
+
+                <ServerPathManager />
+              </motion.div>
+            )}
+          </div>
+
+          {/* DATASET */}
+          <div className="w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm w-full">
+            {/* HEADER */}
+            <button
+              type="button"
+              onClick={() => setOpenDatasetModalBlock((prev) => !prev)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition rounded-xl"
+            >
+              <div className="flex flex-col">
+                <span className="text-[15px] font-semibold text-slate-900">
+                  Загрузка датасета
+                </span>
+                <span className="text-[13px] text-slate-500">
+                  Объединение нескольких файлов по ID
+                </span>
+              </div>
+
+              <IoIosArrowDown
+                className={clsx(
+                  "w-5 h-5 text-slate-600 transition-transform duration-200",
+                  openDatasetModalBlock && "rotate-180",
+                )}
+              />
+            </button>
+
+            {/* BODY */}
+            {openDatasetModalBlock && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                transition={{ duration: 0.25 }}
+                className="px-5 pb-5 border-gray-100"
+              >
+                <DatasetUploadBlock
+                  onCreated={(dataset) => setDatasetModal(dataset)}
+                />
+              </motion.div>
+            )}
+          </div>
         </div>
 
         {/* Selected files */}
