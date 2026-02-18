@@ -111,5 +111,19 @@ export type DatasetUploadResponse = {
   message: string;
   linking_column: string;
   detected_linking_column: string;
-  name: string
+  name: string;
+};
+
+export type DatasetItem = {
+  id: string;
+  dataset_name: string;
+  description: string | null;
+  status: "pending" | "processing" | "completed" | "failed";
+  error_message: string | null;
+  total_files: number;
+  merged_entities_count: number;
+  unique_linking_ids: number;
+  linking_column_name: string | null;
+  linking_column_confirmed: boolean;
+  created_at: string;
 };

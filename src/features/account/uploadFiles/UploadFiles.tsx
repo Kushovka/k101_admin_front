@@ -32,6 +32,7 @@ import Toast from "../../../components/toast/Toast";
 import { useParsingQueue } from "../../../hooks/uploadFiles/useParsingQueue";
 import { useUploadStore } from "../../../store/useUploadStore";
 import type { FileGroup, FileItem } from "../../../types/file";
+import DatasetsList from "./dataset/DatasetsList";
 import DatasetModal from "./DatasetModal";
 import DatasetUploadBlock from "./DatasetUploadBlock";
 import FilePreviewModal from "./filePreviewModal/FilePreviewModal";
@@ -110,8 +111,6 @@ const UploadFiles = () => {
   const [datasetModal, setDatasetModal] = useState<any | null>(null);
 
   const token = localStorage.getItem("access_token") ?? "";
-
-  console.log(filesByGroup);
 
   /* ---------------- user ---------------- */
 
@@ -713,6 +712,11 @@ const UploadFiles = () => {
       {/* ---------------- нижний контент ---------------- */}
 
       {/* загруженные файлы */}
+
+      {/* datasets */}
+      <div>
+        <DatasetsList />
+      </div>
 
       {/* PROCESSING QUEUE */}
       <motion.div
