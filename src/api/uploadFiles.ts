@@ -320,4 +320,4 @@ export const uploadServerFiles = async (files: string[], priority = 100) => {
     priority,
   });
   return res.data;
-};
+}

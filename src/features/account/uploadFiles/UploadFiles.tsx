@@ -257,7 +257,7 @@ const UploadFiles = () => {
       setLoadingGroup((p) => ({ ...p, [groupName]: false }));
     }
   };
-
+ 
   const handleFileDeleted = (file: FileItem) => {
     // группы
     setFilesByGroup((prev) => {

@@ -30,7 +30,7 @@ const AppContent: React.FC = () => {
 
   const isAccountPage = location.pathname.startsWith("/account");
 
-  useBankIdleLogout(5 * 60 * 1000, uploading || !isAccountPage);
+  useBankIdleLogout(15 * 60 * 1000, uploading || !isAccountPage);
 
   useEffect(() => {
     const handler = () => {
