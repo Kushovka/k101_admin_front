@@ -1,0 +1,47 @@
+name: Deploy Admin Front
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: deploy-admin-front
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+
+            cd "${{ secrets.APP_DIR }}"
+
+            echo "Pull latest..."
+            git fetch --all
+            git reset --hard origin/master
+
+            echo "Build image..."
+            docker build -t k101_admin_front_react .
+
+            echo "Stop old container..."
+            docker rm -f k101_admin_front_react || true
+
+            echo "Run new container..."
+            docker run -d \
+              -p 4301:80 \
+              --name k101_admin_front_react \
+              --restart always \
+              k101_admin_front_react
+
+            echo "Cleanup unused images..."
+            docker image prune -f
