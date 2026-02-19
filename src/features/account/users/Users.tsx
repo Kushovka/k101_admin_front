@@ -369,7 +369,7 @@ export default function Users() {
           {openModal === "users" && (
             <div
               onClick={() => setOpenCreateModal(true)}
-              className="fixed bottom-8 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition cursor-pointer active:scale-95"
+              className="fixed bottom-8 right-8 z-50 flex items-center justify-center w-[54px] h-[54px] rounded-full bg-black-500 text-white shadow-lg hover:bg-cyan-600 transition cursor-pointer active:scale-95"
             >
               <IoClose className="w-6 h-6 rotate-45" />
             </div>
