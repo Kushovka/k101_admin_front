@@ -1,4 +1,3 @@
-
 # Stage 1: Build frontend
 FROM node:20 AS build
 
