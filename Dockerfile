@@ -1,4 +1,4 @@
-  GNU nano 6.2                                                                  Dockerfile
+
 # Stage 1: Build frontend
 FROM node:20 AS build
 
