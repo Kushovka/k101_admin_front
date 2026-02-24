@@ -27,7 +27,7 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const [totalPages, setTotalPages] = useState<number>(0);
   const [res, setRes] = useState<SearchResponse | null>(null);
 
-  console.log(res);
+
   const value: SearchContextValue = {
     query,
     setQuery,

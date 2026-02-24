@@ -3,7 +3,7 @@ import AppContent from "./components/appContent/AppContent";
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/admin">
       <AppContent />
     </BrowserRouter>
   );

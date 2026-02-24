@@ -100,7 +100,7 @@ const Search = () => {
 
     return "+" + phone;
   };
-  console.log(result);
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);

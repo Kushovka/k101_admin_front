@@ -95,7 +95,7 @@ const UserDetails = () => {
       await isDeletedUser(id);
       navigate("/account/users");
     } catch (err) {
-      console.log(err);
+
     }
   };
 
@@ -137,7 +137,7 @@ const UserDetails = () => {
         email: res.email,
       });
     } catch (err) {
-      console.log(err);
+
     }
   };
 

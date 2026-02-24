@@ -61,7 +61,7 @@ export default function Users() {
 
     try {
       const res = await getUsers();
-      console.log("getUsers res:", res);
+
       const formattedUsers: TableUser[] = res.map((u) => ({
         id: u.id,
         nickName: u.username,
@@ -98,7 +98,7 @@ export default function Users() {
     const fetchRequests = async (): Promise<void> => {
       try {
         const res = await getRequests();
-        console.log(res);
+
         setAllRequests(res);
       } catch (err) {
       } finally {
@@ -113,7 +113,7 @@ export default function Users() {
       const updated = await getRequests();
       setAllRequests(updated);
     } catch (e) {
-      console.log(e);
+
     }
   };
 
@@ -123,7 +123,7 @@ export default function Users() {
       await isRejectRequest(id, reason ?? undefined);
       await getRequests();
     } catch (e) {
-      console.log(e);
+
     }
   };
 
@@ -152,7 +152,7 @@ export default function Users() {
       setNotify("user_create");
       setOpenCreateModal(false);
 
-      console.log(res);
+
 
       setEmail("");
       setFirstName("");
@@ -211,8 +211,6 @@ export default function Users() {
     },
   };
 
-  console.log(toastConfig);
-  console.log(dataAddUser);
 
   return (
     <section

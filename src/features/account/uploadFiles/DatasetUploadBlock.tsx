@@ -143,8 +143,8 @@ const DatasetUploadBlock = ({ onCreated }: Props) => {
         onClick={async () => {
           try {
             const dataset = await upload();
-            console.log("UPLOAD RESPONSE:", dataset);
-            onCreated(dataset); // ✅ откроем модалку
+
+            onCreated(dataset);
           } catch (err: any) {
             setError(err.message);
           }

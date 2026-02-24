@@ -38,7 +38,7 @@ const ServerFileBrowser = ({ onUploaded }: Props) => {
 
     const res = await uploadServerFiles(selected, 100);
 
-    console.log(res.results);
+
 
     setSelected([]);
 

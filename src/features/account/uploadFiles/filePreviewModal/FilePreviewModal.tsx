@@ -146,7 +146,7 @@ const FilePreviewModal = ({
     </div>
   );
 
-  console.log(typedRows);
+
 
   type TxtLineProps = {
     value: string;

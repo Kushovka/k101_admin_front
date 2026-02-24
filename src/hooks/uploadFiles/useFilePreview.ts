@@ -28,9 +28,9 @@ export const useFilePreview = ({ file, limit, token }: UseFilePreviewArgs) => {
       })
       .then((res) => {
         const records = res.data?.preview_records;
-        console.log(res.data);
+
         setRows(Array.isArray(records) ? records : []);
-        console.log(res);
+
       })
       .finally(() => setLoading(false));
   }, [file, limit, token]);

@@ -29,7 +29,7 @@ export const getUsers = async (): Promise<ApiUser[]> => {
   const { data } = await adminApi.get<UsersResponse>(`/admin/users`, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data.users;
 };
 
@@ -47,7 +47,7 @@ export const addUsers = async (
   const res = await adminApi.post(`/admin/users/create`, payload, {
     headers: getHeaders(),
   });
-  console.log(res.data);
+
   return res.data;
 };
 
@@ -55,7 +55,7 @@ export const getCurrentUser = async (): Promise<ApiUser> => {
   const { data } = await userApi.get<ApiUser>(`/api/v1/users/profile`, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -65,7 +65,7 @@ export const getUserById = async (id: string): Promise<ApiUser> => {
   const { data } = await adminApi.get<ApiUser>(`/admin/users/${id}`, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -94,7 +94,7 @@ export const isBlockedUser = async (
       headers: getHeaders(),
     },
   );
-  console.log(data);
+
   return data;
 };
 
@@ -120,7 +120,7 @@ export const postDeposit = async (
       headers: getHeaders(),
     },
   );
-  console.log(data);
+
   return data;
 };
 
@@ -133,7 +133,7 @@ export const getRequests = async (): Promise<ApiTelegramUser[]> => {
       headers: getHeaders(),
     },
   );
-  console.log(data);
+
   return data.requests;
 };
 

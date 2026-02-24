@@ -26,7 +26,7 @@ export const updateProfile = async (
       headers: getHeaders(),
     },
   );
-  console.log(data);
+
   return data;
 };
 

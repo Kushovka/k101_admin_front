@@ -21,7 +21,7 @@ const DatasetsList = () => {
     try {
       const res = await getDatasets();
       setDatasets(res.datasets);
-      console.log(res.datasets);
+
     } catch (e: any) {
       setError("Ошибка загрузки датасетов");
     }
@@ -39,7 +39,7 @@ const DatasetsList = () => {
       try {
         const data = await getDatasetById(id);
         setDetails((prev) => ({ ...prev, [id]: data }));
-        console.log(data);
+
       } catch {
         setError("Ошибка загрузки информации о датасете");
       }
