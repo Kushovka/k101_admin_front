@@ -62,6 +62,7 @@ export default function Users() {
     try {
       const res = await getUsers();
 
+
       const formattedUsers: TableUser[] = res.map((u) => ({
         id: u.id,
         nickName: u.username,
