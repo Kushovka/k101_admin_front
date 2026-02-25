@@ -112,9 +112,7 @@ export default function Users() {
       await isApproveRequest(id);
       const updated = await getRequests();
       setAllRequests(updated);
-    } catch (e) {
-
-    }
+    } catch (e) {}
   };
 
   const handleReject = async (id: number) => {
@@ -122,9 +120,7 @@ export default function Users() {
     try {
       await isRejectRequest(id, reason ?? undefined);
       await getRequests();
-    } catch (e) {
-
-    }
+    } catch (e) {}
   };
 
   const pendingRequests = allRequests.filter((r) => r.status === "pending");
@@ -151,8 +147,6 @@ export default function Users() {
       setShowDataNewUser(true);
       setNotify("user_create");
       setOpenCreateModal(false);
-
-
 
       setEmail("");
       setFirstName("");
@@ -210,7 +204,6 @@ export default function Users() {
       message: "СКОПИРОВАНО !",
     },
   };
-
 
   return (
     <section
@@ -282,7 +275,7 @@ export default function Users() {
             {/* BODY */}
             <div className="flex flex-col divide-y divide-gray-100">
               {openModal === "users" &&
-                users.map((u) => (
+                users?.map((u) => (
                   <div
                     key={u.id}
                     onClick={() => navigate(`/account/users/${u.identifier}`)}
