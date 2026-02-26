@@ -71,7 +71,6 @@ const Profile = () => {
       setNotify("access_save");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
-      console.log(err);
       setNotify("error_save");
       setTimeout(() => setNotify(null), 3000);
     } finally {
@@ -110,9 +109,9 @@ const Profile = () => {
   //     try {
   //       const res = await linkForTelegram();
   //       setLink(res.deep_link);
-  //       console.log(res.deep_link);
+
   //     } catch (err) {
-  //       console.log(err);
+
   //     }
   //   };
   //   handleLink();
@@ -176,7 +175,7 @@ const Profile = () => {
 
       <div className="max-w-[1100px] w-full mx-auto flex flex-col gap-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
-          Профиль пользователя
+          Профиль пользователя пользователя
         </h1>
 
         {!error ? (

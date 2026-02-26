@@ -27,7 +27,7 @@ const HealthCheck: React.FC = () => {
     try {
       const res: HealthCheckResponse = await healthCheck();
       setProperty(res);
-      console.log(res);
+
     } catch (err: any) {
       console.error("Ошибка при получении пользователей:", err);
       setError(

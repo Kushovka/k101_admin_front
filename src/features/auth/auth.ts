@@ -30,10 +30,6 @@ export const login = async (
   localStorage.setItem("access_token", access_token);
   localStorage.setItem("refresh_token", refresh_token);
 
-  console.log(res.data.access_token);
-  console.log(res.data.refresh_token);
-  console.log(res.data);
-  console.log(res);
 
   return res.data;
 };

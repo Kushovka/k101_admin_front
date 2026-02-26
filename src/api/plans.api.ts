@@ -24,7 +24,7 @@ export const allPlans = async (): Promise<PlansResponse> => {
   const { data } = await userApi.get<PlansResponse>(`/api/v1/plans`, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -32,7 +32,7 @@ export const allArchivedPlans = async (): Promise<PlansResponse> => {
   const { data } = await userApi.get<PlansResponse>(`/api/v1/plans/archived`, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -42,7 +42,7 @@ export const createPlans = async (
   const { data } = await userApi.post<Plan>(`/api/v1/plans`, payload, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -53,7 +53,7 @@ export const updatePlans = async (
   const { data } = await userApi.put<Plan>(`/api/v1/plans/${id}`, payload, {
     headers: getHeaders(),
   });
-  console.log(data);
+
   return data;
 };
 
@@ -65,7 +65,7 @@ export const archivedPlans = async (id: string): Promise<Plan> => {
       headers: getHeaders(),
     }
   );
-  console.log(data);
+
   return data;
 };
 
@@ -77,6 +77,6 @@ export const unarchivedPlans = async (id: string): Promise<Plan> => {
       headers: getHeaders(),
     }
   );
-  console.log(data);
+
   return data;
 };

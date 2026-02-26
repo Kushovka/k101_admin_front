@@ -24,7 +24,7 @@ const Complaints = () => {
       console.error(err);
     }
   };
-  console.log(allComplaints);
+
   useEffect(() => {
     fetchComplaints();
   }, []);

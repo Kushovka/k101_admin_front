@@ -23,7 +23,6 @@ const PaymentSuccess = () => {
     const interval = setInterval(async () => {
       try {
         const data = await getPaymentStatus(Number(paymentId));
-        console.log("payment status data:", data);
         setStatus(data.status);
 
         if (["completed", "paid", "overpaid"].includes(data.status)) {

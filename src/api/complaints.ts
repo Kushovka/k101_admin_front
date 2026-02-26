@@ -34,7 +34,7 @@ export const reviewComplaint = async (
     },
     { headers: getHeaders() },
   );
-  console.log(data);
+
   return data;
 };
 

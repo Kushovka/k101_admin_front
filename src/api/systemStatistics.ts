@@ -16,6 +16,6 @@ export const systemStatistics = async () => {
   const res = await adminApi.get(`/api/stats`, {
     headers: getHeaders(),
   });
-  console.log(res.data);
+
   return res.data;
 };

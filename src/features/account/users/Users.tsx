@@ -61,15 +61,21 @@ export default function Users() {
 
     try {
       const res = await getUsers();
-      console.log("getUsers res:", res);
+
+      if (!Array.isArray(res)) {
+        throw new Error("Users response is not array");
+      }
+
       const formattedUsers: TableUser[] = res.map((u) => ({
         id: u.id,
-        nickName: u.username,
-        name: u.first_name,
-        surname: u.last_name,
-        email: u.email,
+        nickName: u.username ?? "-",
+        name: u.first_name ?? "-",
+        surname: u.last_name ?? "-",
+        email: u.email ?? "-",
         role: u.role === "user" ? "User" : "Admin",
-        registrationDate: new Date(u.registration_date).toLocaleDateString(),
+        registrationDate: u.registration_date
+          ? new Date(u.registration_date).toLocaleDateString()
+          : "-",
         status: u.is_blocked ? "Blocked" : "Active",
         identifier: u.id,
         balance: u.balance ?? 0,
@@ -79,15 +85,9 @@ export default function Users() {
       }));
 
       setUsers(formattedUsers);
-    } catch (err: any) {
-      console.error("Ошибка при получении пользователей:", err);
-      setError(
-        err.response
-          ? err.response.status === 500
-            ? "Сервер временно недоступен. Попробуйте позже."
-            : "Ошибка при загрузке пользователей"
-          : "Сетевая ошибка или CORS",
-      );
+    } catch (err) {
+      console.error(err);
+      setError("Ошибка загрузки пользователей");
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export default function Users() {
     const fetchRequests = async (): Promise<void> => {
       try {
         const res = await getRequests();
-        console.log(res);
+
         setAllRequests(res);
       } catch (err) {
       } finally {
@@ -112,9 +112,7 @@ export default function Users() {
       await isApproveRequest(id);
       const updated = await getRequests();
       setAllRequests(updated);
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
   };
 
   const handleReject = async (id: number) => {
@@ -122,9 +120,7 @@ export default function Users() {
     try {
       await isRejectRequest(id, reason ?? undefined);
       await getRequests();
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
   };
 
   const pendingRequests = allRequests.filter((r) => r.status === "pending");
@@ -151,8 +147,6 @@ export default function Users() {
       setShowDataNewUser(true);
       setNotify("user_create");
       setOpenCreateModal(false);
-
-      console.log(res);
 
       setEmail("");
       setFirstName("");
@@ -210,9 +204,6 @@ export default function Users() {
       message: "СКОПИРОВАНО !",
     },
   };
-
-  console.log(toastConfig);
-  console.log(dataAddUser);
 
   return (
     <section
@@ -284,7 +275,7 @@ export default function Users() {
             {/* BODY */}
             <div className="flex flex-col divide-y divide-gray-100">
               {openModal === "users" &&
-                users.map((u) => (
+                users?.map((u) => (
                   <div
                     key={u.id}
                     onClick={() => navigate(`/account/users/${u.identifier}`)}
