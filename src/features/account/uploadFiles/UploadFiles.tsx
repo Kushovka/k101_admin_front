@@ -506,7 +506,7 @@ const UploadFiles = () => {
           onClose={() => setDuplicatesCount(0)}
         />
       )}
-
+ 
       {notify === "duplicates_only" && (
         <Toast
           type="error"

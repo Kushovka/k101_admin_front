@@ -13,7 +13,7 @@ type Item = {
 type Props = {
   onUploaded?: () => void;
 };
-
+ 
 const ServerFileBrowser = ({ onUploaded }: Props) => {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
