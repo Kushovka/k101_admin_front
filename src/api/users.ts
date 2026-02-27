@@ -26,7 +26,7 @@ const getHeaders = (): Record<string, string> => {
 /* ---------------- USERS ---------------- */
 
 export const getUsers = async (): Promise<ApiUser[]> => {
-  const { data } = await adminApi.get<UsersResponse>(`/users`, {
+  const { data } = await adminApi.get<UsersResponse>(`/api/admin/users`, {
     headers: getHeaders(),
   });
 
@@ -44,7 +44,7 @@ interface CreatedUserPayload {
 export const addUsers = async (
   payload: CreatedUserPayload,
 ): Promise<CreatedUserResponse> => {
-  const res = await adminApi.post(`/users/create`, payload, {
+  const res = await adminApi.post(`/api/admin/users/create`, payload, {
     headers: getHeaders(),
   });
 
@@ -62,7 +62,7 @@ export const getCurrentUser = async (): Promise<ApiUser> => {
 /* ---------------- USER DETAILS ---------------- */
 
 export const getUserById = async (id: string): Promise<ApiUser> => {
-  const { data } = await adminApi.get<ApiUser>(`/users/${id}`, {
+  const { data } = await adminApi.get<ApiUser>(`/api/admin/users/${id}`, {
     headers: getHeaders(),
   });
 
@@ -73,9 +73,13 @@ export const updateUser = async (
   id: string,
   payload: UpdateUserPayload,
 ): Promise<ApiUser> => {
-  const { data } = await adminApi.patch<ApiUser>(`/users/${id}`, payload, {
-    headers: getHeaders(),
-  });
+  const { data } = await adminApi.patch<ApiUser>(
+    `/api/admin/users/${id}`,
+    payload,
+    {
+      headers: getHeaders(),
+    },
+  );
   return data;
 };
 
@@ -84,7 +88,7 @@ export const isBlockedUser = async (
   isBlocked: boolean,
 ): Promise<ApiUser> => {
   const { data } = await adminApi.post(
-    `/users/${id}/toggle-active`,
+    `/api/admin/users/${id}/toggle-active`,
     { is_blocked: isBlocked },
     {
       headers: getHeaders(),
@@ -95,7 +99,7 @@ export const isBlockedUser = async (
 };
 
 export const isDeletedUser = async (id: string): Promise<ApiUser> => {
-  const { data } = await adminApi.delete(`/users/${id}`, {
+  const { data } = await adminApi.delete(`/api/admin/users/${id}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
@@ -110,7 +114,7 @@ export const postDeposit = async (
   id: string,
 ): Promise<void> => {
   const { data } = await adminApi.post(
-    `/users/${id}/top-up`,
+    `/api/admin/users/${id}/top-up`,
     { amount: amount.toString() },
     {
       headers: getHeaders(),
@@ -124,7 +128,7 @@ export const postDeposit = async (
 
 export const getRequests = async (): Promise<ApiTelegramUser[]> => {
   const { data } = await adminApi.get<TelegramUsersResponse>(
-    `/registration-requests`,
+    `/api/admin/registration-requests`,
     {
       headers: getHeaders(),
     },
@@ -135,7 +139,7 @@ export const getRequests = async (): Promise<ApiTelegramUser[]> => {
 
 export const isApproveRequest = async (id: number) => {
   const { data } = await adminApi.post(
-    `/registration-requests/${id}/approve`,
+    `/api/admin/registration-requests/${id}/approve`,
     {},
     { headers: getHeaders() },
   );
@@ -147,7 +151,7 @@ export const isRejectRequest = async (
   reason?: string,
 ): Promise<ApiTelegramUser> => {
   const { data } = await adminApi.post(
-    `/registration-requests/${id}/reject`,
+    `/api/admin/registration-requests/${id}/reject`,
     reason ? { reason } : {},
     { headers: getHeaders() },
   );
