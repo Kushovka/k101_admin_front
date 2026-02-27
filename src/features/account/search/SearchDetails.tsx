@@ -12,6 +12,7 @@ import type {
   SourceFile,
 } from "../../../types/searchDetails.types";
 import { CorrectionModal } from "../complaints/CorrectionModal";
+import { RenameColumnModal } from "../complaints/RenameColumnModal";
 
 const fieldLabels: Record<string, string> = {
   height: "Рост",
@@ -84,6 +85,14 @@ const SearchDetails: React.FC = () => {
   const [dossierLoading, setDossierLoading] = useState(false);
   const [openCorrection, setOpenCorrection] = useState<{
     docId: string;
+  } | null>(null);
+  const [renameModal, setRenameModal] = useState<{
+    rawFileId: string;
+    columns: string[];
+  } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "error" | "access";
   } | null>(null);
 
   /* ---------------- helpers ---------------- */
@@ -176,6 +185,13 @@ const SearchDetails: React.FC = () => {
           type="access"
           message="СКОПИРОВАНО!"
           onClose={() => setNotify(false)}
+        />
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
 
@@ -336,20 +352,32 @@ const SearchDetails: React.FC = () => {
                           >
                             {/* Источник */}
                             {/* Верхняя строка */}
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between">
                               <div className="text-xs text-slate-500">
                                 Источник: {sourceName}
                               </div>
-
-                              <button
-                                onClick={() => {
-                                  if (!source.doc_id) return;
-                                  setOpenCorrection({ docId: source.doc_id });
-                                }}
-                                className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition"
-                              >
-                                Исправить
-                              </button>
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => {
+                                    if (!source.doc_id) return;
+                                    setOpenCorrection({ docId: source.doc_id });
+                                  }}
+                                  className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition"
+                                >
+                                  Исправить
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setRenameModal({
+                                      rawFileId: source.raw_file_id,
+                                      columns: Object.keys(source.fields),
+                                    })
+                                  }
+                                  className="text-xs px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
+                                >
+                                  Переименовать колонку
+                                </button>
+                              </div>
                             </div>
 
                             {/* Поля источника */}
@@ -465,6 +493,20 @@ const SearchDetails: React.FC = () => {
           docId={openCorrection.docId}
           onClose={() => setOpenCorrection(null)}
           onUpdated={refetchSearchDetails}
+        />
+      )}
+      {renameModal && (
+        <RenameColumnModal
+          rawFileId={renameModal.rawFileId}
+          availableColumns={renameModal.columns}
+          onClose={() => setRenameModal(null)}
+          onCompleted={(message) => {
+            setRenameModal(null);
+            setToast({
+              message,
+              type: message.includes("Ошибка") ? "error" : "access",
+            });
+          }}
         />
       )}
     </section>
