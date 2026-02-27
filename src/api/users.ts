@@ -26,7 +26,7 @@ const getHeaders = (): Record<string, string> => {
 /* ---------------- USERS ---------------- */
 
 export const getUsers = async (): Promise<ApiUser[]> => {
-  const { data } = await adminApi.get<UsersResponse>(`/api/admin/users`, {
+  const { data } = await adminApi.get<UsersResponse>(`/admin-api/users`, {
     headers: getHeaders(),
   });
 
@@ -44,7 +44,7 @@ interface CreatedUserPayload {
 export const addUsers = async (
   payload: CreatedUserPayload,
 ): Promise<CreatedUserResponse> => {
-  const res = await adminApi.post(`/api/admin/users/create`, payload, {
+  const res = await adminApi.post(`/admin-api/users/create`, payload, {
     headers: getHeaders(),
   });
 
@@ -62,7 +62,7 @@ export const getCurrentUser = async (): Promise<ApiUser> => {
 /* ---------------- USER DETAILS ---------------- */
 
 export const getUserById = async (id: string): Promise<ApiUser> => {
-  const { data } = await adminApi.get<ApiUser>(`/api/admin/users/${id}`, {
+  const { data } = await adminApi.get<ApiUser>(`/admin-api/users/${id}`, {
     headers: getHeaders(),
   });
 
@@ -74,7 +74,7 @@ export const updateUser = async (
   payload: UpdateUserPayload,
 ): Promise<ApiUser> => {
   const { data } = await adminApi.patch<ApiUser>(
-    `/api/admin/users/${id}`,
+    `/admin-api/users/${id}`,
     payload,
     {
       headers: getHeaders(),
@@ -88,7 +88,7 @@ export const isBlockedUser = async (
   isBlocked: boolean,
 ): Promise<ApiUser> => {
   const { data } = await adminApi.post(
-    `/api/admin/users/${id}/toggle-active`,
+    `/admin-api/users/${id}/toggle-active`,
     { is_blocked: isBlocked },
     {
       headers: getHeaders(),
@@ -99,7 +99,7 @@ export const isBlockedUser = async (
 };
 
 export const isDeletedUser = async (id: string): Promise<ApiUser> => {
-  const { data } = await adminApi.delete(`/api/admin/users/${id}`, {
+  const { data } = await adminApi.delete(`/admin-api/users/${id}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
@@ -114,7 +114,7 @@ export const postDeposit = async (
   id: string,
 ): Promise<void> => {
   const { data } = await adminApi.post(
-    `/api/admin/users/${id}/top-up`,
+    `/admin-api/users/${id}/top-up`,
     { amount: amount.toString() },
     {
       headers: getHeaders(),
@@ -128,7 +128,7 @@ export const postDeposit = async (
 
 export const getRequests = async (): Promise<ApiTelegramUser[]> => {
   const { data } = await adminApi.get<TelegramUsersResponse>(
-    `/api/admin/registration-requests`,
+    `/admin-api/registration-requests`,
     {
       headers: getHeaders(),
     },
@@ -139,7 +139,7 @@ export const getRequests = async (): Promise<ApiTelegramUser[]> => {
 
 export const isApproveRequest = async (id: number) => {
   const { data } = await adminApi.post(
-    `/api/admin/registration-requests/${id}/approve`,
+    `/admin-api/registration-requests/${id}/approve`,
     {},
     { headers: getHeaders() },
   );
@@ -151,7 +151,7 @@ export const isRejectRequest = async (
   reason?: string,
 ): Promise<ApiTelegramUser> => {
   const { data } = await adminApi.post(
-    `/api/admin/registration-requests/${id}/reject`,
+    `/admin-api/registration-requests/${id}/reject`,
     reason ? { reason } : {},
     { headers: getHeaders() },
   );
