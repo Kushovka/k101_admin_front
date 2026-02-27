@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import {
+  correctEntireFile,
   deleteFieldValue,
+  getCorrectionTaskStatus,
   getDocumentPreview,
   remapFields,
+  renameColumnInFile,
   updateAdditionalData,
   updateMainInfo,
 } from "../../../api/complaints";
@@ -34,11 +37,16 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
   const [loading, setLoading] = useState(false);
   type NotifyType = "reason_required_delete" | "reason_required_save" | null;
   const [notify, setNotify] = useState<NotifyType>(null);
+  const [rawFileId, setRawFileId] = useState<string | null>(null);
+  const [applyScope, setApplyScope] = useState<"single" | "file">("single");
 
   const [data, setData] = useState<Record<string, any> | null>(null);
   const [originalData, setOriginalData] = useState<Record<string, any> | null>(
     null,
   );
+
+  const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [newColumnName, setNewColumnName] = useState("");
 
   const [remapTarget, setRemapTarget] = useState<{
     fromField: string;
@@ -53,6 +61,7 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
       const res = await getDocumentPreview(docId);
       setData(res.current_data);
       setOriginalData(res.current_data);
+      setRawFileId(res.raw_file_id);
     };
 
     fetchPreview();
@@ -110,9 +119,47 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
     }
   };
 
+  const pollTask = (taskId: string) => {
+    const interval = setInterval(async () => {
+      const status = await getCorrectionTaskStatus(taskId);
+
+      if (status.status === "success" || status.status === "failed") {
+        clearInterval(interval);
+        setLoading(false);
+        onUpdated();
+        onClose();
+      }
+    }, 3000);
+  };
+
+  const handleFileCorrection = async () => {
+    if (!rawFileId || !reason.trim()) return;
+
+    const mainDiff = getMainInfoDiff();
+    if (Object.keys(mainDiff).length === 0) return;
+
+    try {
+      setLoading(true);
+
+      const res = await correctEntireFile(rawFileId, mainDiff, reason);
+
+      const taskId = res.task_id;
+
+      pollTask(taskId);
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!data || !reason.trim()) {
       setNotify("reason_required_save");
+      return;
+    }
+
+    if (applyScope === "file") {
+      await handleFileCorrection();
       return;
     }
 
@@ -308,10 +355,45 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
                   >
                     Перенести
                   </button>
+                  <button
+                    onClick={() => {
+                      setRenameTarget(key);
+                      setNewColumnName(key);
+                    }}
+                    className="px-2 py-1 text-xs bg-yellow-500 text-white rounded"
+                  >
+                    Переименовать
+                  </button>
                 </div>
               ))}
             </>
           )}
+
+          <div className="flex flex-col gap-1 mt-4">
+            <label className="text-sm font-medium">Применить изменения:</label>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                value="single"
+                checked={applyScope === "single"}
+                onChange={() => setApplyScope("single")}
+              />
+              Только этот документ
+            </label>
+
+            {rawFileId && (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  value="file"
+                  checked={applyScope === "file"}
+                  onChange={() => setApplyScope("file")}
+                />
+                Ко всем записям этого файла
+              </label>
+            )}
+          </div>
 
           <textarea
             placeholder="Причина изменения"
@@ -378,6 +460,61 @@ export const CorrectionModal = ({ docId, onClose, onUpdated }: Props) => {
                 className="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50"
               >
                 Перенести
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {renameTarget && rawFileId && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white w-[420px] p-5 rounded-xl shadow-xl flex flex-col gap-3">
+            <h4 className="font-semibold">Переименование колонки</h4>
+
+            <div className="text-sm text-slate-600">
+              Старое имя: <b>{renameTarget}</b>
+            </div>
+
+            <input
+              value={newColumnName}
+              onChange={(e) => setNewColumnName(e.target.value)}
+              className="border rounded p-2 text-sm"
+            />
+
+            <textarea
+              placeholder="Причина изменения"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="border rounded p-2 text-sm"
+            />
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setRenameTarget(null)}
+                className="px-3 py-1 border rounded"
+              >
+                Отмена
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (!reason.trim()) return;
+
+                  setLoading(true);
+
+                  const res = await renameColumnInFile(
+                    rawFileId,
+                    renameTarget,
+                    newColumnName,
+                    reason,
+                  );
+
+                  pollTask(res.task_id);
+
+                  setRenameTarget(null);
+                }}
+                className="px-3 py-1 bg-yellow-600 text-white rounded"
+              >
+                Переименовать
               </button>
             </div>
           </div>

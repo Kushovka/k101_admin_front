@@ -118,3 +118,82 @@ export const deleteFieldValue = async (
 
   return data;
 };
+
+export const bulkUpdateDocuments = async (
+  rawFileId: string,
+  corrections: {
+    doc_id: string;
+    field_updates: Record<string, any>;
+  }[],
+  reason: string,
+) => {
+  const { data } = await userApi.post(
+    `/api/v1/corrections/bulk`,
+    {
+      raw_file_id: rawFileId,
+      corrections,
+      reason,
+    },
+    { headers: getHeaders() },
+  );
+
+  return data;
+};
+
+export const getCorrectionsHistory = async (params?: {
+  doc_id?: string;
+  raw_file_id?: string;
+  page?: number;
+  page_size?: number;
+}) => {
+  const { data } = await userApi.get(`/api/v1/corrections/history`, {
+    params,
+    headers: getHeaders(),
+  });
+
+  return data;
+};
+
+export const correctEntireFile = async (
+  rawFileId: string,
+  fieldUpdates: Record<string, any>,
+  reason: string,
+) => {
+  const { data } = await userApi.post(
+    `/api/v1/corrections/file/${rawFileId}`,
+    {
+      field_updates: fieldUpdates,
+      reason,
+    },
+    { headers: getHeaders() },
+  );
+
+  return data;
+};
+
+export const getCorrectionTaskStatus = async (taskId: string) => {
+  const { data } = await userApi.get(`/api/v1/corrections/task/${taskId}`, {
+    headers: getHeaders(),
+  });
+
+  return data;
+};
+
+export const renameColumnInFile = async (
+  rawFileId: string,
+  oldColumn: string,
+  newColumn: string,
+  reason: string,
+) => {
+  const { data } = await userApi.post(
+    `/api/v1/corrections/file/${rawFileId}/rename-column`,
+    {
+      old_column: oldColumn,
+      new_column: newColumn,
+      reason,
+    },
+    { headers: getHeaders() },
+  );
+  console.log(data);
+  return data;
+};
