@@ -23,14 +23,14 @@ import SessionExpiredModal from "./SessionExpiredModal";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const { uploading } = useUploadStore();
+  const { uploading, isBusy } = useUploadStore();
   const isAuth = Boolean(localStorage.getItem("access_token"));
 
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const isAccountPage = location.pathname.startsWith("/account");
 
-  useBankIdleLogout(15 * 60 * 1000, uploading || !isAccountPage);
+  useBankIdleLogout(15 * 60 * 1000, uploading || isBusy || !isAccountPage);
 
   useEffect(() => {
     const handler = () => {

@@ -3,6 +3,7 @@ import {
   browseServerPath,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
+import { useUploadStore } from "../../../../store/useUploadStore";
 
 type Item = {
   name: string;
@@ -12,12 +13,16 @@ type Item = {
 
 type Props = {
   onUploaded?: () => void;
+  onError?: (msg: string) => void;
 };
- 
-const ServerFileBrowser = ({ onUploaded }: Props) => {
+
+const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
+  const { startBusy, endBusy } = useUploadStore();
+
   const [currentPath, setCurrentPath] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const loadDirectory = async (path: string) => {
     const data = await browseServerPath(path);
@@ -34,15 +39,24 @@ const ServerFileBrowser = ({ onUploaded }: Props) => {
   };
 
   const handleUpload = async () => {
-    if (!selected.length) return;
+    if (!selected.length || isUploading) return;
 
-    const res = await uploadServerFiles(selected, 100);
+    try {
+      startBusy();
+      setIsUploading(true);
 
+      await uploadServerFiles(selected, 100);
 
+      setSelected([]);
+      onUploaded?.();
+    } catch (e: any) {
+      const message = e?.response?.data?.detail || "Ошибка при загрузке файлов";
 
-    setSelected([]);
-
-    onUploaded?.();
+      onError?.(message);
+    } finally {
+      setIsUploading(false);
+      endBusy();
+    }
   };
 
   return (
@@ -98,10 +112,17 @@ const ServerFileBrowser = ({ onUploaded }: Props) => {
 
       <button
         onClick={handleUpload}
-        disabled={!selected.length}
-        className="px-4 py-2 bg-cyan-500 text-white rounded disabled:bg-gray-300"
+        disabled={!selected.length || isUploading}
+        className="px-4 py-2 bg-cyan-500 text-white rounded disabled:bg-gray-300 flex items-center justify-center gap-2"
       >
-        Загрузить выбранные ({selected.length})
+        {isUploading ? (
+          <>
+            <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+            Загружается...
+          </>
+        ) : (
+          <>Загрузить выбранные ({selected.length})</>
+        )}
       </button>
     </div>
   );
