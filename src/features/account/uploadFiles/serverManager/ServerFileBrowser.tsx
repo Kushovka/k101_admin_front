@@ -25,9 +25,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const loadDirectory = async (path: string) => {
-    const data = await browseServerPath(path);
-    setItems(data.items);
-    setCurrentPath(data.current_path);
+    try {
+      const data = await browseServerPath(path);
+      setItems(data?.items ?? []);
+      setCurrentPath(data?.current_path ?? path);
+    } catch (e: any) {
+      onError?.(e?.response?.data?.detail || "Ошибка при открытии директории");
+    }
   };
 
   const toggleSelect = (filePath: string) => {
