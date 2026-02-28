@@ -257,7 +257,7 @@ const UploadFiles = () => {
       setLoadingGroup((p) => ({ ...p, [groupName]: false }));
     }
   };
- 
+
   const handleFileDeleted = (file: FileItem) => {
     // группы
     setFilesByGroup((prev) => {
@@ -568,6 +568,7 @@ const UploadFiles = () => {
                     loadGroups();
                     setNotify("upload_file");
                   }}
+                  onError={(msg) => setError(msg)}
                 />
 
                 <ServerPathManager />

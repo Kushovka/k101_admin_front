@@ -8,9 +8,15 @@ import userApi from "./userApi";
 
 type UploadResultItem = {
   created: boolean;
-  is_duplicate: boolean;
+  file_id?: string;
   file_name: string;
+  is_duplicate: boolean;
   message?: string;
+  status?: string;
+  success?: boolean;
+  task_id?: string;
+  duplicate_file_id?: string;
+  existing_status?: string;
 };
 
 type UploadResult = {
@@ -67,23 +73,47 @@ export const getAllGroup = async () => {
 export const postUploadFiles = async (
   files: File[],
   onProgress?: UploadProgressFn,
+  priority = 100,
 ): Promise<UploadResult> => {
-  const formData = new FormData();
+  const results: UploadResultItem[] = [];
+  const totalFiles = files.length;
 
-  files.forEach((file) => {
+  for (let i = 0; i < totalFiles; i++) {
+    const file = files[i];
+
+    const formData = new FormData();
     formData.append("files", file);
-  });
 
-  const { data } = await userApi.post("/api/v1/files/upload", formData, {
-    timeout: 0,
-    onUploadProgress: (e) => {
-      if (!e.total || !onProgress) return;
-      const percent = Math.round((e.loaded / e.total) * 100);
-      files.forEach((file) => onProgress(file, percent));
-    },
-  });
+    try {
+      const { data } = await userApi.post("/api/v1/files/upload", formData, {
+        params: { priority },
+        timeout: 0,
+        onUploadProgress: (e) => {
+          if (!e.total || !onProgress) return;
 
-  return data;
+          const filePercent = e.loaded / e.total; // 0–1
+          const overallPercent = ((i + filePercent) / totalFiles) * 100;
+
+          onProgress(file, Math.round(overallPercent));
+        },
+      });
+
+      if (data?.results?.length) {
+        results.push(...data.results);
+      }
+    } catch (error: any) {
+      console.error("Ошибка загрузки файла:", file.name, error);
+
+      results.push({
+        created: false,
+        is_duplicate: false,
+        file_name: file.name,
+        message: error?.response?.data?.detail || "Ошибка загрузки файла",
+      });
+    }
+  }
+
+  return { results };
 };
 
 export const patchPriorityFile = async (
@@ -320,4 +350,4 @@ export const uploadServerFiles = async (files: string[], priority = 100) => {
     priority,
   });
   return res.data;
-}
+};
