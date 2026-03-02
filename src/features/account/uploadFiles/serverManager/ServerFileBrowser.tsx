@@ -55,7 +55,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       onUploaded?.();
     } catch (e: any) {
       const message = e?.response?.data?.detail || "Ошибка при загрузке файлов";
-
+      console.error(e);
       onError?.(message);
     } finally {
       setIsUploading(false);
