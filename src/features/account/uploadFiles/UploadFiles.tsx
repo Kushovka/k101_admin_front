@@ -149,6 +149,23 @@ const UploadFiles = () => {
     );
   };
 
+  const getErrorLabel = (code?: string | null) => {
+    switch (code) {
+      case "INVALID_FILE_FORMAT":
+        return "Неверный формат файла";
+      case "EMPTY_FILE":
+        return "Файл пустой";
+      case "UNSUPPORTED_FILE_TYPE":
+        return "Неподдерживаемый тип файла";
+      case "CORRUPTED_FILE":
+        return "Файл повреждён";
+      case "NO_VALID_DATA":
+        return "Нет валидных данных";
+      default:
+        return "Ошибка парсинга";
+    }
+  };
+
   const formatDateTime = (value?: string) =>
     value ? new Date(value).toLocaleString() : "-";
 
@@ -178,14 +195,17 @@ const UploadFiles = () => {
             >
               Ошибка
             </span>
-            {file.error_message && (
-              <Tooltip
-                id={`error-file-modal_${file.id}`}
-                place="top"
-                delayShow={400}
-                content={file.error_message}
-              />
-            )}
+
+            <Tooltip
+              id={`error-file-modal_${file.id}`}
+              place="top"
+              delayShow={400}
+              content={
+                file.error_code
+                  ? getErrorLabel(file.error_code)
+                  : file.error_message || "Ошибка парсинга"
+              }
+            />
           </>
         );
 
@@ -1014,7 +1034,11 @@ const UploadFiles = () => {
                           place="top"
                           delayShow={400}
                           id={tooltipId}
-                          content={item.error_message}
+                          content={
+                            item.error_code
+                              ? getErrorLabel(item.error_code)
+                              : item.error_message || "Ошибка парсинга"
+                          }
                         />
 
                         <div className="col-span-3 flex justify-end gap-2">
@@ -1130,6 +1154,31 @@ const UploadFiles = () => {
 
                     <div className="flex items-center gap-4 text-[13px] text-slate-500">
                       <span>{formatFileSize(file.file_size)}</span>
+                      {file.quality_score != null && (
+                        <span
+                          className={clsx(
+                            "px-2 py-[2px] rounded text-xs font-medium",
+                            file.needs_review
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-700",
+                          )}
+                        >
+                          {Math.round(file.quality_score * 100)}%
+                        </span>
+                      )}
+
+                      {file.needs_review && (
+                        <>
+                          <CgDanger
+                            data-tooltip-id={`quality_warn_${file.id}`}
+                            className="w-4 h-4 text-yellow-500"
+                          />
+                          <Tooltip
+                            id={`quality_warn_${file.id}`}
+                            content="Низкое качество данных (< 40%)"
+                          />
+                        </>
+                      )}
                       <button
                         onClick={() => setPreviewFile(file)}
                         className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
@@ -1366,6 +1415,25 @@ const UploadFiles = () => {
                 <InfoRow label="Извлечённые сущности" value={"-"} />
                 {/* openAddFile.extracted_entities */}
               </div>
+              {openAddFile.quality_score != null && (
+                <InfoRow
+                  label="Качество данных"
+                  value={`${Math.round(openAddFile.quality_score * 100)}%`}
+                />
+              )}
+
+              {openAddFile.needs_review && (
+                <div className="text-yellow-700 text-xs mt-1">
+                  Требуется проверка качества данных
+                </div>
+              )}
+
+              {openAddFile.error_code && (
+                <InfoRow
+                  label="Причина ошибки"
+                  value={getErrorLabel(openAddFile.error_code)}
+                />
+              )}
             </div>
 
             {/* ДАТЫ */}

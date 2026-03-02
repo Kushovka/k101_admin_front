@@ -22,3 +22,9 @@ export interface SearchResponse {
   total_records_found: number;
   results: SearchResultItem[];
 }
+
+export type CreateComplaintPayload = {
+  doc_id: string;
+  field_name: string;
+  message: string;
+};

@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import type {
 } from "../../../types/searchDetails.types";
 import { CorrectionModal } from "../complaints/CorrectionModal";
 import { RenameColumnModal } from "../complaints/RenameColumnModal";
+import { exportPersonDossier } from "../../../api/search";
 
 const fieldLabels: Record<string, string> = {
   height: "Рост",
@@ -76,13 +77,18 @@ const getHeaders = (): Record<string, string> => {
 const SearchDetails: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isOpen } = useSidebar();
+  const { isOpen, setIsOpen } = useSidebar();
 
   const [notify, setNotify] = useState(false);
   const [openMain, setOpenMain] = useState(true);
   const [openDossier, setOpenDossier] = useState(false);
   const [aiDossier, setAIDossier] = useState("");
+  const [generationTime, setGenerationTime] = useState<number | null>(null);
   const [dossierLoading, setDossierLoading] = useState(false);
+  const [navDossierOpen, setNavDossierOpen] = useState(true);
+  const [exportFormat, setExportFormat] = useState<"pdf" | "txt">("pdf");
+  const [exportLoading, setExportLoading] = useState(false);
+
   const [openCorrection, setOpenCorrection] = useState<{
     docId: string;
   } | null>(null);
@@ -97,6 +103,35 @@ const SearchDetails: React.FC = () => {
 
   /* ---------------- helpers ---------------- */
   const state = location.state as SearchDetailsState | null;
+
+  const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const sectionRefs = useRef<{
+    main: HTMLDivElement | null;
+    dossier: HTMLDivElement | null;
+    ai: HTMLDivElement | null;
+    sources: HTMLDivElement | null;
+  }>({
+    main: null,
+    dossier: null,
+    ai: null,
+    sources: null,
+  });
+
+  const scrollToGroup = (groupName: string) => {
+    const element = groupRefs.current[groupName];
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const scrollToSection = (key: keyof typeof sectionRefs.current) => {
+    const el = sectionRefs.current[key];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const user = state?.item ?? null;
 
   const groupedSources = user?.grouped_sources ?? [];
@@ -129,13 +164,48 @@ const SearchDetails: React.FC = () => {
     );
   }
 
-  const sourceFiles = user.source_files ?? [];
+  useEffect(() => {
+    setIsOpen(true);
+  }, [setIsOpen]);
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const sourceFiles = Array.from(
+    new Map(
+      (user.source_files ?? []).map((file) => [file.raw_file_id, file]),
+    ).values(),
+  );
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setNotify(true);
     setTimeout(() => setNotify(false), 1200);
   };
+
+  const cleanValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "";
+
+    let str = String(value).trim();
+
+    str = str.replace(/^['"]+|['"]+$/g, "");
+
+    return str;
+  };
+
+  const uniqueEmails = Array.from(
+    new Set(
+      (user.emails ?? []).map((e) => e.trim().toLowerCase()).filter(Boolean),
+    ),
+  );
 
   const handleAIDossier = async (id: string) => {
     try {
@@ -174,6 +244,24 @@ const SearchDetails: React.FC = () => {
     }
   };
 
+  const handleExport = async (format: "pdf" | "txt") => {
+    try {
+      setExportLoading(true);
+
+      const blob = await exportPersonDossier(personId, format);
+
+      const safeName =
+        `${user.last_name || "person"}_${user.first_name || ""}`.trim();
+      const filename = `dossier_${safeName || personId}.${format}`;
+
+      downloadBlob(blob, filename);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const isValidName = (val: string) => /^\p{L}+$/u.test(val);
 
   const personId = user.entity_id;
@@ -194,300 +282,425 @@ const SearchDetails: React.FC = () => {
           onClose={() => setToast(null)}
         />
       )}
-
-      <div className="w-[1100px] mx-auto flex flex-col gap-6">
-        {/* title */}
-        <h1 className="text-[20px] font-semibold text-slate-900">
-          Досье: {user.last_name} {user.first_name} {user.middle_name}
-        </h1>
-
-        {/* back button */}
-        <button
-          onClick={() =>
-            navigate("/account/search", {
-              state: {
-                restore: true,
-                searchValue: location.state?.searchValue,
-                page: location.state?.page,
-                mode: location.state?.mode,
-              },
-            })
-          }
-          className="flex items-center gap-3 h-[40px] w-fit border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition px-3 text-[14px]"
-        >
-          <IoExitOutline className="rotate-180 h-[20px] w-[20px] text-slate-600" />
-          Назад
-        </button>
-
-        {/* MAIN INFO */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-        >
-          <div
-            onClick={() => setOpenMain(!openMain)}
-            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition  select-none"
-          >
-            <div className="font-medium text-slate-800">
-              Основная информация
-            </div>
-            <IoIosArrowDown
-              className={clsx(
-                "transition",
-                openMain && "rotate-180 text-slate-600",
-              )}
-            />
-          </div>
-
-          {openMain && (
-            <div className="px-4 py-3 border-t border-gray-200 space-y-2 text-[14px] text-slate-700">
-              {user?.first_name && isValidName(user.first_name) && (
-                <p>
-                  Имя: <span>{user?.first_name}</span>
-                </p>
-              )}
-
-              {user?.last_name && isValidName(user.last_name) && (
-                <p>
-                  Фамилия: <span>{user?.last_name}</span>
-                </p>
-              )}
-
-              {user?.middle_name && isValidName(user.middle_name) && (
-                <p>
-                  Отчество: <span>{user?.middle_name}</span>
-                </p>
-              )}
-
-              {user.phones?.[0] && (
-                <p>
-                  Телефон:{" "}
-                  <span
-                    className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
-                    onClick={() => handleCopy(user.phones![0])}
-                  >
-                    {user.phones![0]}
-                  </span>
-                </p>
-              )}
-              {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
-              {user.age && <p>Возраст: {user.age}</p>}
-              {user.gender && (
-                <p>Пол: {user.gender === "male" ? "Мужской" : "Женский"}</p>
-              )}
-              {user.birthdays?.[0] && <p>Дата рождения: {user.birthdays[0]}</p>}
-              {user.emails?.map((e, i) => (
-                <p key={i}>
-                  Email {i + 1}:{" "}
-                  <span
-                    className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
-                    onClick={() => handleCopy(e)}
-                  >
-                    {e}
-                  </span>
-                </p>
-              ))}
-
-              {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
-              {user.ipn?.[0] && <p>ИНН: {user.ipn[0]}</p>}
-
-              {user.addresses?.map((a, i) => (
-                <p key={i}>
-                  Адрес {i + 1}: {a}
-                </p>
-              ))}
-
-              {/* {user.entity_id && <p>ID: {user.entity_id}</p>} */}
-            </div>
+      <div className="w-[1100px] ml-[420px]">
+        {/* ЛЕВАЯ ФИКС НАВИГАЦИЯ */}
+        <div
+          className={clsx(
+            "fixed top-0 bottom-0 h-full w-[260px]",
+            isOpen ? "left-[140px]" : "left-[360px]",
           )}
-        </motion.div>
-
-        {/* DOSSIER */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
         >
-          <div
-            onClick={() => setOpenDossier(!openDossier)}
-            className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition select-none"
-          >
-            <div className="font-medium text-slate-800">Полное досье</div>
-            <IoIosArrowDown
-              className={clsx(
-                "transition",
-                openDossier && "rotate-180 text-slate-600",
-              )}
-            />
+          <div className="h-full bg-white border border-gray-200 p-4 shadow-sm flex flex-col">
+            <div className="text-sm font-semibold text-slate-700 mb-4">
+              Навигация по досье
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-sm">
+              {/* Основное */}
+              <button
+                onClick={() => scrollToSection("main")}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-cyan-50"
+              >
+                Основная информация
+              </button>
+
+              {/* Досье */}
+              <div>
+                <button
+                  onClick={() => setNavDossierOpen((prev) => !prev)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-cyan-50 font-medium"
+                >
+                  <span>Полное досье</span>
+                  <IoIosArrowDown
+                    className={clsx(
+                      "transition text-slate-500",
+                      navDossierOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+
+                {navDossierOpen && (
+                  <div className="ml-3 mt-2 space-y-1">
+                    {groupedSources
+                      .slice()
+                      .sort(sortGroups)
+                      .map((group) => (
+                        <button
+                          key={group.group_name}
+                          onClick={() => {
+                            scrollToSection("dossier");
+                            scrollToGroup(group.group_name);
+                          }}
+                          className="w-full text-left px-3 py-1 text-xs rounded hover:bg-cyan-50"
+                        >
+                          {group.group_name === "other"
+                            ? "Другие источники"
+                            : group.group_name}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* AI */}
+              <button
+                onClick={() => scrollToSection("ai")}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-cyan-50"
+              >
+                AI-досье
+              </button>
+
+              {/* Источники */}
+              <button
+                onClick={() => scrollToSection("sources")}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-cyan-50"
+              >
+                Источники данных
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col gap-6">
+          {/* title */}
+          <h1 className="text-[20px] font-semibold text-slate-900">
+            Досье: {user.last_name} {user.first_name} {user.middle_name}
+          </h1>
+
+          {/* button */}
+          <div className="flex items-center justify-between">
+            {/* back button */}
+            <button
+              onClick={() =>
+                navigate("/account/search", {
+                  state: {
+                    restore: true,
+                    searchValue: location.state?.searchValue,
+                    page: location.state?.page,
+                    mode: location.state?.mode,
+                  },
+                })
+              }
+              className="flex items-center gap-3 h-[40px] w-fit border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition px-3 text-[14px]"
+            >
+              <IoExitOutline className="rotate-180 h-[20px] w-[20px] text-slate-600" />
+              Назад
+            </button>
+            <div className="flex items-center gap-3">
+              {/* Select формата */}
+              <select
+                value={exportFormat}
+                onChange={(e) =>
+                  setExportFormat(e.target.value as "pdf" | "txt")
+                }
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              >
+                <option value="pdf">PDF</option>
+                <option value="txt">TXT</option>
+              </select>
+
+              {/* Кнопка скачать */}
+              <button
+                disabled={exportLoading}
+                onClick={() => handleExport(exportFormat)}
+                className={clsx(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition",
+                  exportLoading
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-cyan-500 hover:bg-cyan-600 text-white",
+                )}
+              >
+                {exportLoading ? "Скачивание..." : "Скачать"}
+              </button>
+            </div>
           </div>
 
-          {openDossier && (
-            <div className="px-4 py-4 border-t border-gray-200 space-y-6">
-              {groupedSources
-                .slice()
-                .sort(sortGroups)
-                .map((group) => {
-                  if (!group.sources?.length) return null;
+          {/* MAIN INFO */}
+          <motion.div
+            ref={(el) => {
+              sectionRefs.current.main = el;
+            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          >
+            <div
+              onClick={() => setOpenMain(!openMain)}
+              className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition  select-none"
+            >
+              <div className="font-medium text-slate-800">
+                Основная информация
+              </div>
+              <IoIosArrowDown
+                className={clsx(
+                  "transition",
+                  openMain && "rotate-180 text-slate-600",
+                )}
+              />
+            </div>
+
+            {openMain && (
+              <div className="px-4 py-3 border-t border-gray-200 space-y-2 text-[14px] text-slate-700">
+                {user?.first_name && isValidName(user.first_name) && (
+                  <p>
+                    Имя: <span>{user?.first_name}</span>
+                  </p>
+                )}
+
+                {user?.last_name && isValidName(user.last_name) && (
+                  <p>
+                    Фамилия: <span>{user?.last_name}</span>
+                  </p>
+                )}
+
+                {user?.middle_name && isValidName(user.middle_name) && (
+                  <p>
+                    Отчество: <span>{user?.middle_name}</span>
+                  </p>
+                )}
+
+                {user.phones?.[0] && (
+                  <p>
+                    Телефон:{" "}
+                    <span
+                      className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                      onClick={() => handleCopy(user.phones![0])}
+                    >
+                      {user.phones![0]}
+                    </span>
+                  </p>
+                )}
+                {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
+                {user.age && <p>Возраст: {user.age}</p>}
+                {user.gender && (
+                  <p>Пол: {user.gender === "male" ? "Мужской" : "Женский"}</p>
+                )}
+                {user.birthdays?.[0] && (
+                  <p>Дата рождения: {user.birthdays[0]}</p>
+                )}
+                {user.emails?.map((e, i) => (
+                  <p key={i}>
+                    Email {i + 1}:{" "}
+                    <span
+                      className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                      onClick={() => handleCopy(e)}
+                    >
+                      {e}
+                    </span>
+                  </p>
+                ))}
+
+                {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
+                {user.ipn?.[0] && <p>ИНН: {user.ipn[0]}</p>}
+
+                {user.addresses?.map((a, i) => (
+                  <p key={i}>
+                    Адрес {i + 1}: {a}
+                  </p>
+                ))}
+
+                {/* {user.entity_id && <p>ID: {user.entity_id}</p>} */}
+              </div>
+            )}
+          </motion.div>
+
+          {/* DOSSIER */}
+          <motion.div
+            ref={(el) => {
+              sectionRefs.current.dossier = el;
+            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          >
+            <div
+              onClick={() => setOpenDossier(!openDossier)}
+              className="flex justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition select-none"
+            >
+              <div className="font-medium text-slate-800">Полное досье</div>
+              <IoIosArrowDown
+                className={clsx(
+                  "transition",
+                  openDossier && "rotate-180 text-slate-600",
+                )}
+              />
+            </div>
+
+            {openDossier && (
+              <div className="px-4 py-4 border-t border-gray-200 space-y-6">
+                {groupedSources
+                  .slice()
+                  .sort(sortGroups)
+                  .map((group) => {
+                    if (!group.sources?.length) return null;
+
+                    return (
+                      <div key={group.group_name} className="space-y-4">
+                        {/* Заголовок группы */}
+                        <div className="font-medium text-slate-800">
+                          {group.group_name === "other"
+                            ? "Другие источники"
+                            : `${group.group_name}`}
+                        </div>
+
+                        {/* Источники внутри группы */}
+                        {group.sources.map((source) => {
+                          const sourceName =
+                            source.display_name || source.raw_file_id;
+
+                          return (
+                            <div
+                              key={source.raw_file_id}
+                              className="border border-gray-200 rounded-lg p-3 space-y-2"
+                            >
+                              {/* Источник */}
+                              {/* Верхняя строка */}
+                              <div className="flex justify-between">
+                                <div className="text-xs text-slate-500">
+                                  Источник: {sourceName}
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={() => {
+                                      if (!source.doc_id) return;
+                                      setOpenCorrection({
+                                        docId: source.doc_id,
+                                      });
+                                    }}
+                                    className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition"
+                                  >
+                                    Исправить
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setRenameModal({
+                                        rawFileId: source.raw_file_id,
+                                        columns: Object.keys(
+                                          source.fields ?? {},
+                                        ),
+                                      })
+                                    }
+                                    className="text-xs px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
+                                  >
+                                    Переименовать колонку
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Поля */}
+                              <div className="flex flex-col gap-1 text-[14px]">
+                                {Object.entries(source.fields).map(
+                                  ([fieldKey, fieldValue], fieldIndex) => {
+                                    const label =
+                                      fieldLabels[fieldKey.toLowerCase()] ??
+                                      fieldKey;
+
+                                    return (
+                                      <div
+                                        key={`${source.doc_id}-${fieldKey}-${fieldIndex}`}
+                                        className="flex gap-2"
+                                      >
+                                        <span className="text-slate-500">
+                                          {label}:
+                                        </span>
+                                        <span>{cleanValue(fieldValue)}</span>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </motion.div>
+
+          {/* досье ии */}
+          <motion.div
+            ref={(el) => {
+              sectionRefs.current.ai = el;
+            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+          >
+            <div className="bg-white p-4 flex justify-between items-center select-none">
+              <div className="text-[15px] font-medium text-slate-800">
+                AI-Досье
+              </div>
+
+              <button
+                disabled={dossierLoading}
+                onClick={() => handleAIDossier(personId)}
+                className={clsx(
+                  "px-4 py-2 rounded-lg text-sm font-medium",
+                  dossierLoading
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-cyan-500 hover:bg-cyan-600 text-white",
+                )}
+              >
+                {dossierLoading ? "Генерация..." : "Сгенерировать"}
+              </button>
+            </div>
+
+            {aiDossier && (
+              <motion.div
+                className="bg-white border-t p-4 whitespace-pre-wrap text-[14px]"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {aiDossier}
+              </motion.div>
+            )}
+          </motion.div>
+
+          {/* SOURCE FILES */}
+          {sourceFiles.length > 0 && (
+            <motion.div
+              ref={(el) => {
+                sectionRefs.current.sources = el;
+              }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-gray-200">
+                <div className="font-medium text-slate-800">
+                  Источники данных
+                </div>
+              </div>
+
+              <div className="px-4 py-3 space-y-2 text-[14px]">
+                {sourceFiles.map((file) => {
+                  const name =
+                    file.display_name && file.display_name !== "unknown"
+                      ? file.display_name
+                      : file.file_name;
 
                   return (
-                    <div key={group.group_name} className="space-y-4">
-                      {/* Заголовок группы */}
-                      <div className="font-medium text-slate-800">
-                        {group.group_name === "other"
-                          ? "Другие источники"
-                          : `${group.group_name}`}
-                      </div>
+                    <div
+                      key={file.raw_file_id}
+                      className="flex justify-between items-center text-slate-700"
+                    >
+                      <span>{name || "Неизвестный файл"}</span>
 
-                      {/* Источники внутри группы */}
-                      {group.sources.map((source) => {
-                        const sourceName =
-                          source.display_name || source.raw_file_id;
-
-                        return (
-                          <div
-                            key={source.raw_file_id}
-                            className="border border-gray-200 rounded-lg p-3 space-y-2"
-                          >
-                            {/* Источник */}
-                            {/* Верхняя строка */}
-                            <div className="flex justify-between">
-                              <div className="text-xs text-slate-500">
-                                Источник: {sourceName}
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                <button
-                                  onClick={() => {
-                                    if (!source.doc_id) return;
-                                    setOpenCorrection({ docId: source.doc_id });
-                                  }}
-                                  className="text-xs px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition"
-                                >
-                                  Исправить
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setRenameModal({
-                                      rawFileId: source.raw_file_id,
-                                      columns: Object.keys(source.fields),
-                                    })
-                                  }
-                                  className="text-xs px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
-                                >
-                                  Переименовать колонку
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Поля источника */}
-                            <div className="flex flex-col gap-1 text-[14px]">
-                              {Object.entries(source.fields).map(
-                                ([fieldKey, fieldValue]) => {
-                                  const label =
-                                    fieldLabels[fieldKey.toLowerCase()] ??
-                                    fieldKey;
-
-                                  return (
-                                    <div
-                                      key={fieldKey}
-                                      className="flex gap-2 text-slate-700"
-                                    >
-                                      <span className="min-w-[180px] text-slate-500">
-                                        {label}:
-                                      </span>
-                                      <span className="text-slate-800 break-all">
-                                        {String(fieldValue)}
-                                      </span>
-                                    </div>
-                                  );
-                                },
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      <span className="text-xs text-slate-400">
+                        {file.raw_file_id}
+                      </span>
                     </div>
                   );
                 })}
-            </div>
-          )}
-        </motion.div>
-
-        {/* досье ии */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-        >
-          <div className="bg-white p-4 flex justify-between items-center select-none">
-            <div className="text-[15px] font-medium text-slate-800">
-              AI-Досье
-            </div>
-
-            <button
-              disabled={dossierLoading}
-              onClick={() => handleAIDossier(personId)}
-              className={clsx(
-                "px-4 py-2 rounded-lg text-sm font-medium",
-                dossierLoading
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-cyan-500 hover:bg-cyan-600 text-white",
-              )}
-            >
-              {dossierLoading ? "Генерация..." : "Сгенерировать"}
-            </button>
-          </div>
-
-          {aiDossier && (
-            <motion.div
-              className="bg-white border-t p-4 whitespace-pre-wrap text-[14px]"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {aiDossier}
+              </div>
             </motion.div>
           )}
-        </motion.div>
-
-        {/* SOURCE FILES */}
-        {sourceFiles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-          >
-            <div className="px-4 py-3 border-b border-gray-200">
-              <div className="font-medium text-slate-800">Источники данных</div>
-            </div>
-
-            <div className="px-4 py-3 space-y-2 text-[14px]">
-              {sourceFiles.map((file) => {
-                const name =
-                  file.display_name && file.display_name !== "unknown"
-                    ? file.display_name
-                    : file.file_name;
-
-                return (
-                  <div
-                    key={file.raw_file_id}
-                    className="flex justify-between items-center text-slate-700"
-                  >
-                    <span>{name || "Неизвестный файл"}</span>
-
-                    <span className="text-xs text-slate-400">
-                      {file.raw_file_id}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
+        </div>
       </div>
-
       {openCorrection && (
         <CorrectionModal
           docId={openCorrection.docId}
@@ -495,6 +708,7 @@ const SearchDetails: React.FC = () => {
           onUpdated={refetchSearchDetails}
         />
       )}
+
       {renameModal && (
         <RenameColumnModal
           rawFileId={renameModal.rawFileId}
