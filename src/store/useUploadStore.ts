@@ -14,7 +14,7 @@ type UploadState = {
   progress: Record<string, number>;
   totalProgress: number;
 
-  // 🔥 NEW
+ 
   busyCount: number;
   isBusy: boolean;
   startBusy: () => void;

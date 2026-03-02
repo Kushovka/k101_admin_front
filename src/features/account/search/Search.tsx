@@ -83,6 +83,16 @@ const Search = () => {
     { id: 7, title: "Подробнее..." },
   ];
 
+  const cleanValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "";
+
+    let str = String(value).trim();
+
+    str = str.replace(/^['"]+|['"]+$/g, "");
+
+    return str;
+  };
+
   const normalizePhone = (raw: string) => {
     let phone = raw.replace(/\D/g, "");
 
@@ -349,14 +359,22 @@ const Search = () => {
                 <span className="text-center">
                   {(currentPage - 1) * pageSize + index + 1}
                 </span>
-                <span className="text-center">{item.last_name || "-"}</span>
-                <span className="text-center">{item.first_name || "-"}</span>
-                <span className="text-center">{item.middle_name || "-"}</span>
+                <span className="text-center">
+                  {cleanValue(item.last_name) || "-"}
+                </span>
+                <span className="text-center">
+                  {cleanValue(item.first_name) || "-"}
+                </span>
+                <span className="text-center">
+                  {cleanValue(item.middle_name) || "-"}
+                </span>
                 <span className="text-center truncate">
-                  {item.emails?.[0] ?? "-"}
+                  {cleanValue(item.emails?.[0]) || "-"}
                 </span>
 
-                <span className="text-center">{item.phones?.[0] ?? "-"}</span>
+                <span className="text-center">
+                  {cleanValue(item.phones?.[0]) || "-"}
+                </span>
 
                 <span
                   className="text-cyan-600 font-medium text-center"

@@ -58,6 +58,7 @@ export const getAllFiles = async ({
     },
     headers: getHeaders(),
   });
+
   return data;
 };
 
@@ -67,6 +68,7 @@ export const getAllGroup = async () => {
       Authorization: `Bearer ${localStorage.getItem("access_token")}`,
     },
   });
+
   return data;
 };
 
@@ -208,6 +210,7 @@ export const getFilesByGroup = async ({
   const { data } = await userApi.get("/api/v1/file-groups", {
     params: { group, page, pageSize, sort },
   });
+
   return data;
 };
 

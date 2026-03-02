@@ -31,6 +31,7 @@ export type ParsingQueueItem = {
   total_rows?: number;
   started_at?: string;
   celery_task_id?: string;
+  error_code: string;
 };
 
 type ParsingQueueResponse = {

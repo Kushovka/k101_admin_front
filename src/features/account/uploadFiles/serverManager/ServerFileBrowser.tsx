@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   browseServerPath,
   uploadServerFiles,
@@ -25,10 +25,26 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const loadDirectory = async (path: string) => {
-    const data = await browseServerPath(path);
-    setItems(data.items);
-    setCurrentPath(data.current_path);
+    try {
+      const data = await browseServerPath(path);
+      setItems(data?.items ?? []);
+      setCurrentPath(data?.current_path ?? path);
+      setSelected([]); // сбрасываем выделение при смене папки
+    } catch (e: any) {
+      onError?.(e?.response?.data?.detail || "Ошибка при открытии директории");
+    }
   };
+
+  const filesOnly = useMemo(
+    () =>
+      items
+        .filter((i) => i.type === "file")
+        .map((i) => `${currentPath}/${i.name}`),
+    [items, currentPath],
+  );
+
+  const allSelected =
+    filesOnly.length > 0 && filesOnly.every((file) => selected.includes(file));
 
   const toggleSelect = (filePath: string) => {
     setSelected((prev) =>
@@ -36,6 +52,22 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         ? prev.filter((f) => f !== filePath)
         : [...prev, filePath],
     );
+  };
+
+  const selectAll = () => {
+    setSelected(filesOnly);
+  };
+
+  const clearSelection = () => {
+    setSelected([]);
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectAll();
+    }
   };
 
   const handleUpload = async () => {
@@ -51,7 +83,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       onUploaded?.();
     } catch (e: any) {
       const message = e?.response?.data?.detail || "Ошибка при загрузке файлов";
-
+      console.error(e);
       onError?.(message);
     } finally {
       setIsUploading(false);
@@ -63,6 +95,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     <div className="bg-white border rounded-xl p-4 flex flex-col gap-4">
       <h3 className="font-semibold">Файлы на сервере</h3>
 
+      {/* PATH INPUT */}
       <div className="flex gap-2">
         <input
           value={currentPath}
@@ -78,7 +111,31 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         </button>
       </div>
 
-      <ul className="border rounded divide-y">
+      {/* SELECT ALL BLOCK */}
+      {filesOnly.length > 0 && (
+        <div className="flex items-center justify-between text-sm">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+            />
+            Выделить все ({filesOnly.length})
+          </label>
+
+          {selected.length > 0 && (
+            <button
+              onClick={clearSelection}
+              className="text-red-500 hover:underline"
+            >
+              Снять выделение
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* FILE LIST */}
+      <ul className="border rounded divide-y max-h-[400px] overflow-y-auto">
         {items.map((item) => {
           const fullPath = `${currentPath}/${item.name}`;
 
@@ -110,6 +167,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         })}
       </ul>
 
+      {/* UPLOAD BUTTON */}
       <button
         onClick={handleUpload}
         disabled={!selected.length || isUploading}
