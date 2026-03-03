@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoExitOutline } from "react-icons/io5";
 import { useLocation, useNavigate } from "react-router-dom";
+import { exportPersonDossier } from "../../../api/search";
 import userApi from "../../../api/userApi";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
@@ -13,7 +14,6 @@ import type {
 } from "../../../types/searchDetails.types";
 import { CorrectionModal } from "../complaints/CorrectionModal";
 import { RenameColumnModal } from "../complaints/RenameColumnModal";
-import { exportPersonDossier } from "../../../api/search";
 
 const fieldLabels: Record<string, string> = {
   height: "Рост",
@@ -363,7 +363,8 @@ const SearchDetails: React.FC = () => {
         <div className="flex-1 flex flex-col gap-6">
           {/* title */}
           <h1 className="text-[20px] font-semibold text-slate-900">
-            Досье: {user.last_name} {user.first_name} {user.middle_name}
+            Досье: {cleanValue(user.last_name)} {cleanValue(user.first_name)}{" "}
+            {cleanValue(user.middle_name)}
           </h1>
 
           {/* button */}
@@ -477,17 +478,24 @@ const SearchDetails: React.FC = () => {
                 {user.birthdays?.[0] && (
                   <p>Дата рождения: {cleanValue(user.birthdays[0])}</p>
                 )}
-                {user.emails?.map((e, i) => (
-                  <p key={i}>
-                    Email {i + 1}:{" "}
-                    <span
-                      className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
-                      onClick={() => handleCopy(e)}
-                    >
-                      {cleanValue(e)}
-                    </span>
-                  </p>
-                ))}
+
+                {uniqueEmails.length > 0 && (
+                  <div className="flex items-start">
+                    <span className="min-w-[50px]">Email:</span>
+
+                    <div className="flex flex-col gap-1">
+                      {uniqueEmails.map((email, i) => (
+                        <span
+                          key={i}
+                          className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                          onClick={() => handleCopy(email)}
+                        >
+                          {cleanValue(email)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {user.cities?.[0] && <p>Город: {cleanValue(user.cities[0])}</p>}
                 {user.ipn?.[0] && <p>ИНН: {cleanValue(user.ipn[0])}</p>}
