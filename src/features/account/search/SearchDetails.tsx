@@ -442,19 +442,19 @@ const SearchDetails: React.FC = () => {
               <div className="px-4 py-3 border-t border-gray-200 space-y-2 text-[14px] text-slate-700">
                 {user?.first_name && isValidName(user.first_name) && (
                   <p>
-                    Имя: <span>{user?.first_name}</span>
+                    Имя: <span>{cleanValue(user?.first_name)}</span>
                   </p>
                 )}
 
                 {user?.last_name && isValidName(user.last_name) && (
                   <p>
-                    Фамилия: <span>{user?.last_name}</span>
+                    Фамилия: <span>{cleanValue(user?.last_name)}</span>
                   </p>
                 )}
 
                 {user?.middle_name && isValidName(user.middle_name) && (
                   <p>
-                    Отчество: <span>{user?.middle_name}</span>
+                    Отчество: <span>{cleanValue(user?.middle_name)}</span>
                   </p>
                 )}
 
@@ -465,17 +465,17 @@ const SearchDetails: React.FC = () => {
                       className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
                       onClick={() => handleCopy(user.phones![0])}
                     >
-                      {user.phones![0]}
+                      {cleanValue(user.phones![0])}
                     </span>
                   </p>
                 )}
-                {user.snils?.[0] && <p>СНИЛС: {user.snils[0]}</p>}
-                {user.age && <p>Возраст: {user.age}</p>}
+                {user.snils?.[0] && <p>СНИЛС: {cleanValue(user.snils[0])}</p>}
+                {user.age && <p>Возраст: {cleanValue(user.age)}</p>}
                 {user.gender && (
                   <p>Пол: {user.gender === "male" ? "Мужской" : "Женский"}</p>
                 )}
                 {user.birthdays?.[0] && (
-                  <p>Дата рождения: {user.birthdays[0]}</p>
+                  <p>Дата рождения: {cleanValue(user.birthdays[0])}</p>
                 )}
                 {user.emails?.map((e, i) => (
                   <p key={i}>
@@ -484,17 +484,17 @@ const SearchDetails: React.FC = () => {
                       className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
                       onClick={() => handleCopy(e)}
                     >
-                      {e}
+                      {cleanValue(e)}
                     </span>
                   </p>
                 ))}
 
-                {user.cities?.[0] && <p>Город: {user.cities[0]}</p>}
-                {user.ipn?.[0] && <p>ИНН: {user.ipn[0]}</p>}
+                {user.cities?.[0] && <p>Город: {cleanValue(user.cities[0])}</p>}
+                {user.ipn?.[0] && <p>ИНН: {cleanValue(user.ipn[0])}</p>}
 
                 {user.addresses?.map((a, i) => (
                   <p key={i}>
-                    Адрес {i + 1}: {a}
+                    Адрес {i + 1}: {cleanValue(a)}
                   </p>
                 ))}
 
