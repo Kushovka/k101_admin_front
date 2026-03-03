@@ -13,7 +13,7 @@ const getHeaders = (): Record<string, string> => {
 };
 
 export const systemStatistics = async () => {
-  const res = await adminApi.get(`/api/stats`, {
+  const res = await adminApi.get(`/admin-api/api/stats`, {
     headers: getHeaders(),
   });
 
