@@ -211,21 +211,31 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         })}
       </ul>
 
-      {/* UPLOAD BUTTON */}
-      <button
-        onClick={handleUpload}
-        disabled={!selected.length || isUploading}
-        className="px-4 py-2 bg-cyan-500 text-white rounded disabled:bg-gray-300 flex items-center justify-center gap-2"
-      >
-        {isUploading ? (
-          <>
-            <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-            Загружается...
-          </>
-        ) : (
-          <>Загрузить выбранные ({selected.length})</>
-        )}
-      </button>
+      {/* ACTION BUTTONS */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleUpload}
+          disabled={!selected.length || isUploading}
+          className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded disabled:bg-gray-300 flex items-center justify-center gap-2"
+        >
+          {isUploading ? (
+            <>
+              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+              Загружается...
+            </>
+          ) : (
+            <>Загрузить выбранные ({selected.length})</>
+          )}
+        </button>
+
+        <button
+          onClick={handleUploadDirectory}
+          disabled={!currentPath || isUploading}
+          className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-300"
+        >
+          Загрузить всю папку
+        </button>
+      </div>
     </div>
   );
 };
