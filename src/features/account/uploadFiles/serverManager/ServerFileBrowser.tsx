@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import {
   browseServerPath,
+  uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
 import { useUploadStore } from "../../../../store/useUploadStore";
+import Toast from "../../../../components/toast/Toast";
 
 type Item = {
   name: string;
@@ -21,6 +23,10 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
 
   const [currentPath, setCurrentPath] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
+  const [toast, setToast] = useState<{
+    type: "error" | "access";
+    message: string;
+  } | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -78,7 +84,10 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       setIsUploading(true);
 
       await uploadServerFiles(selected, 100);
-
+      setToast({
+        type: "access",
+        message: "Файлы успешно добавлены в очередь",
+      });
       setSelected([]);
       onUploaded?.();
     } catch (e: any) {
@@ -91,10 +100,45 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     }
   };
 
+  const handleUploadDirectory = async () => {
+    if (!currentPath || isUploading) return;
+
+    try {
+      startBusy();
+      setIsUploading(true);
+
+      await uploadServerDirectory({
+        directory: currentPath,
+        recursive: true,
+        priority: 100,
+        max_files: 5000,
+      });
+      setToast({
+        type: "access",
+        message: "Директория успешно добавлена в очередь",
+      });
+      onUploaded?.();
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.detail || "Ошибка при загрузке директории";
+      console.error(e);
+      onError?.(message);
+    } finally {
+      setIsUploading(false);
+      endBusy();
+    }
+  };
+
   return (
     <div className="bg-white border rounded-xl p-4 flex flex-col gap-4">
       <h3 className="font-semibold">Файлы на сервере</h3>
-
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
       {/* PATH INPUT */}
       <div className="flex gap-2">
         <input
