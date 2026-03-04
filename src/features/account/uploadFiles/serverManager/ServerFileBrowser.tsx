@@ -200,7 +200,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         directory: currentPath,
         recursive: true,
         priority: 100,
-        max_files: 100000,
+        max_files: 50000,
       });
 
       const jobId = job?.job_id;

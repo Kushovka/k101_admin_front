@@ -359,7 +359,7 @@ export const uploadServerDirectory = async ({
   directory,
   recursive = true,
   priority = 100,
-  max_files = 100000,
+  max_files = 50000,
 }: {
   directory: string;
   recursive?: boolean;
