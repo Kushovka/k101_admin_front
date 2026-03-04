@@ -481,7 +481,7 @@ const UploadFiles = () => {
         console.error("Status polling error", err);
         setError("Ошибка попробуйте позже.");
       }
-    }, 2000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
