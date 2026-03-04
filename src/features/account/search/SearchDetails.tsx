@@ -363,7 +363,8 @@ const SearchDetails: React.FC = () => {
         <div className="flex-1 flex flex-col gap-6">
           {/* title */}
           <h1 className="text-[20px] font-semibold text-slate-900">
-            Досье: {user.last_name} {user.first_name} {user.middle_name}
+            Досье: {cleanValue(user.last_name)} {cleanValue(user.first_name)}{" "}
+            {cleanValue(user.middle_name)}
           </h1>
 
           {/* button */}
