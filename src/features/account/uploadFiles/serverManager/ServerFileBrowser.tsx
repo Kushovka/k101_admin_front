@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   browseServerPath,
+  getUploadDirectoryStatus,
   uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
@@ -19,10 +20,21 @@ type Props = {
 };
 
 const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const { startBusy, endBusy } = useUploadStore();
 
   const [currentPath, setCurrentPath] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
+  const [stats, setStats] = useState<{
+    total?: number;
+    processed?: number;
+    success?: number;
+    failed?: number;
+    duplicates?: number;
+    status?: string;
+  } | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
   const [toast, setToast] = useState<{
     type: "error" | "access";
     message: string;
@@ -99,6 +111,82 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       endBusy();
     }
   };
+  const pollDirectoryProgress = (jobId: string) => {
+    // если уже есть polling — остановить
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await getUploadDirectoryStatus(jobId);
+
+        setProgress(status.progress_pct);
+
+        setStats({
+          total: status.total,
+          processed: status.processed,
+          success: status.success,
+          failed: status.failed_count,
+          duplicates: status.duplicates,
+          status: status.status,
+        });
+
+        if (status.status === "completed") {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+
+          setToast({
+            type: "access",
+            message: `Загружено ${status.success} файлов`,
+          });
+
+          setProgress(null);
+          setIsUploading(false);
+          endBusy();
+          onUploaded?.();
+        }
+
+        if (status.status === "failed") {
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+
+          setToast({
+            type: "error",
+            message: "Ошибка обработки директории",
+          });
+
+          setProgress(null);
+          setIsUploading(false);
+          endBusy();
+        }
+      } catch (e) {
+        console.error(e);
+
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+
+        setIsUploading(false);
+        endBusy();
+      }
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, []);
 
   const handleUploadDirectory = async () => {
     if (!currentPath || isUploading) return;
@@ -106,26 +194,27 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     try {
       startBusy();
       setIsUploading(true);
+      setProgress(0);
 
-      await uploadServerDirectory({
+      const job = await uploadServerDirectory({
         directory: currentPath,
         recursive: true,
         priority: 100,
-        max_files: 5000,
+        max_files: 100000,
       });
-      setToast({
-        type: "access",
-        message: "Директория успешно добавлена в очередь",
-      });
-      onUploaded?.();
+
+      const jobId = job?.job_id;
+
+      if (!jobId) {
+        throw new Error("Job ID not returned");
+      }
+
+      pollDirectoryProgress(jobId);
     } catch (e: any) {
       const message =
         e?.response?.data?.detail || "Ошибка при загрузке директории";
       console.error(e);
       onError?.(message);
-    } finally {
-      setIsUploading(false);
-      endBusy();
     }
   };
 
@@ -236,6 +325,36 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           Загрузить всю папку
         </button>
       </div>
+      {progress !== null && (
+        <div className="mt-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span>Обработка директории</span>
+            <span>{progress.toFixed(1)}%</span>
+          </div>
+
+          <div className="w-full h-2 bg-gray-200 rounded">
+            <div
+              className="h-2 bg-indigo-500 rounded transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {stats && (
+        <div className="text-xs text-slate-500 mt-1">
+          {stats.processed} / {stats.total} файлов
+        </div>
+      )}
+      {stats && (
+        <div className="mt-3 text-sm text-slate-600 grid grid-cols-2 gap-x-6 gap-y-1">
+          <div>Всего: {stats.total}</div>
+          <div>Обработано: {stats.processed}</div>
+          <div className="text-green-600">Успешно: {stats.success}</div>
+          <div className="text-red-600">Ошибки: {stats.failed}</div>
+          <div className="text-yellow-600">Дубликаты: {stats.duplicates}</div>
+          <div>Статус: {stats.status}</div>
+        </div>
+      )}
     </div>
   );
 };

@@ -359,7 +359,7 @@ export const uploadServerDirectory = async ({
   directory,
   recursive = true,
   priority = 100,
-  max_files = 5000,
+  max_files = 100000,
 }: {
   directory: string;
   recursive?: boolean;
@@ -372,5 +372,12 @@ export const uploadServerDirectory = async ({
     priority,
     max_files,
   });
+  return res.data;
+};
+
+export const getUploadDirectoryStatus = async (jobId: string) => {
+  const res = await userApi.get(
+    `/api/v1/files/server/upload-directory/status/${jobId}`,
+  );
   return res.data;
 };
