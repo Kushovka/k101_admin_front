@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { useSearch } from "./SearchContext";
+import { FiFilter } from "react-icons/fi";
 
 import userApi from "../../../api/userApi";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
@@ -291,21 +292,80 @@ const Search = () => {
 
           <form onSubmit={handleSubmit} className="flex gap-3">
             <input
+              ref={inputRef}
               type="text"
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={SEARCH_TABS.find((t) => t.key === mode)?.placeholder}
               className="flex-1 h-[42px] px-4 border border-gray-300 rounded-lg
-               focus:outline-none focus:ring-2 focus:ring-cyan"
+    focus:outline-none focus:ring-2 focus:ring-cyan"
             />
 
             <button
+              type="button"
+              onClick={() => setAdditionalOption((prev) => !prev)}
+              className="h-[42px] px-4 border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-100"
+            >
+              <FiFilter />
+              Фильтр
+            </button>
+
+            <button
               className="px-6 h-[42px] bg-cyan-500 text-white rounded-lg
-               hover:bg-cyan-600 transition"
+    hover:bg-cyan-600 transition"
             >
               Найти
             </button>
           </form>
+
+          {additionalOption && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.25 }}
+              className="border border-gray-200 rounded-lg p-4 grid grid-cols-2 gap-3"
+            >
+              <input
+                placeholder="Имя"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Фамилия"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Отчество"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Телефон"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Email"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Город"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Дата рождения"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+
+              <input
+                placeholder="Адрес"
+                className="h-[40px] px-3 border border-gray-300 rounded-lg"
+              />
+            </motion.div>
+          )}
 
           {/* {mode === "address" && (
             <p className="text-xs text-slate-500">
