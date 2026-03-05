@@ -359,18 +359,21 @@ export const uploadServerDirectory = async ({
   directory,
   recursive = true,
   priority = 100,
-  max_files = 50000,
+  max_files = 5000,
+  offset = 0,
 }: {
   directory: string;
   recursive?: boolean;
   priority?: number;
   max_files?: number;
+  offset?: number;
 }) => {
   const res = await userApi.post("/api/v1/files/server/upload-directory", {
     directory,
     recursive,
     priority,
     max_files,
+    offset,
   });
   return res.data;
 };

@@ -196,25 +196,43 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       setIsUploading(true);
       setProgress(0);
 
-      const job = await uploadServerDirectory({
-        directory: currentPath,
-        recursive: true,
-        priority: 100,
-        max_files: 50000,
+      setStats({
+        status: "Сканирование файлов...",
       });
 
-      const jobId = job?.job_id;
+      let offset = 0;
+      let jobId: string | null = null;
+      let hasMore = true;
 
-      if (!jobId) {
-        throw new Error("Job ID not returned");
+      while (hasMore) {
+        const res = await uploadServerDirectory({
+          directory: currentPath,
+          recursive: true,
+          priority: 100,
+          max_files: 5000,
+          offset,
+        });
+
+        if (!jobId && res?.job_id) {
+          jobId = res.job_id;
+          pollDirectoryProgress(res.job_id);
+        }
+
+        if (res.truncated && res.next_offset !== null) {
+          offset = res.next_offset;
+        } else {
+          hasMore = false;
+        }
       }
-
-      pollDirectoryProgress(jobId);
     } catch (e: any) {
       const message =
         e?.response?.data?.detail || "Ошибка при загрузке директории";
+
       console.error(e);
       onError?.(message);
+
+      setIsUploading(false);
+      endBusy();
     }
   };
 
