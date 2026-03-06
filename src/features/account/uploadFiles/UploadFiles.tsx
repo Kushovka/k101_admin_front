@@ -5,7 +5,7 @@ import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa6";
 import { IoIosArrowDown, IoIosClose, IoMdClose } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
-import { MdDelete, MdRestartAlt } from "react-icons/md";
+import { MdDelete, MdMoreVert, MdRestartAlt } from "react-icons/md";
 import {
   PiFileCsvBold,
   PiFileHtmlBold,
@@ -1154,6 +1154,7 @@ const UploadFiles = () => {
 
                     <div className="flex items-center gap-4 text-[13px] text-slate-500">
                       <span>{formatFileSize(file.file_size)}</span>
+                      
                       {file.quality_score != null && (
                         <span
                           className={clsx(
@@ -1179,11 +1180,20 @@ const UploadFiles = () => {
                           />
                         </>
                       )}
+
                       <button
                         onClick={() => setPreviewFile(file)}
                         className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
                       >
                         Предпросмотр
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenAddFile(file);
+                        }}
+                      >
+                        <MdMoreVert className="w-5 h-5" />
                       </button>
                     </div>
                   </div>

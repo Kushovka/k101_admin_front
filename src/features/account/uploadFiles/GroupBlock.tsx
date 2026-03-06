@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo } from "react";
+import { CgDanger } from "react-icons/cg";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import { MdDelete, MdMoreVert, MdRestartAlt } from "react-icons/md";
 import { Tooltip } from "react-tooltip";
@@ -123,6 +124,32 @@ const GroupBlock = memo(
 
                     <div className="flex items-center gap-4 text-[13px] text-slate-500">
                       <span>{formatFileSize(file.file_size)}</span>
+                      {file.quality_score != null && (
+                        <span
+                          className={clsx(
+                            "px-2 py-[2px] rounded text-xs font-medium",
+                            file.needs_review
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-700",
+                          )}
+                        >
+                          {Math.round(file.quality_score * 100)}%
+                        </span>
+                      )}
+
+                      {file.needs_review && (
+                        <>
+                          <CgDanger
+                            data-tooltip-id={`quality_warn_${file.id}`}
+                            className="w-4 h-4 text-yellow-500"
+                          />
+                          <Tooltip
+                            id={`quality_warn_${file.id}`}
+                            content="Низкое качество данных (< 40%)"
+                          />
+                        </>
+                      )}
+
                       {/* <span>{file.total_rows}</span> */}
                       <button
                         onClick={() => onPreview(file)}
