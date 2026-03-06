@@ -122,7 +122,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       try {
         const status = await getUploadDirectoryStatus(jobId);
 
-        setProgress(status.progress_pct);
+        setProgress(status.progress_pct ?? 0);
 
         setStats({
           total: status.total,
@@ -340,7 +340,9 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         <div className="mt-3">
           <div className="flex justify-between text-sm mb-1">
             <span>Обработка директории</span>
-            <span>{progress.toFixed(1)}%</span>
+            <span>
+              {typeof progress === "number" ? progress.toFixed(1) : "0"}%
+            </span>
           </div>
 
           <div className="w-full h-2 bg-gray-200 rounded">
