@@ -5,8 +5,8 @@ import {
   uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
-import { useUploadStore } from "../../../../store/useUploadStore";
 import Toast from "../../../../components/toast/Toast";
+import { useUploadStore } from "../../../../store/useUploadStore";
 
 type Item = {
   name: string;
@@ -167,14 +167,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         }
       } catch (e) {
         console.error(e);
-
-        if (pollRef.current) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
-
-        setIsUploading(false);
-        endBusy();
+        return;
       }
     }, 5000);
   };
