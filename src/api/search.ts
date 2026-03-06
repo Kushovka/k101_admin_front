@@ -1,4 +1,3 @@
-import { CreateComplaintPayload } from "../types/search";
 import userApi from "./userApi";
 
 const getHeaders = (): Record<string, string> => {
@@ -15,7 +14,7 @@ const getHeaders = (): Record<string, string> => {
 
 export const exportPersonDossier = async (
   entityId: string,
-  format: "pdf" | "txt",
+  format: "pdf" | "txt" | "docx",
 ) => {
   const res = await userApi.get(`/api/v1/person/${entityId}/export`, {
     params: { format },
