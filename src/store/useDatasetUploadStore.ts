@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { postUploadDataset } from "../api/uploadFiles";
 import { refreshTokens } from "../features/auth/auth";
+import { useUploadStore } from "./useUploadStore";
 
 type DatasetUploadState = {
   files: File[];
@@ -52,12 +53,16 @@ export const useDatasetUploadStore = create<DatasetUploadState>((set, get) => ({
 
   upload: async () => {
     const { files, datasetName, description, linkingColumn } = get();
+    const { startBusy, endBusy } = useUploadStore.getState();
 
     if (files.length < 2) throw new Error("Минимум 2 файла для датасета");
+
     if (!datasetName.trim()) throw new Error("Введите название датасета");
 
     await refreshTokens();
+
     set({ uploading: true });
+    startBusy(); // 🔥 блокируем idle logout
 
     try {
       const dataset = await postUploadDataset({
@@ -67,14 +72,16 @@ export const useDatasetUploadStore = create<DatasetUploadState>((set, get) => ({
         files,
       });
 
-      set({ uploading: false });
       get().clear();
 
       return dataset;
     } catch (e: any) {
-      set({ uploading: false });
       const msg = e?.response?.data?.detail || "Ошибка при загрузке датасета";
+
       throw new Error(msg);
+    } finally {
+      set({ uploading: false });
+      endBusy(); // 🔥 снимаем блокировку
     }
   },
 }));

@@ -218,9 +218,7 @@ const SearchDetails: React.FC = () => {
   );
 
   const uniqueAddress = Array.from(
-    new Set(
-      (user.addresses ?? []).map((e) => e.trim()).filter(Boolean),
-    ),
+    new Set((user.addresses ?? []).map((e) => e.trim()).filter(Boolean)),
   );
 
   const handleAIDossier = async (id: string) => {
