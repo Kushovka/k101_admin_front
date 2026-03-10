@@ -18,6 +18,10 @@ export type FileItem = {
   extracted_entities?: number;
   file_type?: string;
 
+  quality_score?: number | null;
+  needs_review?: boolean | null;
+  error_code?: string | null;
+
   uploaded_by_user_id?: string;
   processing_status?:
     | "queued"

@@ -1,14 +1,18 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import React, { ReactElement, SVGProps, useEffect, useState } from "react";
+import { BsPassportFill } from "react-icons/bs";
+import { FaCalendarAlt } from "react-icons/fa";
 import {
   IoCallSharp,
   IoCardSharp,
   IoDocumentTextSharp,
   IoLocationSharp,
   IoMailSharp,
+  IoMaleFemale,
   IoPersonSharp,
 } from "react-icons/io5";
+import { PiCityFill } from "react-icons/pi";
 import { useLocation, useNavigate } from "react-router-dom";
 import userApi from "../../../api/userApi";
 import Loader from "../../../components/loader/Loader";
@@ -16,7 +20,19 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 import { useSearch } from "./SearchContext";
 
-type SearchMode = "name" | "phone" | "email" | "address" | "snils" | "ipn";
+type SearchMode =
+  | "name"
+  | "phone"
+  | "email"
+  | "snils"
+  | "ipn"
+  | "address"
+  | "city"
+  | "passport"
+  | "gender"
+  | "birthday"
+  | "birthday_from"
+  | "birthday_to";
 
 const SEARCH_TABS: {
   key: SearchMode;
@@ -25,10 +41,10 @@ const SEARCH_TABS: {
   icon: ReactElement<SVGProps<SVGAElement>>;
 }[] = [
   {
-    key: "name",
-    label: "ФИО",
-    placeholder: "Фамилия Имя Отчество",
-    icon: <IoPersonSharp />,
+    key: "gender",
+    label: "Пол",
+    placeholder: "м/ж/мужской/женский",
+    icon: <IoMaleFemale />,
   },
   {
     key: "phone",
@@ -49,6 +65,18 @@ const SEARCH_TABS: {
     icon: <IoLocationSharp />,
   },
   {
+    key: "city",
+    label: "Город",
+    placeholder: "Москва",
+    icon: <PiCityFill />,
+  },
+  {
+    key: "passport",
+    label: "Серия и номер паспорта",
+    placeholder: "4510 123456",
+    icon: <BsPassportFill />,
+  },
+  {
     key: "snils",
     label: "СНИЛС",
     placeholder: "123-456-789 00",
@@ -67,7 +95,7 @@ const getHeaders = () => ({
   "Content-Type": "application/json",
 });
 
-const Search = () => {
+const Search_test = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notify, setNotify] = useState<null | string>(null);
@@ -81,9 +109,15 @@ const Search = () => {
     name: "",
     phone: "",
     email: "",
-    address: "",
     snils: "",
     ipn: "",
+    address: "",
+    city: "",
+    passport: "",
+    gender: "",
+    birthday: "",
+    birthday_from: "",
+    birthday_to: "",
   });
 
   const { isOpen } = useSidebar();
@@ -136,22 +170,6 @@ const Search = () => {
     return "+" + phone;
   };
 
-  const SEARCH_CONFIG: Record<
-    SearchMode,
-    { endpoint: string; param: string; transform?: (v: string) => string }
-  > = {
-    name: { endpoint: "/api/v1/search/by-name", param: "name" },
-    phone: {
-      endpoint: "/api/v1/search",
-      param: "phone",
-      transform: normalizePhone,
-    },
-    email: { endpoint: "/api/v1/search", param: "email" },
-    snils: { endpoint: "/api/v1/search", param: "snils" },
-    ipn: { endpoint: "/api/v1/search", param: "ipn" },
-    address: { endpoint: "/api/v1/search/by-address", param: "address" },
-  };
-
   useEffect(() => {
     if (location.state?.restore) {
       setMode(location.state.mode ?? "name");
@@ -170,73 +188,56 @@ const Search = () => {
   ) => {
     e?.preventDefault();
 
-    const value = values[mode].trim();
-    if (!value) {
-      setError("Введите значение для поиска");
-      return;
+    const params: Record<string, string> = {
+      page: String(page),
+      page_size: String(pageSize),
+      cascade_mode: "quick",
+    };
+
+    const searchValues = { ...values };
+
+    if (searchValues.birthday) {
+      searchValues.birthday_from = "";
+      searchValues.birthday_to = "";
     }
 
-    // очищаем все остальные значения, оставляем только текущее поле
-    setValues((prev) => {
-      const newValues: Record<SearchMode, string> = {
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-        snils: "",
-        ipn: "",
-      };
-      newValues[mode] = prev[mode];
-      return newValues;
+    Object.entries(searchValues).forEach(([key, value]) => {
+      const v = value.trim();
+
+      if (!v) return;
+
+      if (key === "phone") {
+        params.phone = normalizePhone(v);
+      } else {
+        params[key] = v;
+      }
     });
 
-    if (!isPagination) {
-      setCurrentPage(1);
-      setTotalPages(1);
-      setResult([]);
+    if (Object.keys(params).length <= 3) {
+      setError("Введите хотя бы один параметр поиска");
+      return;
     }
 
     setLoading(true);
     setError(null);
-    setSeeSearch(false);
 
     try {
-      const config = SEARCH_CONFIG[mode];
-      const params: Record<string, string> = {
-        page: String(page),
-        page_size: String(pageSize),
-        [config.param]: config.transform ? config.transform(value) : value,
-      };
       const qs = new URLSearchParams(params).toString();
 
       const response = await userApi.post<SearchResponse>(
-        `${config.endpoint}?${qs}`,
+        `/api/v1/search/advanced?${qs}`,
         null,
-        {
-          headers: getHeaders(),
-        },
+        { headers: getHeaders() },
       );
 
-      setSeeSearch(true);
       setRes(response.data);
-
-      if ("entity" in response.data) {
-        setResult(
-          response.data.total_records_found === 0
-            ? []
-            : [response.data.entity as any],
-        );
-      } else {
-        setResult(response.data.results ?? []);
-      }
-
+      setResult(response.data.results ?? []);
       setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
+      setSeeSearch(true);
     } catch (err: any) {
       setError(
-        err?.response?.status === 500
-          ? "Сервер временно недоступен"
-          : "Ошибка поиска",
+        err?.response?.status === 500 ? "Ошибка сервера" : "Ошибка поиска",
       );
     } finally {
       setLoading(false);
@@ -271,7 +272,91 @@ const Search = () => {
           className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
         >
           <div className="grid grid-cols-[320px_1fr] gap-6">
-            <div className="flex flex-col gap-3">
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => handleSubmit(e)}
+            >
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoPersonSharp />
+                  </span>
+                  ФИО
+                </div>
+
+                <div>
+                  <input
+                    placeholder="Фамилия Имя Отчество"
+                    type="text"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.name}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <FaCalendarAlt />
+                  </span>
+                  Дата рождения
+                </div>
+
+                <div>
+                  <input
+                    type="date"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.birthday}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        birthday: e.target.value,
+                        birthday_from: "",
+                        birthday_to: "",
+                      }))
+                    }
+                  />
+                </div>
+                <div className="text-xs text-slate-500">или диапазон</div>
+                <div className="flex gap-2">
+                  <div>
+                    <span className="text-xs text-slate-500">от:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_from}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_from: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500">до:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_to}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_to: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </motion.div>
               {SEARCH_TABS.map((tab) => (
                 <motion.div
                   key={tab.key}
@@ -300,17 +385,17 @@ const Search = () => {
                       }))
                     }
                   />
-
-                  <button
-                    className="px-6 h-[42px] bg-cyan-500 text-white rounded-lg
-               hover:bg-cyan-600 transition"
-                    onClick={(e) => handleSubmit(e)}
-                  >
-                    Найти
-                  </button>
                 </motion.div>
               ))}
-            </div>
+
+              <button
+                type="submit"
+                className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium
+  hover:bg-cyan-600 transition"
+              >
+                Найти
+              </button>
+            </form>
           </div>
 
           <div className="w-full">
@@ -414,4 +499,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default Search_test;

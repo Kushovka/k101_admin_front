@@ -5,7 +5,7 @@ import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa6";
 import { IoIosArrowDown, IoIosClose, IoMdClose } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
-import { MdDelete, MdRestartAlt } from "react-icons/md";
+import { MdDelete, MdMoreVert, MdRestartAlt } from "react-icons/md";
 import {
   PiFileCsvBold,
   PiFileHtmlBold,
@@ -16,6 +16,7 @@ import {
 } from "react-icons/pi";
 import { TbJson } from "react-icons/tb";
 import { Tooltip } from "react-tooltip";
+import { getFileStatuses } from "../../../api/search";
 import {
   getAllFiles,
   getAllGroup,
@@ -91,11 +92,19 @@ const UploadFiles = () => {
     Record<string, boolean>
   >({});
 
+  const [fileStatuses, setFileStatuses] = useState<{
+    total: number;
+    statuses: { status: string; count: number }[];
+  } | null>(null);
+
   const [sortByGroup, setSortByGroup] = useState<
     Record<string, "newest" | "oldest">
   >({});
 
   const [searchResults, setSearchResults] = useState<FileItem[]>([]);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchLoading, setSearchLoading] = useState(false);
 
   const [duplicatesCount, setDuplicatesCount] = useState(0);
@@ -149,6 +158,23 @@ const UploadFiles = () => {
     );
   };
 
+  const getErrorLabel = (code?: string | null) => {
+    switch (code) {
+      case "INVALID_FILE_FORMAT":
+        return "Неверный формат файла";
+      case "EMPTY_FILE":
+        return "Файл пустой";
+      case "UNSUPPORTED_FILE_TYPE":
+        return "Неподдерживаемый тип файла";
+      case "CORRUPTED_FILE":
+        return "Файл повреждён";
+      case "NO_VALID_DATA":
+        return "Нет валидных данных";
+      default:
+        return "Ошибка парсинга";
+    }
+  };
+
   const formatDateTime = (value?: string) =>
     value ? new Date(value).toLocaleString() : "-";
 
@@ -178,20 +204,41 @@ const UploadFiles = () => {
             >
               Ошибка
             </span>
-            {file.error_message && (
-              <Tooltip
-                id={`error-file-modal_${file.id}`}
-                place="top"
-                delayShow={400}
-                content={file.error_message}
-              />
-            )}
+
+            <Tooltip
+              id={`error-file-modal_${file.id}`}
+              place="top"
+              delayShow={400}
+              content={
+                file.error_code
+                  ? getErrorLabel(file.error_code)
+                  : file.error_message || "Ошибка парсинга"
+              }
+            />
           </>
         );
 
       default:
         return <span className="text-slate-400">—</span>;
     }
+  };
+
+  const statusMeta: Record<string, { label: string }> = {
+    uploaded: {
+      label: "Загружен",
+    },
+    extracting: {
+      label: "Обрабатывается",
+    },
+    extracted: {
+      label: "Выполнен",
+    },
+    failed: {
+      label: "Ошибка",
+    },
+    reprocessing: {
+      label: "Переобработка",
+    },
   };
 
   /* ---------------- API ---------------- */
@@ -257,7 +304,7 @@ const UploadFiles = () => {
       setLoadingGroup((p) => ({ ...p, [groupName]: false }));
     }
   };
- 
+
   const handleFileDeleted = (file: FileItem) => {
     // группы
     setFilesByGroup((prev) => {
@@ -281,20 +328,27 @@ const UploadFiles = () => {
   };
 
   useEffect(() => {
-    if (!search.trim()) {
+    if (!search.trim() && !statusFilter) {
       setSearchResults([]);
+      setSearchPage(1);
       return;
     }
 
     const loadSearch = async () => {
       try {
         setSearchLoading(true);
+
         const res = await getAllFiles({
-          page: 1,
+          page: searchPage,
           pageSize: 50,
-          search,
+          search: search || undefined,
+          status: statusFilter || undefined,
         });
-        setSearchResults(res.files);
+        setSearchTotal(res.total);
+
+        setSearchResults((prev) =>
+          searchPage === 1 ? res.files : [...prev, ...res.files],
+        );
       } catch (e) {
         console.error(e);
       } finally {
@@ -302,13 +356,29 @@ const UploadFiles = () => {
       }
     };
 
-    const timeout = setTimeout(loadSearch, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
+    loadSearch();
+  }, [search, statusFilter, searchPage]);
+
+  useEffect(() => {
+    const loadStatuses = async () => {
+      try {
+        const data = await getFileStatuses();
+        setFileStatuses(data);
+      } catch (e) {
+        console.error("Ошибка загрузки статусов", e);
+      }
+    };
+
+    loadStatuses();
+  }, []);
 
   /* ---------------- пагинация ---------------- */
 
-  const loadFiles = async (pageToLoad = 1, replace = false): Promise<void> => {
+  const loadFiles = async (
+    pageToLoad = 1,
+    replace = false,
+    status?: string,
+  ): Promise<void> => {
     if (loadingFiles) return;
 
     setLoadingFiles(true);
@@ -319,6 +389,7 @@ const UploadFiles = () => {
         page: pageToLoad,
         pageSize,
         search,
+        status: status ?? statusFilter ?? undefined,
       });
 
       setAllFiles((prev) => (replace ? data.files : [...prev, ...data.files]));
@@ -461,7 +532,7 @@ const UploadFiles = () => {
         console.error("Status polling error", err);
         setError("Ошибка попробуйте позже.");
       }
-    }, 2000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
@@ -506,7 +577,7 @@ const UploadFiles = () => {
           onClose={() => setDuplicatesCount(0)}
         />
       )}
- 
+
       {notify === "duplicates_only" && (
         <Toast
           type="error"
@@ -568,6 +639,7 @@ const UploadFiles = () => {
                     loadGroups();
                     setNotify("upload_file");
                   }}
+                  onError={(msg) => setError(msg)}
                 />
 
                 <ServerPathManager />
@@ -1013,7 +1085,11 @@ const UploadFiles = () => {
                           place="top"
                           delayShow={400}
                           id={tooltipId}
-                          content={item.error_message}
+                          content={
+                            item.error_code
+                              ? getErrorLabel(item.error_code)
+                              : item.error_message || "Ошибка парсинга"
+                          }
                         />
 
                         <div className="col-span-3 flex justify-end gap-2">
@@ -1055,7 +1131,7 @@ const UploadFiles = () => {
         transition={{ duration: 0.25 }}
         className="mt-12"
       >
-        <div className="flex items-center justify-between pb-4 border-b">
+        <div className="flex items-center justify-between pb-4">
           <div>
             <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
               Загруженные файлы
@@ -1063,24 +1139,71 @@ const UploadFiles = () => {
           </div>
 
           <div className="flex gap-3 items-center">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                const value = e.target.value;
+                setStatusFilter(value);
+                loadFiles(1, true, value);
+                setSearchPage(1);
+              }}
+              className="px-3 py-2 text-[14px] border border-gray-300 rounded-lg bg-white"
+            >
+              <option value="">Все статусы</option>
+              <option value="uploaded">Загружен</option>
+              <option value="extracting">Обработка</option>
+              <option value="extracted">Готово</option>
+              <option value="failed">Ошибка</option>
+              <option value="reprocessing">Переобработка</option>
+            </select>
             {/* SEARCH */}
             <input
               type="text"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
+                setSearchPage(1);
               }}
               placeholder="Поиск по названию файла"
               className="w-64 px-3 py-2 text-[14px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
             />
           </div>
         </div>
+
+        {fileStatuses && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-3 mb-4 items-center">
+            <div className="text-sm font-medium text-slate-700 mr-2">
+              Всего файлов:
+            </div>
+
+            <div className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              {fileStatuses.total}
+            </div>
+
+            {fileStatuses.statuses.map((s) => {
+              const meta = statusMeta[s.status] || {
+                label: s.status,
+                color: "bg-gray-100 text-gray-700",
+              };
+
+              return (
+                <div
+                  key={s.status}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border`}
+                >
+                  {meta.label}: {s.count}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* SEARCH RESULTS */}
-        {search.trim() ? (
+        {search.trim() || statusFilter ? (
           <div className="mt-5 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="px-4 py-3 border-b">
               <h3 className="text-[15px] font-semibold text-slate-900">
-                Найдено файлов: {searchResults.length}
+                Найдено файлов: {searchTotal}
               </h3>
             </div>
 
@@ -1129,11 +1252,46 @@ const UploadFiles = () => {
 
                     <div className="flex items-center gap-4 text-[13px] text-slate-500">
                       <span>{formatFileSize(file.file_size)}</span>
+
+                      {file.quality_score != null && (
+                        <span
+                          className={clsx(
+                            "px-2 py-[2px] rounded text-xs font-medium",
+                            file.needs_review
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-700",
+                          )}
+                        >
+                          {Math.round(file.quality_score * 100)}%
+                        </span>
+                      )}
+
+                      {file.needs_review && (
+                        <>
+                          <CgDanger
+                            data-tooltip-id={`quality_warn_${file.id}`}
+                            className="w-4 h-4 text-yellow-500"
+                          />
+                          <Tooltip
+                            id={`quality_warn_${file.id}`}
+                            content="Низкое качество данных (< 40%)"
+                          />
+                        </>
+                      )}
+
                       <button
                         onClick={() => setPreviewFile(file)}
                         className="text-cyan-600 hover:text-cyan-700 underline underline-offset-2 transition"
                       >
                         Предпросмотр
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenAddFile(file);
+                        }}
+                      >
+                        <MdMoreVert className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -1210,6 +1368,12 @@ const UploadFiles = () => {
                 </div>
               );
             })}
+            <button
+              onClick={() => setSearchPage((p) => p + 1)}
+              className="w-full py-3 text-sm text-cyan-600 hover:underline"
+            >
+              Показать ещё
+            </button>
           </div>
         ) : (
           /* GROUPS */
@@ -1311,6 +1475,7 @@ const UploadFiles = () => {
           description={"Файл будет удалён без возможности восстановления."}
         />
       )}
+
       {/* ---------------- модалка подтверждения удаления файла ---------------- */}
       {openAddFile && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -1365,6 +1530,25 @@ const UploadFiles = () => {
                 <InfoRow label="Извлечённые сущности" value={"-"} />
                 {/* openAddFile.extracted_entities */}
               </div>
+              {openAddFile.quality_score != null && (
+                <InfoRow
+                  label="Качество данных"
+                  value={`${Math.round(openAddFile.quality_score * 100)}%`}
+                />
+              )}
+
+              {openAddFile.needs_review && (
+                <div className="text-yellow-700 text-xs mt-1">
+                  Требуется проверка качества данных
+                </div>
+              )}
+
+              {openAddFile.error_code && (
+                <InfoRow
+                  label="Причина ошибки"
+                  value={getErrorLabel(openAddFile.error_code)}
+                />
+              )}
             </div>
 
             {/* ДАТЫ */}

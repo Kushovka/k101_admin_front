@@ -4,7 +4,7 @@ import Complaints from "../../features/account/complaints/Complaints";
 import HealthCheck from "../../features/account/healthCheck/HealthCheck";
 import Plans from "../../features/account/plans/Plans";
 import Profile from "../../features/account/profile/Profile";
-import Search from "../../features/account/search/Search";
+import Search_test from "../../features/account/search/Search_test";
 import { SearchProvider } from "../../features/account/search/SearchContext";
 import SearchDetails from "../../features/account/search/SearchDetails";
 import SystemStatistics from "../../features/account/systemStatistics/SystemStatistics";
@@ -92,7 +92,8 @@ const AppContent: React.FC = () => {
               </SearchProvider>
             }
           >
-            <Route index element={<Search />} />
+            <Route index element={<Search_test />} />
+
             <Route path=":id" element={<SearchDetails />} />
           </Route>
 
