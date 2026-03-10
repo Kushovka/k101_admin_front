@@ -172,19 +172,34 @@ const Search = () => {
 
   useEffect(() => {
     if (location.state?.restore) {
-      setMode(location.state.mode ?? "name");
-      setValues((prev) => ({
-        ...prev,
-        [location.state.mode ?? "name"]: location.state.searchValue ?? "",
-      }));
-      handleSubmit(undefined, location.state.page ?? 1);
+      const restoredMode = location.state.mode ?? "name";
+      const restoredValues =
+        location.state.values ??
+        ({
+          name: "",
+          phone: "",
+          email: "",
+          snils: "",
+          ipn: "",
+          address: "",
+          city: "",
+          passport: "",
+          gender: "",
+          birthday: "",
+          birthday_from: "",
+          birthday_to: "",
+        } as Record<SearchMode, string>);
+
+      setMode(restoredMode);
+      setValues(restoredValues);
+      handleSubmit(undefined, location.state.page ?? 1, restoredValues);
     }
   }, [location.state]);
 
   const handleSubmit = async (
     e?: React.FormEvent,
     page = 1,
-    isPagination = false,
+    overrideValues?: Record<SearchMode, string>,
   ) => {
     e?.preventDefault();
 
@@ -194,7 +209,7 @@ const Search = () => {
       cascade_mode: "quick",
     };
 
-    const searchValues = { ...values };
+    const searchValues = overrideValues ?? { ...values };
 
     if (searchValues.birthday) {
       searchValues.birthday_from = "";
@@ -213,7 +228,11 @@ const Search = () => {
       }
     });
 
-    if (Object.keys(params).length <= 3) {
+    const filledFields = Object.entries(searchValues).filter(
+      ([, value]) => value.trim() !== "",
+    );
+
+    if (filledFields.length === 0) {
       setError("Введите хотя бы один параметр поиска");
       return;
     }
@@ -456,9 +475,9 @@ const Search = () => {
                       navigate(`/account/search/${item.entity_id}`, {
                         state: {
                           item,
-                          searchValue: values[mode],
                           page: currentPage,
                           mode,
+                          values,
                         },
                       })
                     }
@@ -474,7 +493,7 @@ const Search = () => {
                 {visiblePages.map((page) => (
                   <button
                     key={page}
-                    onClick={() => handleSubmit(undefined, page, true)}
+                    onClick={() => handleSubmit(undefined, page)}
                     className={clsx(
                       "px-3 py-1 rounded-full text-[14px] border transition",
                       page === currentPage

@@ -58,8 +58,9 @@ const fieldLabels: Record<string, string> = {
 
 type SearchDetailsState = {
   item: SearchUser;
-  searchValue?: string;
   page?: number;
+  mode?: string;
+  values?: Record<string, string>;
 };
 
 const getHeaders = (): Record<string, string> => {
@@ -450,9 +451,9 @@ const SearchDetails: React.FC = () => {
                 navigate("/account/search", {
                   state: {
                     restore: true,
-                    searchValue: location.state?.searchValue,
                     page: location.state?.page,
                     mode: location.state?.mode,
+                    values: location.state?.values,
                   },
                 })
               }
