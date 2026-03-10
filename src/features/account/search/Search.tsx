@@ -232,7 +232,7 @@ const Search = () => {
 
       setRes(response.data);
       setResult(response.data.entities?.map((item) => item.entity) ?? []);
-      setTotalPages(response.data.entities?.[0]?.total_pages ?? 1);
+      setTotalPages(Math.ceil((response.data.total_entities ?? 0) / pageSize));
       setCurrentPage(page);
       setSeeSearch(true);
     } catch (err: any) {
