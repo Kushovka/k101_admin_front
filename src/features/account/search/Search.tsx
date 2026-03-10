@@ -95,7 +95,7 @@ const getHeaders = () => ({
   "Content-Type": "application/json",
 });
 
-const Search_test = () => {
+const Search = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notify, setNotify] = useState<null | string>(null);
@@ -231,7 +231,9 @@ const Search_test = () => {
       );
 
       setRes(response.data);
-      setResult(response.data.results ?? []);
+
+      setResult(response.data.entity ? [response.data.entity] : []);
+
       setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
       setSeeSearch(true);
@@ -401,12 +403,7 @@ const Search_test = () => {
           <div className="w-full">
             {seeSearch && (
               <div className="text-[14px] text-slate-600">
-                Найдено:{" "}
-                {res?.count === 10
-                  ? "Очень много совпадений, уточните запрос"
-                  : res?.count || (res?.total_pages ?? 0) > 0
-                    ? res?.total
-                    : 0}
+                Найдено: {res?.total_records_found ?? 0}
               </div>
             )}
 
@@ -499,4 +496,4 @@ const Search_test = () => {
   );
 };
 
-export default Search_test;
+export default Search;

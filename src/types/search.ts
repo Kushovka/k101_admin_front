@@ -16,11 +16,11 @@ export interface SearchResultItem {
 }
 
 export interface SearchResponse {
-  count: number;
-  total: number;
-  total_pages: number;
+  entity: SearchResultItem;
   total_records_found: number;
-  results: SearchResultItem[];
+  total_pages: number;
+  page: number;
+  page_size: number;
 }
 
 export type CreateComplaintPayload = {
