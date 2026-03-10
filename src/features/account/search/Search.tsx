@@ -95,7 +95,7 @@ const getHeaders = () => ({
   "Content-Type": "application/json",
 });
 
-const Search_test = () => {
+const Search = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notify, setNotify] = useState<null | string>(null);
@@ -496,4 +496,4 @@ const Search_test = () => {
   );
 };
 
-export default Search_test;
+export default Search;
