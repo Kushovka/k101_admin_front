@@ -5,7 +5,11 @@ type Props = {
   rawFileId: string;
   availableColumns: string[];
   onClose: () => void;
-  onCompleted: (message: string, type?: "access" | "error") => void;
+  onCompleted: (data: {
+    message: string;
+    type?: "access" | "error";
+    task_id?: string;
+  }) => void;
 };
 
 export const RenameColumnModal = ({
@@ -21,12 +25,18 @@ export const RenameColumnModal = ({
 
   const handleSubmit = async () => {
     if (!oldColumn || !newColumn || !reason.trim()) {
-      onCompleted("Заполни все поля", "error");
+      onCompleted({
+        message: "Заполни все поля",
+        type: "error",
+      });
       return;
     }
 
     if (oldColumn === newColumn) {
-      onCompleted("Новое имя совпадает со старым", "error");
+      onCompleted({
+        message: "Новое имя совпадает со старым",
+        type: "error",
+      });
       return;
     }
 
@@ -40,21 +50,28 @@ export const RenameColumnModal = ({
         reason,
       );
 
-      // закрываем модалку сразу
       onClose();
 
-      // показываем нормальный текст, а не тех. message
       if (res?.status === "queued") {
-        onCompleted(
-          "Задача поставлена в очередь. Изменения появятся позже.",
-          "access",
-        );
+        onCompleted({
+          message: "Задача поставлена в очередь. Изменения появятся позже.",
+          type: "access",
+          task_id: res?.task_id,
+        });
       } else {
-        onCompleted("Задача отправлена. Ожидайте изменений.", "access");
+        onCompleted({
+          message: "Задача отправлена. Ожидайте изменений.",
+          type: "access",
+          task_id: res?.task_id,
+        });
       }
     } catch (err) {
       console.error(err);
-      onCompleted("Ошибка при постановке задачи", "error");
+
+      onCompleted({
+        message: "Ошибка при постановке задачи",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }

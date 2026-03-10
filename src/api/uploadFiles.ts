@@ -43,11 +43,13 @@ export const getAllFiles = async ({
   pageSize,
   sortOrder,
   search,
+  status,
 }: {
   page: number;
   pageSize: number;
   sortOrder?: "newest" | "oldest";
   search?: string;
+  status?: string;
 }) => {
   const { data } = await userApi.get("/api/v1/files", {
     params: {
@@ -55,6 +57,7 @@ export const getAllFiles = async ({
       page_size: pageSize,
       sort_order: sortOrder,
       ...(search?.trim() && { search: search.trim() }),
+      ...(status && { status }),
     },
     headers: getHeaders(),
   });
@@ -158,7 +161,7 @@ export const postToTopFile = async (id: string): Promise<ApiPriority> => {
 };
 
 export const getParsingQueue = async () => {
-  const { data } = await userApi.get("/api/v1/parsing-queue?limit=1000", {
+  const { data } = await userApi.get("/api/v1/parsing-queue?limit=100", {
     headers: getHeaders(),
   });
   return data;

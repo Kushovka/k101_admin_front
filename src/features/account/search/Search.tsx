@@ -1,31 +1,93 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import React, { ReactElement, SVGProps, useEffect, useState } from "react";
+import { BsPassportFill } from "react-icons/bs";
+import { FaCalendarAlt } from "react-icons/fa";
+import {
+  IoCallSharp,
+  IoCardSharp,
+  IoDocumentTextSharp,
+  IoLocationSharp,
+  IoMailSharp,
+  IoMaleFemale,
+  IoPersonSharp,
+} from "react-icons/io5";
+import { PiCityFill } from "react-icons/pi";
 import { useLocation, useNavigate } from "react-router-dom";
+import userApi from "../../../api/userApi";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import { useSearch } from "./SearchContext";
-
-import userApi from "../../../api/userApi";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
+import { useSearch } from "./SearchContext";
 
 type SearchMode =
   | "name"
   | "phone"
   | "email"
-  | "address"
-  | "id"
   | "snils"
-  | "ipn";
+  | "ipn"
+  | "address"
+  | "city"
+  | "passport"
+  | "gender"
+  | "birthday"
+  | "birthday_from"
+  | "birthday_to";
 
-const SEARCH_TABS: { key: SearchMode; label: string; placeholder: string }[] = [
-  { key: "name", label: "ФИО", placeholder: "Фамилия Имя Отчество" },
-  { key: "phone", label: "Телефон", placeholder: "+7 999 123-45-67" },
-  { key: "email", label: "Email", placeholder: "example@mail.ru" },
-  { key: "address", label: "Адрес", placeholder: "Город, улица, дом" },
-  { key: "snils", label: "СНИЛС", placeholder: "123-456-789 00" },
-  { key: "ipn", label: "ИНН", placeholder: "123456789000" },
-  // { key: "id", label: "ID", placeholder: "ID персоны" },
+const SEARCH_TABS: {
+  key: SearchMode;
+  label: string;
+  placeholder: string;
+  icon: ReactElement<SVGProps<SVGAElement>>;
+}[] = [
+  {
+    key: "gender",
+    label: "Пол",
+    placeholder: "м/ж/мужской/женский",
+    icon: <IoMaleFemale />,
+  },
+  {
+    key: "phone",
+    label: "Телефон",
+    placeholder: "+7 999 123-45-67",
+    icon: <IoCallSharp />,
+  },
+  {
+    key: "email",
+    label: "Email",
+    placeholder: "example@mail.ru",
+    icon: <IoMailSharp />,
+  },
+  {
+    key: "address",
+    label: "Адрес",
+    placeholder: "Город, улица, дом",
+    icon: <IoLocationSharp />,
+  },
+  {
+    key: "city",
+    label: "Город",
+    placeholder: "Москва",
+    icon: <PiCityFill />,
+  },
+  {
+    key: "passport",
+    label: "Серия и номер паспорта",
+    placeholder: "4510 123456",
+    icon: <BsPassportFill />,
+  },
+  {
+    key: "snils",
+    label: "СНИЛС",
+    placeholder: "123-456-789 00",
+    icon: <IoDocumentTextSharp />,
+  },
+  {
+    key: "ipn",
+    label: "ИНН",
+    placeholder: "123456789000",
+    icon: <IoCardSharp />,
+  },
 ];
 
 const getHeaders = () => ({
@@ -33,25 +95,35 @@ const getHeaders = () => ({
   "Content-Type": "application/json",
 });
 
-const Search = () => {
+const Search_test = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [notify, setNotify] = useState<null | string>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
-  const [additionalOption, setAdditionalOption] = useState(false);
   const [mode, setMode] = useState<SearchMode>("name");
-  const [value, setValue] = useState("");
+
+  // хранит значения всех табов
+  const [values, setValues] = useState<Record<SearchMode, string>>({
+    name: "",
+    phone: "",
+    email: "",
+    snils: "",
+    ipn: "",
+    address: "",
+    city: "",
+    passport: "",
+    gender: "",
+    birthday: "",
+    birthday_from: "",
+    birthday_to: "",
+  });
 
   const { isOpen } = useSidebar();
-
-  const pageSize = 10;
+  const pageSize = 20;
 
   const {
-    query,
-    setQuery,
     result,
     setResult,
     currentPage,
@@ -83,146 +155,89 @@ const Search = () => {
     { id: 7, title: "Подробнее..." },
   ];
 
-  const cleanValue = (value: unknown): string => {
+  const cleanValue = (value: unknown) => {
     if (value === null || value === undefined) return "";
-
-    let str = String(value).trim();
-
-    str = str.replace(/^['"]+|['"]+$/g, "");
-
-    return str;
+    return String(value)
+      .trim()
+      .replace(/^['"]+|['"]+$/g, "");
   };
 
   const normalizePhone = (raw: string) => {
     let phone = raw.replace(/\D/g, "");
-
-    if (phone.startsWith("8")) {
-      phone = "7" + phone.slice(1);
-    }
-
-    if (phone.startsWith("9")) {
-      phone = "7" + phone;
-    }
-
-    if (!phone.startsWith("7")) {
-      phone = "7" + phone;
-    }
-
+    if (phone.startsWith("8")) phone = "7" + phone.slice(1);
+    if (phone.startsWith("9")) phone = "7" + phone;
+    if (!phone.startsWith("7")) phone = "7" + phone;
     return "+" + phone;
   };
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
     if (location.state?.restore) {
-      setValue(location.state.searchValue);
-      setCurrentPage(location.state.page);
-
-      if (location.state.mode) {
-        setMode(location.state.mode);
-      }
-
-      handleSubmit(undefined, location.state.page, true);
+      setMode(location.state.mode ?? "name");
+      setValues((prev) => ({
+        ...prev,
+        [location.state.mode ?? "name"]: location.state.searchValue ?? "",
+      }));
+      handleSubmit(undefined, location.state.page ?? 1);
     }
-  }, [location.key]);
+  }, [location.state]);
 
   const handleSubmit = async (
     e?: React.FormEvent,
-    page: number = 1,
-    isPagination: boolean = false,
+    page = 1,
+    isPagination = false,
   ) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
 
-    if (!value.trim()) {
-      setError("Введите значение для поиска");
-      return;
+    const params: Record<string, string> = {
+      page: String(page),
+      page_size: String(pageSize),
+      cascade_mode: "quick",
+    };
+
+    const searchValues = { ...values };
+
+    if (searchValues.birthday) {
+      searchValues.birthday_from = "";
+      searchValues.birthday_to = "";
     }
-    if (location.state?.restore && value.trim())
-      if (!isPagination) setResult([]);
 
-    if (!isPagination) {
-      setCurrentPage(1);
-      setTotalPages(1);
+    Object.entries(searchValues).forEach(([key, value]) => {
+      const v = value.trim();
+
+      if (!v) return;
+
+      if (key === "phone") {
+        params.phone = normalizePhone(v);
+      } else {
+        params[key] = v;
+      }
+    });
+
+    if (Object.keys(params).length <= 3) {
+      setError("Введите хотя бы один параметр поиска");
+      return;
     }
 
     setLoading(true);
     setError(null);
-    setSeeSearch(false);
 
     try {
-      let endpoint = "";
-
-      const params: Record<string, string> = {
-        page: String(page),
-        page_size: String(pageSize),
-      };
-
-      switch (mode) {
-        case "name":
-          endpoint = "/api/v1/search/by-name";
-          params.name = value;
-          break;
-
-        case "phone":
-          endpoint = "/api/v1/search";
-          params.phone = normalizePhone(value);
-          break;
-
-        case "email":
-          endpoint = "/api/v1/search";
-          params.email = value;
-          break;
-
-        case "snils":
-          endpoint = "/api/v1/search";
-          params.snils = value;
-          break;
-
-        case "ipn":
-          endpoint = "/api/v1/search";
-          params.ipn = value;
-          break;
-
-        // case "id":
-        //   endpoint = "/api/v1/search";
-        //   params.person_id = value;
-        //   break;
-
-        case "address":
-          endpoint = "/api/v1/search/by-address";
-          params.address = value;
-          break;
-      }
       const qs = new URLSearchParams(params).toString();
 
       const response = await userApi.post<SearchResponse>(
-        `${endpoint}?${qs}`,
+        `/api/v1/search/advanced?${qs}`,
         null,
         { headers: getHeaders() },
       );
 
-      setSeeSearch(true);
       setRes(response.data);
-
-      if ("entity" in response.data) {
-        setResult(
-          response.data.total_records_found === 0
-            ? []
-            : [response.data.entity as any],
-        );
-      } else {
-        setResult(response.data.results ?? []);
-      }
-
+      setResult(response.data.results ?? []);
       setTotalPages(response.data.total_pages ?? 1);
       setCurrentPage(page);
+      setSeeSearch(true);
     } catch (err: any) {
       setError(
-        err?.response?.status === 500
-          ? "Сервер временно недоступен"
-          : "Ошибка поиска",
+        err?.response?.status === 500 ? "Ошибка сервера" : "Ошибка поиска",
       );
     } finally {
       setLoading(false);
@@ -239,185 +254,249 @@ const Search = () => {
   const maxVisible = 7;
   let startPage = Math.max(currentPage - Math.floor(maxVisible / 2), 1);
   let endPage = startPage + maxVisible - 1;
-
   if (endPage > totalPages) {
     endPage = totalPages;
     startPage = Math.max(endPage - maxVisible + 1, 1);
   }
-
   const visiblePages = [];
   for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
+
   return (
     <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
-      <div className="max-w-[1100px] w-full mx-auto flex flex-col gap-6">
+      <div className="max-w-[1500px] w-full mx-auto flex flex-col gap-6">
         <h1 className="text-[20px] font-semibold text-slate-900">Поиск</h1>
-
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-5"
+          className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
         >
-          <div className="flex gap-2">
-            {SEARCH_TABS.map((tab) => {
-              const isDisabled = false;
-
-              return (
-                <button
-                  key={tab.key}
-                  disabled={isDisabled}
-                  onClick={() => {
-                    if (isDisabled) return;
-
-                    setMode(tab.key);
-                    setValue("");
-                    setResult([]);
-                    setSeeSearch(false);
-                  }}
-                  className={clsx(
-                    "px-4 py-2 rounded-lg text-[14px] transition",
-                    isDisabled
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : mode === tab.key
-                        ? "bg-cyan-500 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex gap-3">
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder={SEARCH_TABS.find((t) => t.key === mode)?.placeholder}
-              className="flex-1 h-[42px] px-4 border border-gray-300 rounded-lg
-               focus:outline-none focus:ring-2 focus:ring-cyan"
-            />
-
-            <button
-              className="px-6 h-[42px] bg-cyan-500 text-white rounded-lg
-               hover:bg-cyan-600 transition"
+          <div className="grid grid-cols-[320px_1fr] gap-6">
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => handleSubmit(e)}
             >
-              Найти
-            </button>
-          </form>
-
-          {/* {mode === "address" && (
-            <p className="text-xs text-slate-500">
-              Пример: Москва, ул. Ильинка, д. 23/16
-            </p>
-          )} */}
-
-          <p className="text-[13px] text-slate-500">
-            Система автоматически определит тип данных
-          </p>
-          {seeSearch && (
-            <div className="text-[14px] text-slate-600">
-              Найдено:{" "}
-              {res?.count === 10
-                ? "Очень много совпадений, уточните запрос"
-                : res?.count || (res?.total_pages ?? 0) > 0
-                  ? res?.total
-                  : 0}
-            </div>
-          )}
-
-          {/* table */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            <div className="grid grid-cols-7 bg-gray-50 text-slate-700 text-[12px] uppercase tracking-wide font-medium py-3">
-              {chapterTitleSearch.map((chapter) => (
-                <div key={chapter.id} className="text-center">
-                  {chapter.title}
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoPersonSharp />
+                  </span>
+                  ФИО
                 </div>
-              ))}
-            </div>
 
-            {loading && <Loader />}
-
-            {result.length === 0 &&
-              res?.total_records_found === 0 &&
-              !loading && (
-                <div className="py-10 text-center text-slate-400 text-[14px]">
-                  Нет результатов
+                <div>
+                  <input
+                    placeholder="Фамилия Имя Отчество"
+                    type="text"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.name}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
-              )}
-
-            {result.map((item, index) => (
-              <motion.div
-                key={item.entity_id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.15 }}
-                className="grid grid-cols-7 text-[14px] text-slate-700 py-3 border-t border-gray-100
-                       hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <span className="text-center">
-                  {(currentPage - 1) * pageSize + index + 1}
-                </span>
-                <span className="text-center">
-                  {cleanValue(item.last_name) || "-"}
-                </span>
-                <span className="text-center">
-                  {cleanValue(item.first_name) || "-"}
-                </span>
-                <span className="text-center">
-                  {cleanValue(item.middle_name) || "-"}
-                </span>
-                <span className="text-center truncate">
-                  {cleanValue(item.emails?.[0]) || "-"}
-                </span>
-
-                <span className="text-center">
-                  {cleanValue(item.phones?.[0]) || "-"}
-                </span>
-
-                <span
-                  className="text-cyan-600 font-medium text-center"
-                  onClick={() =>
-                    navigate(`/account/search/${item.entity_id}`, {
-                      state: {
-                        item,
-                        searchValue: value,
-                        page: currentPage,
-                        mode,
-                      },
-                    })
-                  }
-                >
-                  Подробнее →
-                </span>
               </motion.div>
-            ))}
+
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <FaCalendarAlt />
+                  </span>
+                  Дата рождения
+                </div>
+
+                <div>
+                  <input
+                    type="date"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.birthday}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        birthday: e.target.value,
+                        birthday_from: "",
+                        birthday_to: "",
+                      }))
+                    }
+                  />
+                </div>
+                <div className="text-xs text-slate-500">или диапазон</div>
+                <div className="flex gap-2">
+                  <div>
+                    <span className="text-xs text-slate-500">от:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_from}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_from: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500">до:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_to}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_to: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </motion.div>
+              {SEARCH_TABS.map((tab) => (
+                <motion.div
+                  key={tab.key}
+                  className={clsx(
+                    "bg-white border rounded-xl p-4 cursor-pointer transition flex flex-col gap-3",
+                    mode === tab.key
+                      ? "border-cyan-500 shadow"
+                      : "border-gray-200 hover:border-gray-300",
+                  )}
+                  onClick={() => setMode(tab.key)}
+                >
+                  <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                    <span className="text-[18px]">{tab.icon}</span>
+                    {tab.label}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder={tab.placeholder}
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg"
+                    value={values[tab.key]}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        [tab.key]: e.target.value,
+                      }))
+                    }
+                  />
+                </motion.div>
+              ))}
+
+              <button
+                type="submit"
+                className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium
+  hover:bg-cyan-600 transition"
+              >
+                Найти
+              </button>
+            </form>
           </div>
 
-          {/* pagination */}
-          {!loading && result.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 pt-4">
-              {visiblePages.map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handleSubmit(undefined, page, true)}
-                  className={clsx(
-                    "px-3 py-1 rounded-full text-[14px] border transition",
-                    page === currentPage
-                      ? "bg-blue-600 border-blue-600 text-white"
-                      : "border-gray-300 hover:bg-gray-100",
-                  )}
+          <div className="w-full">
+            {seeSearch && (
+              <div className="text-[14px] text-slate-600">
+                Найдено:{" "}
+                {res?.count === 10
+                  ? "Очень много совпадений, уточните запрос"
+                  : res?.count || (res?.total_pages ?? 0) > 0
+                    ? res?.total
+                    : 0}
+              </div>
+            )}
+
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="grid grid-cols-7 bg-gray-50 text-slate-700 text-[12px] uppercase tracking-wide font-medium py-3">
+                {chapterTitleSearch.map((chapter) => (
+                  <div key={chapter.id} className="text-center">
+                    {chapter.title}
+                  </div>
+                ))}
+              </div>
+
+              {loading && <Loader />}
+
+              {result.length === 0 &&
+                res?.total_records_found === 0 &&
+                !loading && (
+                  <div className="py-10 text-center text-slate-400 text-[14px]">
+                    Нет результатов
+                  </div>
+                )}
+
+              {result.map((item, index) => (
+                <motion.div
+                  key={item.entity_id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="grid grid-cols-7 text-[14px] text-slate-700 py-3 border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
                 >
-                  {page}
-                </button>
+                  <span className="text-center">
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </span>
+                  <span className="text-center">
+                    {cleanValue(item.last_name) || "-"}
+                  </span>
+                  <span className="text-center">
+                    {cleanValue(item.first_name) || "-"}
+                  </span>
+                  <span className="text-center">
+                    {cleanValue(item.middle_name) || "-"}
+                  </span>
+                  <span className="text-center truncate">
+                    {cleanValue(item.emails?.[0]) || "-"}
+                  </span>
+                  <span className="text-center">
+                    {cleanValue(item.phones?.[0]) || "-"}
+                  </span>
+                  <span
+                    className="text-cyan-600 font-medium text-center"
+                    onClick={() =>
+                      navigate(`/account/search/${item.entity_id}`, {
+                        state: {
+                          item,
+                          searchValue: values[mode],
+                          page: currentPage,
+                          mode,
+                        },
+                      })
+                    }
+                  >
+                    Подробнее →
+                  </span>
+                </motion.div>
               ))}
             </div>
-          )}
+
+            {!loading && result.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 pt-4">
+                {visiblePages.map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handleSubmit(undefined, page, true)}
+                    className={clsx(
+                      "px-3 py-1 rounded-full text-[14px] border transition",
+                      page === currentPage
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "border-gray-300 hover:bg-gray-100",
+                    )}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </motion.div>
       </div>
     </section>
   );
 };
 
-export default Search;
+export default Search_test;

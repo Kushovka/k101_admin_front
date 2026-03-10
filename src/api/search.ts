@@ -24,3 +24,11 @@ export const exportPersonDossier = async (
 
   return res.data as Blob;
 };
+
+export const getFileStatuses = async () => {
+  const { data } = await userApi.get("/api/v1/files/statuses", {
+    headers: getHeaders(),
+  });
+
+  return data;
+};

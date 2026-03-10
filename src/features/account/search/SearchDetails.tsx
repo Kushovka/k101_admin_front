@@ -75,6 +75,7 @@ const getHeaders = (): Record<string, string> => {
 };
 
 const SearchDetails: React.FC = () => {
+  const pollRef = useRef<any>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { isOpen, setIsOpen } = useSidebar();
@@ -84,6 +85,13 @@ const SearchDetails: React.FC = () => {
   const [openDossier, setOpenDossier] = useState(false);
   const [aiDossier, setAIDossier] = useState("");
   const [generationTime, setGenerationTime] = useState<number | null>(null);
+  const [progress, setProgress] = useState<{
+    task_id: string;
+    progress_pct: number;
+    processed_docs: number;
+    total_docs: number;
+    status: string;
+  } | null>(null);
   const [dossierLoading, setDossierLoading] = useState(false);
   const [navDossierOpen, setNavDossierOpen] = useState(true);
   const [exportFormat, setExportFormat] = useState<"pdf" | "txt" | "docx">(
@@ -209,6 +217,10 @@ const SearchDetails: React.FC = () => {
     ),
   );
 
+  const uniqueAddress = Array.from(
+    new Set((user.addresses ?? []).map((e) => e.trim()).filter(Boolean)),
+  );
+
   const handleAIDossier = async (id: string) => {
     try {
       setDossierLoading(true);
@@ -224,6 +236,45 @@ const SearchDetails: React.FC = () => {
     } finally {
       setDossierLoading(false);
     }
+  };
+
+  const fetchProgress = async (taskId: string) => {
+    try {
+      const res = await userApi.get(`/api/v1/corrections/progress/${taskId}`, {
+        headers: getHeaders(),
+      });
+
+      const data = res.data;
+
+      setProgress({
+        task_id: data.task_id,
+        progress_pct: data.progress_pct,
+        processed_docs: data.processed_docs,
+        total_docs: data.total_docs,
+        status: data.status,
+      });
+
+      if (data.status !== "processing") {
+        clearInterval(pollRef.current);
+      }
+    } catch (err: any) {
+      // 🔹 если задача ещё не стартовала
+      if (err?.response?.status === 404) {
+        console.log("Task not started yet...");
+        return;
+      }
+
+      console.error(err);
+      clearInterval(pollRef.current);
+    }
+  };
+
+  const startProgressPolling = (taskId: string) => {
+    fetchProgress(taskId);
+
+    pollRef.current = setInterval(() => {
+      fetchProgress(taskId);
+    }, 2000);
   };
 
   const refetchSearchDetails = async () => {
@@ -283,6 +334,28 @@ const SearchDetails: React.FC = () => {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+      {progress && (
+        <div className="fixed bottom-6 right-6 w-[320px] bg-white border rounded-lg shadow-lg p-4">
+          <div className="text-sm font-medium text-slate-700 mb-2">
+            Переименование колонок
+          </div>
+
+          <div className="text-xs text-slate-500 mb-2">
+            {progress.processed_docs} / {progress.total_docs}
+          </div>
+
+          <div className="w-full h-[6px] bg-gray-200 rounded">
+            <div
+              className="h-[6px] bg-cyan-500 rounded transition-all"
+              style={{ width: `${progress.progress_pct}%` }}
+            />
+          </div>
+
+          <div className="text-xs text-slate-500 mt-1">
+            {progress.progress_pct}%
+          </div>
+        </div>
       )}
       <div className="w-[1100px] ml-[420px]">
         {/* ЛЕВАЯ ФИКС НАВИГАЦИЯ */}
@@ -499,15 +572,19 @@ const SearchDetails: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                {user.cities?.[0] && <p>Город: {cleanValue(user.cities[0])}</p>}
                 {user.ipn?.[0] && <p>ИНН: {cleanValue(user.ipn[0])}</p>}
 
-                {user.addresses?.map((a, i) => (
-                  <p key={i}>
-                    Адрес {i + 1}: {cleanValue(a)}
-                  </p>
-                ))}
+                {uniqueAddress.length > 0 && (
+                  <div className="flex items-start gap-1">
+                    <span className="min-w-[50px]">Адреса:</span>
+
+                    <div className="flex flex-col gap-1">
+                      {uniqueAddress.map((address, i) => (
+                        <span key={i}>{address}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* {user.entity_id && <p>ID: {user.entity_id}</p>} */}
               </div>
@@ -725,11 +802,16 @@ const SearchDetails: React.FC = () => {
           rawFileId={renameModal.rawFileId}
           availableColumns={renameModal.columns}
           onClose={() => setRenameModal(null)}
-          onCompleted={(message) => {
+          onCompleted={(data) => {
             setRenameModal(null);
+
+            if (data?.task_id) {
+              startProgressPolling(data.task_id);
+            }
+
             setToast({
-              message,
-              type: message.includes("Ошибка") ? "error" : "access",
+              message: data.message ?? "Задача запущена",
+              type: "access",
             });
           }}
         />
