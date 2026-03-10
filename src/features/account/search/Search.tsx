@@ -231,10 +231,8 @@ const Search = () => {
       );
 
       setRes(response.data);
-
-      setResult(response.data.entity ? [response.data.entity] : []);
-
-      setTotalPages(response.data.total_pages ?? 1);
+      setResult(response.data.entities?.map((item) => item.entity) ?? []);
+      setTotalPages(response.data.entities?.[0]?.total_pages ?? 1);
       setCurrentPage(page);
       setSeeSearch(true);
     } catch (err: any) {
@@ -403,7 +401,7 @@ const Search = () => {
           <div className="w-full">
             {seeSearch && (
               <div className="text-[14px] text-slate-600">
-                Найдено: {res?.total_records_found ?? 0}
+                Найдено: {res?.total_entities ?? 0}
               </div>
             )}
 
@@ -419,7 +417,7 @@ const Search = () => {
               {loading && <Loader />}
 
               {result.length === 0 &&
-                res?.total_records_found === 0 &&
+                (res?.total_entities ?? 0) === 0 &&
                 !loading && (
                   <div className="py-10 text-center text-slate-400 text-[14px]">
                     Нет результатов
