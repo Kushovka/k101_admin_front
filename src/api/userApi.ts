@@ -19,7 +19,7 @@ userApi.interceptors.response.use(
   (res) => res,
   async (error) => {
     const status = error.response?.status;
-    const original = error.config;
+    const original = error.config || {};
 
     // нам интересует только access 401
     if (status !== 401) {
@@ -43,7 +43,6 @@ userApi.interceptors.response.use(
       window.dispatchEvent(new CustomEvent("session-expired"));
       return Promise.reject(error);
     }
-
 
     // повторяем запрос 1 раз
     original.__isRetry = true;

@@ -1,4 +1,6 @@
 import axios, { AxiosResponse } from "axios";
+import adminApi from "../../api/adminApi";
+import userApi from "../../api/userApi";
 
 const API_URL = import.meta.env.VITE_USER_API_URL;
 
@@ -30,6 +32,9 @@ export const login = async (
   localStorage.setItem("access_token", access_token);
   localStorage.setItem("refresh_token", refresh_token);
 
+  axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+  userApi.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+  adminApi.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
 
   return res.data;
 };
@@ -58,6 +63,16 @@ export async function refreshTokens() {
 
     localStorage.setItem("access_token", res.data.access_token);
     localStorage.setItem("refresh_token", res.data.refresh_token);
+
+    axios.defaults.headers.common["Authorization"] =
+      `Bearer ${res.data.access_token}`;
+
+    userApi.defaults.headers.common["Authorization"] =
+      `Bearer ${res.data.access_token}`;
+
+    adminApi.defaults.headers.common["Authorization"] =
+      `Bearer ${res.data.access_token}`;
+
     return true;
   } catch (e: any) {
     const status = e.response?.status;
@@ -69,4 +84,3 @@ export async function refreshTokens() {
     return false;
   }
 }
-

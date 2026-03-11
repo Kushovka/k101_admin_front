@@ -19,7 +19,7 @@ adminApi.interceptors.response.use(
   (res) => res,
   async (error) => {
     const status = error.response?.status;
-    const original = error.config;
+    const original = error.config || {};
 
     if (status !== 401) {
       return Promise.reject(error);
