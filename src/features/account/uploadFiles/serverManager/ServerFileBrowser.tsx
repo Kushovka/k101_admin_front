@@ -206,7 +206,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           offset,
         });
         console.log("UPLOAD BATCH:", res);
-        if (!jobId && res?.job_id) {
+        if (res?.job_id) {
           jobId = res.job_id;
           pollDirectoryProgress(res.job_id);
         }
