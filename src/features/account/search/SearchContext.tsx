@@ -7,11 +7,7 @@ import React, {
 
 import type { SearchContextValue } from "../../../types/searchContext.types";
 
-import type {
-  SearchResultItem,
-  SearchForm,
-  SearchResponse,
-} from "../../../types/search";
+import type { SearchResponse, SearchResultItem } from "../../../types/search";
 
 const SearchContext = createContext<SearchContextValue | undefined>(undefined);
 
@@ -26,7 +22,6 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [res, setRes] = useState<SearchResponse | null>(null);
-
 
   const value: SearchContextValue = {
     query,

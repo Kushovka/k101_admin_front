@@ -224,9 +224,6 @@ const UploadFiles = () => {
   };
 
   const statusMeta: Record<string, { label: string }> = {
-    uploaded: {
-      label: "Загружен",
-    },
     extracting: {
       label: "Обрабатывается",
     },
@@ -238,6 +235,12 @@ const UploadFiles = () => {
     },
     reprocessing: {
       label: "Переобработка",
+    },
+    pending: {
+      label: "Ожидание",
+    },
+    paused: {
+      label: "На паузе",
     },
   };
 
@@ -532,7 +535,7 @@ const UploadFiles = () => {
         console.error("Status polling error", err);
         setError("Ошибка попробуйте позже.");
       }
-    }, 10000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [currentUser, token]);
@@ -1180,21 +1183,23 @@ const UploadFiles = () => {
               {fileStatuses.total}
             </div>
 
-            {fileStatuses.statuses.map((s) => {
-              const meta = statusMeta[s.status] || {
-                label: s.status,
-                color: "bg-gray-100 text-gray-700",
-              };
+            {fileStatuses.statuses
+              .filter((s) => s.status !== "uploaded")
+              .map((s) => {
+                const meta = statusMeta[s.status] || {
+                  label: s.status,
+                  color: "bg-gray-100 text-gray-700",
+                };
 
-              return (
-                <div
-                  key={s.status}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border`}
-                >
-                  {meta.label}: {s.count}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={s.status}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border`}
+                  >
+                    {meta.label}: {s.count}
+                  </div>
+                );
+              })}
           </div>
         )}
 

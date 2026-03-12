@@ -174,7 +174,7 @@ export const useParsingQueue = () => {
   useEffect(() => {
     fetchQueue();
 
-    const interval = setInterval(fetchQueue, 2000);
+    const interval = setInterval(fetchQueue, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

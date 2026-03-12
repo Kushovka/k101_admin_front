@@ -205,8 +205,8 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           max_files: 5000,
           offset,
         });
-
-        if (!jobId && res?.job_id) {
+        console.log("UPLOAD BATCH:", res);
+        if (res?.job_id) {
           jobId = res.job_id;
           pollDirectoryProgress(res.job_id);
         }

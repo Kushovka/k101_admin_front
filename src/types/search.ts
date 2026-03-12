@@ -1,11 +1,3 @@
-export interface SearchForm {
-  name: string;
-  phone: string;
-  person_id: string;
-  email: string;
-  age: string;
-}
-
 export interface SearchResultItem {
   entity_id: string;
   first_name?: string;
@@ -15,16 +7,23 @@ export interface SearchResultItem {
   phones: string[];
 }
 
-export interface SearchResponse {
+export interface SearchEntityWrapper {
   entity: SearchResultItem;
   total_records_found: number;
   total_pages: number;
   page: number;
   page_size: number;
+  cascade_depth_reached: number;
+  execution_time_ms: number;
+  was_limited: boolean;
+  was_saturated: boolean;
 }
 
-export type CreateComplaintPayload = {
-  doc_id: string;
-  field_name: string;
-  message: string;
-};
+export interface SearchResponse {
+  entities: SearchEntityWrapper[];
+  total_entities: number;
+  message?: string;
+  cost?: number;
+  was_free?: boolean;
+  free_requests_remaining?: number;
+}
