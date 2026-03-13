@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   browseServerPath,
+  getReclassifyStatus,
   getUploadDirectoryStatus,
+  reclassifyUngrouped,
   uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
@@ -41,6 +43,10 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
   } | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [reclassifyProgress, setReclassifyProgress] = useState<number | null>(
+    null,
+  );
+  const [reclassifyStatus, setReclassifyStatus] = useState<string | null>(null);
 
   const loadDirectory = async (path: string) => {
     try {
@@ -80,6 +86,62 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     setSelected([]);
   };
 
+  const pollReclassify = (jobId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const status = await getReclassifyStatus(jobId);
+
+        setReclassifyStatus(status.status);
+        setReclassifyProgress(status.progress_pct ?? 0);
+
+        if (status.status === "completed") {
+          clearInterval(interval);
+
+          setToast({
+            type: "access",
+            message: "Переклассификация завершена",
+          });
+
+          setReclassifyProgress(null);
+          setReclassifyStatus(null);
+
+          endBusy();
+        }
+
+        if (status.status === "failed") {
+          clearInterval(interval);
+
+          setToast({
+            type: "error",
+            message: "Ошибка переклассификации",
+          });
+
+          setReclassifyProgress(null);
+          setReclassifyStatus(null);
+
+          endBusy();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 30000);
+  };
+
+  const startReclassify = async () => {
+    try {
+      startBusy();
+
+      const res = await reclassifyUngrouped(1000, true);
+
+      if (res.job_id) {
+        pollReclassify(res.job_id);
+      }
+    } catch (e: any) {
+      console.error(e);
+      onError?.("Ошибка запуска переклассификации");
+    }
+  };
+
   const toggleSelectAll = () => {
     if (allSelected) {
       clearSelection();
@@ -111,6 +173,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       endBusy();
     }
   };
+
   const pollDirectoryProgress = (jobId: string) => {
     // если уже есть polling — остановить
     if (pollRef.current) {
@@ -329,6 +392,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         </button>
 
         <button
+          onClick={startReclassify}
+          className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+          Переклассифицировать файлы
+        </button>
+
+        <button
           onClick={handleUploadDirectory}
           disabled={!currentPath || isUploading}
           className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-300"
@@ -366,6 +436,22 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           <div className="text-red-600">Ошибки: {stats.failed}</div>
           <div className="text-yellow-600">Дубликаты: {stats.duplicates}</div>
           <div>Статус: {stats.status}</div>
+        </div>
+      )}
+
+      {reclassifyProgress !== null && (
+        <div className="mt-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span>AI переклассификация</span>
+            <span>{reclassifyProgress.toFixed(1)}%</span>
+          </div>
+
+          <div className="w-full h-2 bg-gray-200 rounded">
+            <div
+              className="h-2 bg-purple-500 rounded transition-all"
+              style={{ width: `${reclassifyProgress}%` }}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -387,3 +387,29 @@ export const getUploadDirectoryStatus = async (jobId: string) => {
   );
   return res.data;
 };
+
+export const reclassifyUngrouped = async (
+  limit = 1000,
+  skipAlreadyClassified = true,
+) => {
+  const res = await userApi.post(
+    `/api/v1/files/server/reclassify-ungrouped`,
+    {},
+    {
+      params: {
+        limit,
+        skip_already_classified: skipAlreadyClassified,
+      },
+    },
+  );
+
+  return res.data;
+};
+
+export const getReclassifyStatus = async (jobId: string) => {
+  const res = await userApi.get(
+    `/api/v1/files/server/reclassify-ungrouped/status/${jobId}`,
+  );
+
+  return res.data;
+};
