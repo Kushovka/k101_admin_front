@@ -218,6 +218,12 @@ const SearchDetails: React.FC = () => {
     ),
   );
 
+  const uniquePhones = Array.from(
+    new Set(
+      (user.phones ?? []).map((e) => e.trim().toLowerCase()).filter(Boolean),
+    ),
+  );
+
   const uniqueAddress = Array.from(
     new Set((user.addresses ?? []).map((e) => e.trim()).filter(Boolean)),
   );
@@ -536,17 +542,24 @@ const SearchDetails: React.FC = () => {
                   </p>
                 )}
 
-                {user.phones?.[0] && (
-                  <p>
-                    Телефон:{" "}
-                    <span
-                      className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
-                      onClick={() => handleCopy(user.phones![0])}
-                    >
-                      {cleanValue(user.phones![0])}
-                    </span>
-                  </p>
+                {uniquePhones.length > 0 && (
+                  <div className="flex items-start gap-1">
+                    <span className="min-w-[50px]">Телефоны:</span>
+
+                    <div className="flex flex-col gap-1">
+                      {uniquePhones.map((phone, i) => (
+                        <span
+                          key={i}
+                          className="cursor-copy text-cyan-600 hover:text-cyan-700 transition"
+                          onClick={() => handleCopy(phone)}
+                        >
+                          {cleanValue(phone)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
+
                 {user.snils?.[0] && <p>СНИЛС: {cleanValue(user.snils[0])}</p>}
                 {user.age && <p>Возраст: {cleanValue(user.age)}</p>}
                 {user.gender && (
@@ -573,6 +586,7 @@ const SearchDetails: React.FC = () => {
                     </div>
                   </div>
                 )}
+
                 {user.ipn?.[0] && <p>ИНН: {cleanValue(user.ipn[0])}</p>}
 
                 {uniqueAddress.length > 0 && (
