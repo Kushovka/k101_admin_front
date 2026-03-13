@@ -256,7 +256,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         status: "Сканирование файлов...",
       });
 
-      let offset = 40000;
+      let offset = 70000;
       let jobId: string | null = null;
       let hasMore = true;
 
