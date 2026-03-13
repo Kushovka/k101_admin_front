@@ -1153,7 +1153,6 @@ const UploadFiles = () => {
               className="px-3 py-2 text-[14px] border border-gray-300 rounded-lg bg-white"
             >
               <option value="">Все статусы</option>
-              <option value="uploaded">Загружен</option>
               <option value="extracting">Обработка</option>
               <option value="extracted">Готово</option>
               <option value="failed">Ошибка</option>
