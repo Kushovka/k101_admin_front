@@ -5,3 +5,9 @@ export interface ToastProps {
   type?: ToastType;
   onClose: () => void;
 }
+
+export type ToastItem = {
+  id: number;
+  message: string;
+  type: "error" | "access";
+};

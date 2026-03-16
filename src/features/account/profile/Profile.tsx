@@ -71,7 +71,6 @@ const Profile = () => {
       setNotify("access_save");
       setTimeout(() => setNotify(null), 3000);
     } catch (err) {
-
       setNotify("error_save");
       setTimeout(() => setNotify(null), 3000);
     } finally {
@@ -171,6 +170,9 @@ const Profile = () => {
           onClose={() => setNotify(null)}
         />
       )}
+      {error && (
+        <Toast message={error} type="error" onClose={() => setError(null)} />
+      )}
 
       {loading && <Loader />}
 
@@ -179,174 +181,167 @@ const Profile = () => {
           Профиль пользователя
         </h1>
 
-        {!error ? (
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 gap-8"
+        >
+          {/* LEFT CARD */}
           <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-2 gap-8"
+            variants={item}
+            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
           >
-            {/* LEFT CARD */}
-            <motion.div
-              variants={item}
-              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
-            >
-              <p className="text-[16px] font-medium text-slate-900 text-center">
-                Основная информация
+            <p className="text-[16px] font-medium text-slate-900 text-center">
+              Основная информация
+            </p>
+
+            <div className="space-y-3 text-[15px]">
+              <p className="flex justify-between text-slate-600">
+                <span>Никнейм:</span>
+                <span className="font-medium text-slate-900">
+                  {user?.username}
+                </span>
               </p>
 
-              <div className="space-y-3 text-[15px]">
-                <p className="flex justify-between text-slate-600">
-                  <span>Никнейм:</span>
-                  <span className="font-medium text-slate-900">
-                    {user?.username}
-                  </span>
-                </p>
+              <EditableField label="Имя" value={name} onChange={setName} />
 
-                <EditableField label="Имя" value={name} onChange={setName} />
+              <EditableField
+                label="Фамилия"
+                value={surname}
+                onChange={setSurname}
+              />
 
-                <EditableField
-                  label="Фамилия"
-                  value={surname}
-                  onChange={setSurname}
-                />
+              <EditableField label="Email" value={email} onChange={setEmail} />
 
-                <EditableField
-                  label="Email"
-                  value={email}
-                  onChange={setEmail}
-                />
+              <p className="flex justify-between text-slate-600">
+                <span>Роль:</span>
+                <span className="font-medium text-slate-900">{user?.role}</span>
+              </p>
 
-                <p className="flex justify-between text-slate-600">
-                  <span>Роль:</span>
-                  <span className="font-medium text-slate-900">
-                    {user?.role}
-                  </span>
-                </p>
-
-                <p className="flex justify-between text-slate-600">
-                  <span>Дата регистрации:</span>
-                  <span className="font-medium text-slate-900">
-                    {user?.registration_date
-                      ? new Date(user.registration_date).toLocaleDateString()
-                      : "-"}
-                  </span>
-                </p>
-              </div>
-              {/* <a href={link} target="_blank" rel="noreferrer">
+              <p className="flex justify-between text-slate-600">
+                <span>Дата регистрации:</span>
+                <span className="font-medium text-slate-900">
+                  {user?.registration_date
+                    ? new Date(user.registration_date).toLocaleDateString()
+                    : "-"}
+                </span>
+              </p>
+            </div>
+            {/* <a href={link} target="_blank" rel="noreferrer">
                 <button className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition">
                   привязать тг
                 </button>
               </a> */}
 
-              <button
-                onClick={saveProfile}
-                className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
-              >
-                сохранить изменения
-              </button>
-            </motion.div>
-
-            {/* RIGHT CARD */}
-            <motion.div
-              variants={item}
-              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
+            <button
+              onClick={saveProfile}
+              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
             >
-              <div className="flex flex-col gap-4">
-                <p className="text-[16px] font-medium text-slate-900 text-center">
-                  Тарифный план
-                </p>
+              сохранить изменения
+            </button>
+          </motion.div>
 
-                <p className="flex justify-between text-slate-600 text-[15px]">
-                  Число свободных запросов:{" "}
-                  <span className="font-medium text-slate-900">
-                    {user?.free_requests_count}
-                  </span>
-                </p>
+          {/* RIGHT CARD */}
+          <motion.div
+            variants={item}
+            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
+          >
+            <div className="flex flex-col gap-4">
+              <p className="text-[16px] font-medium text-slate-900 text-center">
+                Тарифный план
+              </p>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">Баланс:</span>
-                  <span className="text-[20px] font-semibold text-slate-900">
-                    {user?.balance} ₽
-                  </span>
-                </div>
+              <p className="flex justify-between text-slate-600 text-[15px]">
+                Число свободных запросов:{" "}
+                <span className="font-medium text-slate-900">
+                  {user?.free_requests_count}
+                </span>
+              </p>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600">Баланс:</span>
+                <span className="text-[20px] font-semibold text-slate-900">
+                  {user?.balance} ₽
+                </span>
               </div>
+            </div>
 
-              <button
-                onClick={() => setOpenModal(true)}
-                className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
-              >
-                пополнить баланс
-              </button>
-            </motion.div>
+            <button
+              onClick={() => setOpenModal(true)}
+              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+            >
+              пополнить баланс
+            </button>
+          </motion.div>
 
-            {/* MODAL */}
-            {openModal && (
+          {/* MODAL */}
+          {openModal && (
+            <div
+              onClick={() => {
+                setOpenModal(false);
+                setPayInput(100);
+              }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+            >
               <div
-                onClick={() => {
-                  setOpenModal(false);
-                  setPayInput(100);
-                }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-xl p-6 shadow-xl w-[360px] flex flex-col gap-5"
               >
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-white rounded-xl p-6 shadow-xl w-[360px] flex flex-col gap-5"
-                >
-                  <p className="text-lg font-semibold text-slate-900 text-center">
-                    Оплата
-                  </p>
+                <p className="text-lg font-semibold text-slate-900 text-center">
+                  Оплата
+                </p>
 
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="amount" className="text-sm text-slate-600">
-                      Введите сумму
-                    </label>
-                    <input
-                      id="amount"
-                      type="number"
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      onChange={(e) => setPayInput(Number(e.target.value))}
-                      value={payInput}
-                      placeholder="*введите сумму от 100₽"
-                    />
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="amount" className="text-sm text-slate-600">
+                    Введите сумму
+                  </label>
+                  <input
+                    id="amount"
+                    type="number"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    onChange={(e) => setPayInput(Number(e.target.value))}
+                    value={payInput}
+                    placeholder="*введите сумму от 100₽"
+                  />
 
-                    {payInput < 100 && (
-                      <span className="text-red-500 text-xs">
-                        *пополнение от 100₽
-                      </span>
-                    )}
-                  </div>
+                  {payInput < 100 && (
+                    <span className="text-red-500 text-xs">
+                      *пополнение от 100₽
+                    </span>
+                  )}
+                </div>
 
-                  <p className="text-xs text-slate-500">
-                    *или выберите из предложенных
-                  </p>
+                <p className="text-xs text-slate-500">
+                  *или выберите из предложенных
+                </p>
 
-                  <div className="flex justify-between gap-2">
-                    <button
-                      onClick={() => setPayInput((p) => Number(p) + 100)}
-                      className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                    >
-                      +100₽
-                    </button>
-                    <button
-                      onClick={() => setPayInput((p) => Number(p) + 500)}
-                      className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                    >
-                      +500₽
-                    </button>
-                    <button
-                      onClick={() => setPayInput((p) => Number(p) + 1000)}
-                      className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                    >
-                      +1000₽
-                    </button>
-                  </div>
+                <div className="flex justify-between gap-2">
+                  <button
+                    onClick={() => setPayInput((p) => Number(p) + 100)}
+                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                  >
+                    +100₽
+                  </button>
+                  <button
+                    onClick={() => setPayInput((p) => Number(p) + 500)}
+                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                  >
+                    +500₽
+                  </button>
+                  <button
+                    onClick={() => setPayInput((p) => Number(p) + 1000)}
+                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
+                  >
+                    +1000₽
+                  </button>
+                </div>
 
-                  <div className="flex flex-col gap-2">
-                    <p className="text-xs text-slate-500">Способ оплаты</p>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-slate-500">Способ оплаты</p>
 
-                    <div className="flex gap-2">
-                      {/* <button
+                  <div className="flex gap-2">
+                    {/* <button
                         type="button"
                         onClick={() => setProvider("cryptocloud")}
                         className={clsx(
@@ -359,7 +354,7 @@ const Profile = () => {
                         CryptoCloud
                       </button> */}
 
-                      {/* <button
+                    {/* <button
                         type="button"
                         onClick={() => setProvider("bithide")}
                         className={clsx(
@@ -371,35 +366,32 @@ const Profile = () => {
                       >
                         BitHide
                       </button> */}
-                      <button
-                        type="button"
-                        onClick={() => setProvider("plisio")}
-                        className={clsx(
-                          "px-3 py-2 rounded-lg border text-sm font-medium transition flex-1",
-                          provider === "plisio"
-                            ? "bg-cyan-500 text-white border-cyan-500"
-                            : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
-                        )}
-                      >
-                        Plisio
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProvider("plisio")}
+                      className={clsx(
+                        "px-3 py-2 rounded-lg border text-sm font-medium transition flex-1",
+                        provider === "plisio"
+                          ? "bg-cyan-500 text-white border-cyan-500"
+                          : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
+                      )}
+                    >
+                      Plisio
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleDeposit}
-                    className="px-3 py-2 rounded-lg border text-sm font-medium text-slate-900 hover:bg-green-500/70 hover:text-white transition w-full"
-                  >
-                    оплатить
-                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleDeposit}
+                  className="px-3 py-2 rounded-lg border text-sm font-medium text-slate-900 hover:bg-green-500/70 hover:text-white transition w-full"
+                >
+                  оплатить
+                </button>
               </div>
-            )}
-          </motion.div>
-        ) : (
-          <Toast message={error} type="error" onClose={() => setError(null)} />
-        )}
+            </div>
+          )}
+        </motion.div>
       </div>
     </section>
   );
