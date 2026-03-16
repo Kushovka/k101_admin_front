@@ -48,6 +48,7 @@ const UserDetails = () => {
   const [notify, setNotify] = useState<string | null>(null);
   const [payInput, setPayInput] = useState<number>(100);
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [openDelete, setOpenDelete] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<UpdateUserPayload>({
     first_name: "",
@@ -94,9 +95,7 @@ const UserDetails = () => {
     try {
       await isDeletedUser(id);
       navigate("/account/users");
-    } catch (err) {
-
-    }
+    } catch (err) {}
   };
 
   /* deposit users */
@@ -136,9 +135,7 @@ const UserDetails = () => {
         surname: res.last_name,
         email: res.email,
       });
-    } catch (err) {
-
-    }
+    } catch (err) {}
   };
 
   useEffect(() => {
@@ -391,6 +388,57 @@ const UserDetails = () => {
             </motion.div>
           </div>
         )}
+
+        {/* DELETE MODAL */}
+        {openDelete && (
+          <div
+            onClick={() => setOpenDelete(false)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-xl p-6 shadow-xl w-[380px] flex flex-col gap-5"
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 text-red-600 text-xl font-bold">
+                  !
+                </div>
+
+                <p className="text-lg font-semibold text-slate-900">
+                  Удалить пользователя?
+                </p>
+
+                <p className="text-sm text-slate-500">
+                  Пользователь{" "}
+                  <span className="font-medium text-slate-800">
+                    {user.nickName}
+                  </span>{" "}
+                  будет удалён без возможности восстановления.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setOpenDelete(false)}
+                  className="flex-1 px-4 py-2 rounded-lg border text-sm font-medium text-slate-700 hover:bg-gray-100 transition"
+                >
+                  Отмена
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+                >
+                  Удалить
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/account/users")}
@@ -399,8 +447,9 @@ const UserDetails = () => {
             <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
             Назад
           </button>
+
           <button
-            onClick={handleDelete}
+            onClick={() => setOpenDelete(true)}
             className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
           >
             Удалить пользователя
