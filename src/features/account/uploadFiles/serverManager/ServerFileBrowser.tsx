@@ -392,13 +392,6 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         </button>
 
         <button
-          onClick={startReclassify}
-          className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-        >
-          Переклассифицировать файлы
-        </button>
-
-        <button
           onClick={handleUploadDirectory}
           disabled={!currentPath || isUploading}
           className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded disabled:bg-gray-300"
@@ -406,6 +399,12 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           Загрузить всю папку
         </button>
       </div>
+      <button
+        onClick={startReclassify}
+        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+      >
+        Переклассифицировать файлы
+      </button>
       {progress !== null && (
         <div className="mt-3">
           <div className="flex justify-between text-sm mb-1">
