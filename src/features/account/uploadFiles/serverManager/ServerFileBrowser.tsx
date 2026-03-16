@@ -21,13 +21,28 @@ type Props = {
   onError?: (msg: string) => void;
 };
 
+type UploadJob = {
+  jobId: string;
+  progress: number;
+  stats?: {
+    total?: number;
+    processed?: number;
+    success?: number;
+    failed?: number;
+    duplicates?: number;
+    status?: string;
+  };
+};
+
 const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({});
 
   const { startBusy, endBusy } = useUploadStore();
-
+  const [jobs, setJobs] = useState<UploadJob[]>([]);
+  const [showModal, setShowModal] = useState(false);
   const [currentPath, setCurrentPath] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
+
   const [stats, setStats] = useState<{
     total?: number;
     processed?: number;
@@ -36,11 +51,14 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     duplicates?: number;
     status?: string;
   } | null>(null);
+
   const [progress, setProgress] = useState<number | null>(null);
+
   const [toast, setToast] = useState<{
     type: "error" | "access";
     message: string;
   } | null>(null);
+
   const [selected, setSelected] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [reclassifyProgress, setReclassifyProgress] = useState<number | null>(
@@ -175,74 +193,58 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
   };
 
   const pollDirectoryProgress = (jobId: string) => {
-    // если уже есть polling — остановить
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-
-    pollRef.current = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         const status = await getUploadDirectoryStatus(jobId);
 
-        setProgress(status.progress_pct ?? 0);
+        setJobs((prev) =>
+          prev.map((job) =>
+            job.jobId === jobId
+              ? {
+                  ...job,
+                  progress: status.progress_pct ?? 0,
+                  stats: {
+                    total: status.total,
+                    processed: status.processed,
+                    success: status.success,
+                    failed: status.failed_count,
+                    duplicates: status.duplicates,
+                    status: status.status,
+                  },
+                }
+              : job,
+          ),
+        );
 
-        setStats({
-          total: status.total,
-          processed: status.processed,
-          success: status.success,
-          failed: status.failed_count,
-          duplicates: status.duplicates,
-          status: status.status,
-        });
-
-        if (status.status === "completed") {
-          if (pollRef.current) {
-            clearInterval(pollRef.current);
-            pollRef.current = null;
-          }
-
-          setToast({
-            type: "access",
-            message: `Загружено ${status.success} файлов`,
-          });
-
-          setProgress(null);
-          setIsUploading(false);
-          endBusy();
-          onUploaded?.();
-        }
-
-        if (status.status === "failed") {
-          if (pollRef.current) {
-            clearInterval(pollRef.current);
-            pollRef.current = null;
-          }
-
-          setToast({
-            type: "error",
-            message: "Ошибка обработки директории",
-          });
-
-          setProgress(null);
-          setIsUploading(false);
-          endBusy();
+        if (status.status === "completed" || status.status === "failed") {
+          clearInterval(pollRefs.current[jobId]);
+          delete pollRefs.current[jobId];
         }
       } catch (e) {
         console.error(e);
-        return;
       }
     }, 5000);
+
+    pollRefs.current[jobId] = interval;
   };
 
   useEffect(() => {
     return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
+      Object.values(pollRefs.current).forEach(clearInterval);
     };
   }, []);
+
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showModal]);
 
   const handleUploadDirectory = async () => {
     if (!currentPath || isUploading) return;
@@ -251,13 +253,14 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       startBusy();
       setIsUploading(true);
       setProgress(0);
+      setJobs([]);
+      setShowModal(true);
 
       setStats({
         status: "Сканирование файлов...",
       });
 
       let offset = 0;
-      let jobId: string | null = null;
       let hasMore = true;
 
       while (hasMore) {
@@ -268,9 +271,18 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           max_files: 5000,
           offset,
         });
+
         console.log("UPLOAD BATCH:", res);
+
         if (res?.job_id) {
-          jobId = res.job_id;
+          setJobs((prev) => [
+            ...prev,
+            {
+              jobId: res.job_id,
+              progress: 0,
+            },
+          ]);
+
           pollDirectoryProgress(res.job_id);
         }
 
@@ -286,7 +298,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
 
       console.error(e);
       onError?.(message);
-
+    } finally {
       setIsUploading(false);
       endBusy();
     }
@@ -405,37 +417,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       >
         Переклассифицировать файлы
       </button>
-      {progress !== null && (
-        <div className="mt-3">
-          <div className="flex justify-between text-sm mb-1">
-            <span>Обработка директории</span>
-            <span>
-              {typeof progress === "number" ? progress.toFixed(1) : "0"}%
-            </span>
-          </div>
-
-          <div className="w-full h-2 bg-gray-200 rounded">
-            <div
-              className="h-2 bg-indigo-500 rounded transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-      {stats && (
-        <div className="text-xs text-slate-500 mt-1">
-          {stats.processed} / {stats.total} файлов
-        </div>
-      )}
-      {stats && (
-        <div className="mt-3 text-sm text-slate-600 grid grid-cols-2 gap-x-6 gap-y-1">
-          <div>Всего: {stats.total}</div>
-          <div>Обработано: {stats.processed}</div>
-          <div className="text-green-600">Успешно: {stats.success}</div>
-          <div className="text-red-600">Ошибки: {stats.failed}</div>
-          <div className="text-yellow-600">Дубликаты: {stats.duplicates}</div>
-          <div>Статус: {stats.status}</div>
-        </div>
+      {jobs.length > 0 && !showModal && (
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700"
+        >
+          Посмотреть загрузку ({jobs.length})
+        </button>
       )}
 
       {reclassifyProgress !== null && (
@@ -450,6 +438,71 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
               className="h-2 bg-purple-500 rounded transition-all"
               style={{ width: `${reclassifyProgress}%` }}
             />
+          </div>
+        </div>
+      )}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white w-[650px] max-h-[80vh] overflow-y-auto rounded-xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between mb-4">
+              <h2 className="font-semibold">Загрузка батчей</h2>
+
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+
+            {jobs.map((job) => (
+              <div
+                key={job.jobId}
+                className={`border rounded p-3 mb-3 ${
+                  job.stats?.status === "completed"
+                    ? "bg-green-50"
+                    : job.stats?.status === "failed"
+                      ? "bg-red-50"
+                      : ""
+                }`}
+              >
+                <div className="text-xs text-gray-500 mb-1">{job.jobId}</div>
+
+                <div className="w-full h-2 bg-gray-200 rounded">
+                  <div
+                    className="h-2 bg-indigo-500 rounded"
+                    style={{ width: `${job.progress}%` }}
+                  />
+                </div>
+
+                {job.stats && (
+                  <div className="text-xs mt-2 grid grid-cols-2 gap-2">
+                    <div>Всего: {job.stats.total}</div>
+                    <div>Обработано: {job.stats.processed}</div>
+
+                    <div className="text-green-600">
+                      Успешно: {job.stats.success}
+                    </div>
+
+                    <div className="text-red-600">
+                      Ошибки: {job.stats.failed}
+                    </div>
+
+                    <div className="text-yellow-600">
+                      Дубликаты: {job.stats.duplicates}
+                    </div>
+
+                    <div>Статус: {job.stats.status}</div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
