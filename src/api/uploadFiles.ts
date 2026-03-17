@@ -434,3 +434,19 @@ export const uploadDatasetFromServer = async ({
 
   return res.data;
 };
+
+export const getDatasetColumns = async (id: string) => {
+  const { data } = await userApi.get(`/api/v1/datasets/${id}/columns`);
+  return data;
+};
+
+export const postConfirmDataset = async (
+  id: string,
+  per_file_columns: Record<string, string>,
+) => {
+  const { data } = await userApi.post(`/api/v1/datasets/${id}/confirm`, {
+    per_file_columns,
+  });
+
+  return data;
+};
