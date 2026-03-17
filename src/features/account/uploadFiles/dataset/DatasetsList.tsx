@@ -2,7 +2,12 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { IoIosArrowDown } from "react-icons/io";
-import { getDatasetById, getDatasets } from "../../../../api/uploadFiles";
+import {
+  getDatasetById,
+  getDatasetColumns,
+  getDatasets,
+  postConfirmDataset,
+} from "../../../../api/uploadFiles";
 import Toast from "../../../../components/toast/Toast";
 
 const DatasetsList = () => {
@@ -13,6 +18,11 @@ const DatasetsList = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [error, setError] = useState<string | null>(null);
 
+  const [columnsData, setColumnsData] = useState<Record<string, any>>({});
+  const [selectedColumns, setSelectedColumns] = useState<
+    Record<string, string>
+  >({});
+
   useEffect(() => {
     loadDatasets();
   }, []);
@@ -21,7 +31,6 @@ const DatasetsList = () => {
     try {
       const res = await getDatasets();
       setDatasets(res.datasets);
-
     } catch (e: any) {
       setError("Ошибка загрузки датасетов");
     }
@@ -40,6 +49,14 @@ const DatasetsList = () => {
         const data = await getDatasetById(id);
         setDetails((prev) => ({ ...prev, [id]: data }));
 
+        if (!data.linking_column_confirmed) {
+          const cols = await getDatasetColumns(id);
+
+          setColumnsData((prev) => ({
+            ...prev,
+            [id]: cols,
+          }));
+        }
       } catch {
         setError("Ошибка загрузки информации о датасете");
       }
@@ -194,7 +211,6 @@ const DatasetsList = () => {
                     </div>
                   )}
 
-                 
                   {/* ДАТЫ */}
                   <div className="text-sm">
                     <p className="text-xs uppercase text-slate-500 mb-2">
@@ -233,6 +249,61 @@ const DatasetsList = () => {
                       </div>
                     ))}
                   </div>
+                  {!ds.linking_column_confirmed && columnsData[ds.id] && (
+                    <div className="border rounded-lg bg-white p-4">
+                      <p className="text-xs uppercase text-slate-500 mb-3">
+                        Выберите linking column
+                      </p>
+
+                      <div className="flex flex-col gap-3">
+                        {columnsData[ds.id].files.map((file: any) => (
+                          <div
+                            key={file.raw_file_id}
+                            className="flex flex-col gap-1"
+                          >
+                            <p className="text-sm font-medium text-slate-900">
+                              {file.filename}
+                            </p>
+
+                            <select
+                              className="border rounded px-3 py-2 text-sm"
+                              value={selectedColumns[file.raw_file_id] || ""}
+                              onChange={(e) =>
+                                setSelectedColumns((prev) => ({
+                                  ...prev,
+                                  [file.raw_file_id]: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="">Выберите колонку</option>
+
+                              {file.columns.map((col: string) => (
+                                <option key={col} value={col}>
+                                  {col}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          try {
+                            await postConfirmDataset(ds.id, selectedColumns);
+
+                            setSelectedColumns({});
+                            await loadDatasets();
+                          } catch {
+                            setError("Ошибка подтверждения linking column");
+                          }
+                        }}
+                        className="mt-4 bg-cyan-600 text-white px-4 py-2 rounded"
+                      >
+                        Подтвердить linking column
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
