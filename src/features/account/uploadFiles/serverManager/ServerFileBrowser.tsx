@@ -4,6 +4,7 @@ import {
   getReclassifyStatus,
   getUploadDirectoryStatus,
   reclassifyUngrouped,
+  uploadDatasetFromServer,
   uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
@@ -304,6 +305,44 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     }
   };
 
+  const handleUploadDataset = async () => {
+    if (!selected.length || isUploading) return;
+
+    const datasetName = prompt("Введите название датасета");
+
+    if (!datasetName) return;
+
+    try {
+      startBusy();
+      setIsUploading(true);
+
+      const res = await uploadDatasetFromServer(datasetName, selected);
+
+      if (res.status === "success") {
+        setToast({
+          type: "access",
+          message: `Dataset создан. Файлов: ${res.success_count}`,
+        });
+
+        setSelected([]);
+        onUploaded?.();
+      } else {
+        setToast({
+          type: "error",
+          message: res.message,
+        });
+      }
+    } catch (e: any) {
+      setToast({
+        type: "error",
+        message: e?.response?.data?.detail || "Ошибка создания dataset",
+      });
+    } finally {
+      setIsUploading(false);
+      endBusy();
+    }
+  };
+
   return (
     <div className="bg-white border rounded-xl p-4 flex flex-col gap-4">
       <h3 className="font-semibold">Файлы на сервере</h3>
@@ -416,6 +455,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
         className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
       >
         Переклассифицировать файлы
+      </button>
+      <button
+        onClick={handleUploadDataset}
+        disabled={!selected.length || isUploading}
+        className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded disabled:bg-gray-300"
+      >
+        Создать датасет ({selected.length})
       </button>
       {jobs.length > 0 && !showModal && (
         <button
