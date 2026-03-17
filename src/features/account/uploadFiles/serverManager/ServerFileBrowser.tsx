@@ -4,6 +4,7 @@ import {
   getReclassifyStatus,
   getUploadDirectoryStatus,
   reclassifyUngrouped,
+  uploadDatasetFromServer,
   uploadServerDirectory,
   uploadServerFiles,
 } from "../../../../api/uploadFiles";
@@ -64,6 +65,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
   const [reclassifyProgress, setReclassifyProgress] = useState<number | null>(
     null,
   );
+  const [showDatasetModal, setShowDatasetModal] = useState(false);
+
+  const [datasetForm, setDatasetForm] = useState({
+    dataset_name: "",
+    description: "",
+    linking_column: "",
+  });
   const [reclassifyStatus, setReclassifyStatus] = useState<string | null>(null);
 
   const loadDirectory = async (path: string) => {
@@ -81,7 +89,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     () =>
       items
         .filter((i) => i.type === "file")
-        .map((i) => `${currentPath}/${i.name}`),
+        .map((i) => `${currentPath.replace(/\/$/, "")}/${i.name}`),
     [items, currentPath],
   );
 
@@ -304,6 +312,59 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     }
   };
 
+  const handleUploadDataset = async () => {
+    if (selected.length < 2) {
+      setToast({
+        type: "error",
+        message: "Минимум 2 файла для датасета",
+      });
+      return;
+    }
+
+    try {
+      startBusy();
+      setIsUploading(true);
+
+      const res = await uploadDatasetFromServer({
+        dataset_name: datasetForm.dataset_name,
+        description: datasetForm.description,
+        linking_column: datasetForm.linking_column,
+        files: selected,
+      });
+
+      if (res.status === "success") {
+        setToast({
+          type: "access",
+          message: res.message || "Dataset создан",
+        });
+
+        setSelected([]);
+        setShowDatasetModal(false);
+
+        setDatasetForm({
+          dataset_name: "",
+          description: "",
+          linking_column: "",
+        });
+
+        onUploaded?.();
+      } else {
+        setToast({
+          type: "error",
+          message: res.message,
+        });
+      }
+    } catch (e: any) {
+      setToast({
+        type: "error",
+        message: e?.response?.data?.detail || "Ошибка создания dataset",
+      });
+    } finally {
+      setIsUploading(false);
+      endBusy();
+    }
+  };
+
   return (
     <div className="bg-white border rounded-xl p-4 flex flex-col gap-4">
       <h3 className="font-semibold">Файлы на сервере</h3>
@@ -417,6 +478,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       >
         Переклассифицировать файлы
       </button>
+      <button
+        onClick={() => setShowDatasetModal(true)}
+        disabled={!selected.length || isUploading}
+        className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded disabled:bg-gray-300"
+      >
+        Создать датасет ({selected.length})
+      </button>
       {jobs.length > 0 && !showModal && (
         <button
           onClick={() => setShowModal(true)}
@@ -503,6 +571,70 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {showDatasetModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setShowDatasetModal(false)}
+        >
+          <div
+            className="bg-white w-[500px] rounded-xl p-6 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold text-lg">Создать датасет</h2>
+
+              <button
+                onClick={() => setShowDatasetModal(false)}
+                className="text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="text-sm text-gray-500">
+              Выбрано файлов: {selected.length}
+            </div>
+
+            <input
+              placeholder="Название датасета"
+              className="border px-3 py-2 rounded"
+              value={datasetForm.dataset_name}
+              onChange={(e) =>
+                setDatasetForm((p) => ({ ...p, dataset_name: e.target.value }))
+              }
+            />
+
+            <input
+              placeholder="Linking column (например phone)"
+              className="border px-3 py-2 rounded"
+              value={datasetForm.linking_column}
+              onChange={(e) =>
+                setDatasetForm((p) => ({
+                  ...p,
+                  linking_column: e.target.value,
+                }))
+              }
+            />
+
+            <textarea
+              placeholder="Описание (опционально)"
+              className="border px-3 py-2 rounded"
+              value={datasetForm.description}
+              onChange={(e) =>
+                setDatasetForm((p) => ({ ...p, description: e.target.value }))
+              }
+            />
+
+            <button
+              onClick={handleUploadDataset}
+              disabled={isUploading || !datasetForm.dataset_name}
+              className="bg-emerald-600 text-white py-2 rounded disabled:bg-gray-300"
+            >
+              {isUploading ? "Создание..." : "Создать датасет"}
+            </button>
           </div>
         </div>
       )}
