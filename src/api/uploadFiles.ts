@@ -414,13 +414,22 @@ export const getReclassifyStatus = async (jobId: string) => {
   return res.data;
 };
 
-export const uploadDatasetFromServer = async (
-  dataset_name: string,
-  files: string[],
-) => {
+export const uploadDatasetFromServer = async ({
+  dataset_name,
+  files,
+  description,
+  linking_column,
+}: {
+  dataset_name: string;
+  files: string[];
+  description?: string;
+  linking_column?: string;
+}) => {
   const res = await userApi.post("/api/v1/datasets/upload-from-server", {
     dataset_name,
     files,
+    description,
+    linking_column,
   });
 
   return res.data;

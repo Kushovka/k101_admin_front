@@ -82,7 +82,7 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
     () =>
       items
         .filter((i) => i.type === "file")
-        .map((i) => `${currentPath}/${i.name}`),
+        .map((i) => `${currentPath.replace(/\/$/, "")}/${i.name}`),
     [items, currentPath],
   );
 
@@ -316,7 +316,10 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
       startBusy();
       setIsUploading(true);
 
-      const res = await uploadDatasetFromServer(datasetName, selected);
+      const res = await uploadDatasetFromServer({
+        dataset_name: datasetName,
+        files: selected,
+      });
 
       if (res.status === "success") {
         setToast({
