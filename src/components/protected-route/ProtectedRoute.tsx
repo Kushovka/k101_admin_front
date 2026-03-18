@@ -1,5 +1,4 @@
 import React, { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,11 +10,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const userRole = localStorage.getItem("role");
 
   if (!token) {
-    return <Navigate to="/sign-in" replace />;
+    window.location.href = "/sign-in";
+    return null;
   }
 
   if (role && userRole !== role) {
-    return <Navigate to="/sign-in" replace />;
+    window.location.href = "/sign-in";
+    return null;
   }
 
   return <>{children}</>;
