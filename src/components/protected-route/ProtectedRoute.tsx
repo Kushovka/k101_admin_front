@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,16 +9,18 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const token = localStorage.getItem("access_token");
   const userRole = localStorage.getItem("role");
+  const location = useLocation();
 
   if (!token) {
     return <Navigate to="/sign-in" replace />;
   }
 
-  if (role && userRole !== role) {
+  // если пользователь не админ и пытается открыть админку
+  if (role === "admin" && userRole !== "admin") {
     return <Navigate to="/sign-in" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
