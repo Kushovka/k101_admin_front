@@ -18,9 +18,12 @@ interface NotifyState {
 }
 
 export default function SignIn() {
-  const isAuth = Boolean(localStorage.getItem("access_token"));
-  if (isAuth) return <Navigate to="/account/profile" replace />;
+  const token = localStorage.getItem("access_token");
+  const role = localStorage.getItem("role");
 
+  if (token && role === "admin") {
+    return <Navigate to="/account/profile" replace />;
+  }
   const {
     register,
     handleSubmit,
