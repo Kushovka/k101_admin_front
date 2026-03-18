@@ -11,11 +11,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const userRole = localStorage.getItem("role");
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/sign-in" replace />;
   }
 
   if (role && userRole !== role) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/sign-in" replace />;
   }
 
   return <>{children}</>;
