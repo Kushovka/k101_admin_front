@@ -52,6 +52,7 @@ export const logout = async (): Promise<void> => {
   );
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  localStorage.removeItem("role");
 };
 
 export async function refreshTokens() {
