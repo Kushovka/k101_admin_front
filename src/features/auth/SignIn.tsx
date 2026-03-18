@@ -1,11 +1,11 @@
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 
+import axios from "axios";
 import Toast from "../../components/toast/Toast";
 import { login } from "./auth";
-import axios from "axios";
 
 interface SignInFormValues {
   username: string;
@@ -32,8 +32,17 @@ export default function SignIn() {
 
   const onSubmit: SubmitHandler<SignInFormValues> = async (data) => {
     try {
-      await login(data.username, data.password);
-      setNotify(null);
+      const res = await login(data.username, data.password);
+
+      const role = localStorage.getItem("role");
+
+      if (role !== "admin") {
+        setNotify({
+          message: "У вас нет доступа к админ панели",
+          type: "error",
+        });
+        return;
+      }
 
       navigate("/account/profile");
     } catch (err) {

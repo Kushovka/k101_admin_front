@@ -12,6 +12,7 @@ interface LoginRequest {
 interface LoginResponse {
   access_token: string;
   refresh_token: string;
+  role: string;
 }
 
 interface LogoutRequest {
@@ -27,10 +28,11 @@ export const login = async (
     { username, password } as LoginRequest,
   );
 
-  const { access_token, refresh_token } = res.data;
+  const { access_token, refresh_token, role } = res.data;
 
   localStorage.setItem("access_token", access_token);
   localStorage.setItem("refresh_token", refresh_token);
+  localStorage.setItem("role", role);
 
   axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
   userApi.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
