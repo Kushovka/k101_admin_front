@@ -11,7 +11,7 @@ const UploadDropzone = () => {
   return (
     <div
       className={clsx(
-        "flex flex-col items-center justify-center w-full max-w-[460px] h-[240px] rounded-2xl border-[2px] border-dashed transition-all cursor-pointer select-none",
+        "flex flex-col items-center justify-center w-full rounded-2xl border-[2px] border-dashed transition-all cursor-pointer select-none py-10",
         dragOver
           ? "border-cyan-500 bg-cyan-50/60 shadow-[0_0_0_3px_rgba(6,182,212,0.15)]"
           : "border-slate-300 hover:border-cyan-400 hover:bg-slate-50/40",

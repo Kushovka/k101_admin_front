@@ -472,12 +472,13 @@ const ServerFileBrowser = ({ onUploaded, onError }: Props) => {
           Загрузить всю папку
         </button>
       </div>
-      <button
+      {/* <button
         onClick={startReclassify}
         className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
       >
         Переклассифицировать файлы
-      </button>
+      </button> */}
+      
       <button
         onClick={() => setShowDatasetModal(true)}
         disabled={!selected.length || isUploading}

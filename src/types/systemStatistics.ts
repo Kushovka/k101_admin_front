@@ -1,49 +1,57 @@
 export interface SystemStatisticsResponse {
   gateway_status: string;
-  files: {
-    files_completed: number;
-    files_failed: number;
-    files_processing: number;
-    total_files_uploaded: number;
-    total_files_parsed: number;
-    total_records_parsed: number;
+
+  users: {
+    total: number;
+    active: number;
+    blocked: number;
+    new_last_24h: number;
+    new_last_7d: number;
+    new_last_30d: number;
   };
+
+  requests: {
+    total: number;
+    successful: number;
+    failed: number;
+    last_24h: number;
+    last_7d: number;
+    last_30d: number;
+    by_type: Record<string, number>; // 🔥 ВАЖНО (у тебя его не было)
+  };
+
   financial: {
-    average_user_balance: string;
-    total_spent: string;
     total_user_balance: string;
+    average_user_balance: number; // 👈 у тебя было string, но приходит number
+    total_spent: string;
     payments: {
-      completed_amount: string;
-      total_amount: string;
       total_payments: number;
+      total_amount: string;
+      completed_amount: string;
       by_status: {
-        completed: number;
         pending: number;
+        completed?: number; // иногда может не прийти
       };
     };
   };
+
   registration_requests: {
-    approved: number;
+    total: number;
     pending: number;
+    approved: number;
     rejected: number;
-    total: number;
   };
-  requests: {
-    failed: number;
-    last_7d: number;
-    last_24h: number;
-    last_30d: number;
-    successful: number;
-    total: number;
+
+  files: {
+    total_files_uploaded: number;
+    total_records_parsed: number;
+    files_processing: number;
+    files_completed: number;
+    files_failed: number;
   };
-  users: {
-    active: number;
-    blocked: number;
-    email_verified: number;
-    new_last_7d: number;
-    new_last_24h: number;
-    new_last_30d: number;
-    total: number;
+
+  opensearch: {
+    size_bytes: number;
+    size_human: string;
   };
-  total_files_uploaded: number;
 }

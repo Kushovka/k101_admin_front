@@ -572,7 +572,6 @@ const UploadFiles = () => {
           onClose={() => setNotify(null)}
         />
       )}
-
       {duplicatesCount > 0 && (
         <Toast
           type="error"
@@ -602,7 +601,7 @@ const UploadFiles = () => {
           {/* SERVER */}
           <div
             className={clsx(
-              "w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm",
+              "max-w-3xl bg-white rounded-xl border border-gray-200 shadow-sm",
             )}
           >
             {/* HEADER */}
@@ -651,7 +650,7 @@ const UploadFiles = () => {
           </div>
 
           {/* DATASET */}
-          <div className="w-1/3 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="max-w-3xl bg-white rounded-xl border border-gray-200 shadow-sm">
             {/* HEADER */}
             <button
               type="button"
@@ -692,21 +691,19 @@ const UploadFiles = () => {
         </div>
 
         {/* Selected files */}
+
         {files.length > 0 && (
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-4 w-1/2">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-4 w-full">
             <p className="text-[15px] font-medium text-slate-900">
               Выбранные файлы
             </p>
 
             <ul className="flex flex-col gap-3">
               {files.map((file, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between gap-3 min-w-0"
-                >
+                <li key={i} className="flex items-center justify-between gap-3">
                   <div
                     data-tooltip-id="see_file_name-tooltip"
-                    className="flex items-center gap-3 min-w-0 cursor-pointer"
+                    className="flex items-center gap-3 cursor-pointer"
                   >
                     <div className="w-8 h-8 flex items-center justify-center rounded bg-gray-100 text-gray-700 shrink-0">
                       {getFileIcon(file.name)}
