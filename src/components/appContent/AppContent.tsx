@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import Complaints from "../../features/account/complaints/Complaints";
-import HealthCheck from "../../features/account/healthCheck/HealthCheck";
 import Plans from "../../features/account/plans/Plans";
 import Profile from "../../features/account/profile/Profile";
 import Search from "../../features/account/search/Search";
@@ -79,7 +78,7 @@ const AppContent: React.FC = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />
-          <Route path="health-check" element={<HealthCheck />} />
+          {/* <Route path="health-check" element={<HealthCheck />} /> */}
           <Route path="system-stats" element={<SystemStatistics />} />
           <Route path="complaints" element={<Complaints />} />
           <Route path="plans" element={<Plans />} />

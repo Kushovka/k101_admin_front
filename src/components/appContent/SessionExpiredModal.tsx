@@ -21,7 +21,7 @@ const SessionExpiredModal = () => {
             className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm transition-colors"
             onClick={() => {
               localStorage.removeItem("admin_access_token");
-              window.location.href = "/sign-in";
+            window.location.href = "/sign-in";
             }}
           >
             Войти снова
