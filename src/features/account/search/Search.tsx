@@ -329,17 +329,27 @@ const Search = () => {
 
                 <div>
                   <input
-                    type="date"
-                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    type="text"
+                    className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                    placeholder="ДД.ММ.ГГГГ"
+                    maxLength={10}
                     value={values.birthday}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+
+                      // автоформат
+                      if (v.length >= 5)
+                        v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
+                      else if (v.length >= 3)
+                        v = `${v.slice(0, 2)}.${v.slice(2)}`;
+
                       setValues((prev) => ({
                         ...prev,
-                        birthday: e.target.value,
+                        birthday: v,
                         birthday_from: "",
                         birthday_to: "",
-                      }))
-                    }
+                      }));
+                    }}
                   />
                 </div>
                 <div className="text-xs text-slate-500">или диапазон</div>
