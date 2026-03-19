@@ -2,7 +2,7 @@ import { FaUsers } from "react-icons/fa";
 import { FaRegCircleUser } from "react-icons/fa6";
 import { GoChevronRight } from "react-icons/go";
 import { IoIosSearch } from "react-icons/io";
-import { IoDocumentTextOutline, IoExitOutline } from "react-icons/io5";
+import { IoExitOutline } from "react-icons/io5";
 import {
   MdAttachMoney,
   MdDownloading,
@@ -39,11 +39,11 @@ const Sidebar: React.FC = () => {
       icon: <MdDownloading />,
       path: "/account/upload-files",
     },
-    {
-      name: "Health Check",
-      icon: <IoDocumentTextOutline />,
-      path: "/account/health-check",
-    },
+    // {
+    //   name: "Health Check",
+    //   icon: <IoDocumentTextOutline />,
+    //   path: "/account/health-check",
+    // },
     {
       name: "Системная статистика",
       icon: <MdOutlineAnalytics />,
