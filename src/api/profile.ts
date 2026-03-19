@@ -4,7 +4,7 @@ import userApi from "./userApi";
 const USER_API_URL = import.meta.env.VITE_USER_API_URL;
 
 const getHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (!token) {
     throw new Error("Access token not found");
   }

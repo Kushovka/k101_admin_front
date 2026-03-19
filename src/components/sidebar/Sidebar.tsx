@@ -121,8 +121,8 @@ const Sidebar: React.FC = () => {
       {/* exit */}
       <button
         onClick={() => {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("admin_access_token");
+          localStorage.removeItem("admin_refresh_token");
           navigate("/sign-in", { replace: true });
         }}
         className={clsx(

@@ -7,8 +7,8 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
-  const token = localStorage.getItem("access_token");
-  const userRole = localStorage.getItem("role");
+  const token = localStorage.getItem("admin_access_token");
+  const userRole = localStorage.getItem("admin_role");
   const location = useLocation();
 
   if (!token) {

@@ -18,8 +18,8 @@ interface NotifyState {
 }
 
 export default function SignIn() {
-  const token = localStorage.getItem("access_token");
-  const role = localStorage.getItem("role");
+  const token = localStorage.getItem("admin_access_token");
+  const role = localStorage.getItem("admin_role");
 
   if (token && role === "admin") {
     return <Navigate to="/account/profile" replace />;
@@ -37,7 +37,7 @@ export default function SignIn() {
     try {
       const res = await login(data.username, data.password);
 
-      const role = localStorage.getItem("role");
+      const role = localStorage.getItem("admin_role");
 
       if (role !== "admin") {
         setNotify({

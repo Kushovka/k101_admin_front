@@ -49,7 +49,7 @@ export const useParsingQueue = () => {
     null,
   );
 
-  const token = localStorage.getItem("access_token") ?? "";
+  const token = localStorage.getItem("admin_access_token") ?? "";
   const auth = useMemo(
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
     [token],

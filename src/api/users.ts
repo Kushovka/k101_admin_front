@@ -12,7 +12,7 @@ import {
 } from "../types/user";
 
 const getHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (!token) {
     throw new Error("Access token not found");
   }
@@ -101,7 +101,7 @@ export const isBlockedUser = async (
 export const isDeletedUser = async (id: string): Promise<ApiUser> => {
   const { data } = await adminApi.delete(`/admin-api/admin/users/${id}`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
     },
   });
   return data;

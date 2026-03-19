@@ -228,81 +228,77 @@ const DatasetsList = () => {
 
                   {/* ФАЙЛЫ */}
                   <div className="border rounded-lg bg-white divide-y">
-                    {details[ds.id].files.map((file: any) => (
-                      <div
-                        key={file.id}
-                        className="px-4 py-3 flex justify-between items-center"
-                      >
-                        <div className="flex flex-col">
-                          <p className="text-sm font-medium text-slate-900">
-                            {file.file_name}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {file.total_rows} строк • {file.valid_rows} валидных
-                          </p>
-                        </div>
+                    {details[ds.id].files.map((file: any) => {
+                      const columns =
+                        columnsData[ds.id]?.files?.find(
+                          (f: any) => f.file_name === file.file_name,
+                        )?.columns || [];
 
-                        <div className="text-xs text-slate-600 text-right">
-                          <p>{file.processing_status}</p>
-                          <p>{(file.file_size / 1024).toFixed(1)} KB</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {!ds.linking_column_confirmed && columnsData[ds.id] && (
-                    <div className="border rounded-lg bg-white p-4">
-                      <p className="text-xs uppercase text-slate-500 mb-3">
-                        Выберите linking column
-                      </p>
+                      return (
+                        <div
+                          key={file.id}
+                          className="px-4 py-4 flex flex-col gap-3"
+                        >
+                          {/* информация о файле */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex flex-col">
+                              <p className="text-sm font-medium text-slate-900">
+                                {file.file_name}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {file.total_rows} строк • {file.valid_rows}{" "}
+                                валидных
+                              </p>
+                            </div>
 
-                      <div className="flex flex-col gap-3">
-                        {columnsData[ds.id].files.map((file: any) => (
-                          <div
-                            key={file.raw_file_id}
-                            className="flex flex-col gap-1"
-                          >
-                            <p className="text-sm font-medium text-slate-900">
-                              {file.filename}
-                            </p>
-
-                            <select
-                              className="border rounded px-3 py-2 text-sm"
-                              value={selectedColumns[file.raw_file_id] || ""}
-                              onChange={(e) =>
-                                setSelectedColumns((prev) => ({
-                                  ...prev,
-                                  [file.raw_file_id]: e.target.value,
-                                }))
-                              }
-                            >
-                              <option value="">Выберите колонку</option>
-
-                              {file.columns.map((col: string) => (
-                                <option key={col} value={col}>
-                                  {col}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="text-xs text-slate-600 text-right">
+                              <p>{file.processing_status}</p>
+                              <p>{(file.file_size / 1024).toFixed(1)} KB</p>
+                            </div>
                           </div>
-                        ))}
-                      </div>
 
-                      <button
-                        onClick={async () => {
-                          try {
-                            await postConfirmDataset(ds.id, selectedColumns);
+                          {/* выбор колонки */}
+                          {!ds.linking_column_confirmed &&
+                            columns.length > 0 && (
+                              <select
+                                className="border rounded px-3 py-2 text-sm"
+                                value={selectedColumns[file.id] || ""}
+                                onChange={(e) =>
+                                  setSelectedColumns((prev) => ({
+                                    ...prev,
+                                    [file.id]: e.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="">Выберите колонку</option>
 
-                            setSelectedColumns({});
-                            await loadDatasets();
-                          } catch {
-                            setError("Ошибка подтверждения linking column");
-                          }
-                        }}
-                        className="mt-4 bg-cyan-600 text-white px-4 py-2 rounded"
-                      >
-                        Подтвердить linking column
-                      </button>
-                    </div>
+                                {columns.map((col: string) => (
+                                  <option key={col} value={col}>
+                                    {col}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {!ds.linking_column_confirmed && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await postConfirmDataset(ds.id, selectedColumns);
+                          setSelectedColumns({});
+                          await loadDatasets();
+                        } catch {
+                          setError("Ошибка подтверждения linking column");
+                        }
+                      }}
+                      className="mt-4 bg-cyan-600 text-white px-4 py-2 rounded"
+                    >
+                      Подтвердить linking column
+                    </button>
                   )}
                 </div>
               )}

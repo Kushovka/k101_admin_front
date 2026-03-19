@@ -91,7 +91,7 @@ const SEARCH_TABS: {
 ];
 
 const getHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+  Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
   "Content-Type": "application/json",
 });
 

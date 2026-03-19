@@ -24,7 +24,7 @@ import SessionExpiredModal from "./SessionExpiredModal";
 const AppContent: React.FC = () => {
   const location = useLocation();
   const { uploading, isBusy } = useUploadStore();
-  const isAuth = Boolean(localStorage.getItem("access_token"));
+  const isAuth = Boolean(localStorage.getItem("admin_access_token"));
 
   const [sessionExpired, setSessionExpired] = useState(false);
 

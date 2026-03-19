@@ -28,7 +28,7 @@ const FilePreviewModal = ({
   onClose,
   onUpdateFile,
 }: FilePreviewModalProps) => {
-  const token = localStorage.getItem("access_token") ?? "";
+  const token = localStorage.getItem("admin_access_token") ?? "";
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
