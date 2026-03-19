@@ -12,8 +12,25 @@ const SystemStatistics = () => {
   const [stats, setStats] = useState<SystemStatisticsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   const { isOpen } = useSidebar();
+
+  /* ---------------- helpers ---------------- */
+
+  const REQUEST_TYPE_LABELS: Record<string, string> = {
+    advanced_phone: "Расширенный поиск по телефону",
+    advanced_email: "Расширенный поиск по email",
+    advanced_snils: "Расширенный поиск по СНИЛС",
+    advanced_ipn: "Расширенный поиск по ИНН",
+    advanced_passport: "Расширенный поиск по паспорту",
+    advanced_name: "Расширенный поиск по ФИО",
+    advanced_person_id: "Поиск по ID",
+    advanced_birthday: "Поиск по дате рождения",
+    dossier: "Сбор досье",
+  };
+
+  /* ---------------- api ---------------- */
 
   const fetchStats = async (): Promise<void> => {
     setLoading(true);
@@ -149,7 +166,9 @@ const SystemStatistics = () => {
 
               <div className="pt-3 mt-2 border-t border-gray-100 flex flex-col gap-1">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Размер хранилища</span>
+                  <span className="text-slate-500">
+                    Объем обработанных данных
+                  </span>
                   <span className="font-medium">
                     {stats.opensearch.size_human}
                   </span>
@@ -295,6 +314,50 @@ const SystemStatistics = () => {
                   <span className="font-medium">{stats.requests.last_7d}</span>
                 </div>
               </div>
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowDetails((prev) => !prev)}
+                  className="text-[13px] text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  {showDetails ? "Скрыть" : "Подробнее"}
+                </button>
+              </div>
+              {showDetails && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-3"
+                >
+                  <p className="text-[13px] text-slate-500">Типы запросов</p>
+
+                  {Object.entries(stats.requests.by_type)
+                    .filter(([key]) => key.startsWith("advanced"))
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, value]) => {
+                      const percent = (value / stats.requests.total) * 100;
+                      const label = REQUEST_TYPE_LABELS[key] ?? key;
+
+                      return (
+                        <div key={key} className="flex flex-col gap-1">
+                          <div className="flex justify-between text-[13px] text-slate-700">
+                            <span className="truncate max-w-[70%]">
+                              {label}
+                            </span>
+                            <span className="font-medium">{value}</span>
+                          </div>
+
+                          {/* 🔥 бар */}
+                          <div className="w-full bg-gray-100 h-[4px] rounded">
+                            <div
+                              className="bg-indigo-500 h-[4px] rounded"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </motion.div>
+              )}
             </motion.div>
 
             {/* REGISTRATION */}
