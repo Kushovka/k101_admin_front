@@ -21,7 +21,7 @@ export default function SignIn() {
   const token = localStorage.getItem("admin_access_token");
   const role = localStorage.getItem("admin_role");
 
-  if (token && role === "admin") {
+  if (token) {
     return <Navigate to="/account/profile" replace />;
   }
   const {
@@ -36,16 +36,6 @@ export default function SignIn() {
   const onSubmit: SubmitHandler<SignInFormValues> = async (data) => {
     try {
       const res = await login(data.username, data.password);
-
-      const role = localStorage.getItem("admin_role");
-
-      if (role !== "admin") {
-        setNotify({
-          message: "У вас нет доступа к админ панели",
-          type: "error",
-        });
-        return;
-      }
 
       navigate("/account/profile");
     } catch (err) {

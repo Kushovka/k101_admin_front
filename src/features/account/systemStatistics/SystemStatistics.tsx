@@ -146,6 +146,15 @@ const SystemStatistics = () => {
                   </span>
                 </div>
               </div>
+
+              <div className="pt-3 mt-2 border-t border-gray-100 flex flex-col gap-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Размер хранилища</span>
+                  <span className="font-medium">
+                    {stats.opensearch.size_human}
+                  </span>
+                </div>
+              </div>
             </motion.div>
 
             {/* PAYMENTS */}
@@ -190,6 +199,20 @@ const SystemStatistics = () => {
                     {stats.financial.total_user_balance}
                   </span>
                 </div>
+
+                <div className="flex justify-between">
+                  <span>Потрачено</span>
+                  <span className="font-medium">
+                    {stats.financial.total_spent}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-yellow-600">
+                  <span>Ожидают</span>
+                  <span className="font-medium">
+                    {stats.financial.payments.by_status.pending ?? 0}
+                  </span>
+                </div>
               </div>
             </motion.div>
 
@@ -211,10 +234,15 @@ const SystemStatistics = () => {
                   <span className="font-medium">{stats.users.active}</span>
                 </div>
 
+                <div className="flex justify-between text-red-500">
+                  <span>Заблокированные</span>
+                  <span className="font-medium">{stats.users.blocked}</span>
+                </div>
+
                 <div className="flex justify-between">
-                  <span>Email подтверждён</span>
+                  <span>Новые за 24ч</span>
                   <span className="font-medium">
-                    {stats.users.email_verified}
+                    {stats.users.new_last_24h}
                   </span>
                 </div>
 
@@ -227,6 +255,76 @@ const SystemStatistics = () => {
                   <span>Новые за 30 дней</span>
                   <span className="font-medium">
                     {stats.users.new_last_30d}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* REQUESTS */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4"
+            >
+              <p className="text-[15px] text-slate-600">Запросы</p>
+
+              <div className="flex flex-col gap-2 text-[14px] text-slate-700">
+                <div className="flex justify-between">
+                  <span>Всего</span>
+                  <span className="font-medium">{stats.requests.total}</span>
+                </div>
+
+                <div className="flex justify-between text-emerald-600">
+                  <span>Успешные</span>
+                  <span className="font-medium">
+                    {stats.requests.successful}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-red-500">
+                  <span>Ошибки</span>
+                  <span className="font-medium">{stats.requests.failed}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>За 24ч</span>
+                  <span className="font-medium">{stats.requests.last_24h}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span>За 7 дней</span>
+                  <span className="font-medium">{stats.requests.last_7d}</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* REGISTRATION */}
+            <motion.div
+              variants={item}
+              className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-4"
+            >
+              <p className="text-[15px] text-slate-600">
+                Заявки на регистрацию
+              </p>
+
+              <div className="flex flex-col gap-2 text-[14px] text-slate-700">
+                <div className="flex justify-between">
+                  <span>Всего</span>
+                  <span className="font-medium">
+                    {stats.registration_requests.total}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-emerald-600">
+                  <span>Одобрено</span>
+                  <span className="font-medium">
+                    {stats.registration_requests.approved}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-red-500">
+                  <span>Отклонено</span>
+                  <span className="font-medium">
+                    {stats.registration_requests.rejected}
                   </span>
                 </div>
               </div>

@@ -68,7 +68,7 @@ const AppContent: React.FC = () => {
         <Route
           path="account"
           element={
-            <ProtectedRoute role="admin">
+            <ProtectedRoute>
               <SidebarProvider>
                 <SidebarLayout />
               </SidebarProvider>
