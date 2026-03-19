@@ -25,10 +25,10 @@ type UploadResult = {
 
 type UploadProgressFn = (file: File, percent: number) => void;
 
-const token = localStorage.getItem("access_token");
+const token = localStorage.getItem("admin_access_token");
 
 const getHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (!token) {
     throw new Error("Access token not found");
   }
@@ -68,7 +68,7 @@ export const getAllFiles = async ({
 export const getAllGroup = async () => {
   const { data } = await userApi.get(`/api/v1/files/groups`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
     },
   });
 
@@ -170,7 +170,7 @@ export const getParsingQueue = async () => {
 export const getParsingCurrent = async () => {
   const { data } = await userApi.get("/api/v1/parsing-queue/current", {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
     },
   });
   return data;
@@ -179,7 +179,7 @@ export const getParsingCurrent = async () => {
 export const postRestartFile = async (id: string) => {
   const { data } = await userApi.post(`/api/v1/files/${id}/restart`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
     },
   });
   return data;
@@ -191,7 +191,7 @@ export const patchFileGroup = async (id: string, file_group: string) => {
     { file_group },
     {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
       },
     },
   );
@@ -433,4 +433,20 @@ export const uploadDatasetFromServer = async ({
   });
 
   return res.data;
+};
+
+export const getDatasetColumns = async (id: string) => {
+  const { data } = await userApi.get(`/api/v1/datasets/${id}/columns`);
+  return data;
+};
+
+export const postConfirmDataset = async (
+  id: string,
+  per_file_columns: Record<string, string>,
+) => {
+  const { data } = await userApi.post(`/api/v1/datasets/${id}/confirm`, {
+    per_file_columns,
+  });
+
+  return data;
 };

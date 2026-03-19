@@ -6,7 +6,7 @@ const userApi = axios.create({
 });
 
 userApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,7 +19,7 @@ userApi.interceptors.response.use(
   (res) => res,
   async (error) => {
     const status = error.response?.status;
-    const original = error.config;
+    const original = error.config || {};
 
     // нам интересует только access 401
     if (status !== 401) {
@@ -43,7 +43,6 @@ userApi.interceptors.response.use(
       window.dispatchEvent(new CustomEvent("session-expired"));
       return Promise.reject(error);
     }
-
 
     // повторяем запрос 1 раз
     original.__isRetry = true;

@@ -12,6 +12,7 @@ interface LoginRequest {
 interface LoginResponse {
   access_token: string;
   refresh_token: string;
+  role: string;
 }
 
 interface LogoutRequest {
@@ -27,10 +28,11 @@ export const login = async (
     { username, password } as LoginRequest,
   );
 
-  const { access_token, refresh_token } = res.data;
+  const { access_token, refresh_token, role } = res.data;
 
-  localStorage.setItem("access_token", access_token);
-  localStorage.setItem("refresh_token", refresh_token);
+  localStorage.setItem("admin_access_token", access_token);
+  localStorage.setItem("admin_refresh_token", refresh_token);
+  localStorage.setItem("admin_role", role);
 
   axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
   userApi.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
@@ -40,7 +42,7 @@ export const login = async (
 };
 
 export const logout = async (): Promise<void> => {
-  const refreshToken = localStorage.getItem("refresh_token");
+  const refreshToken = localStorage.getItem("admin_refresh_token");
 
   if (!refreshToken) return;
 
@@ -48,12 +50,13 @@ export const logout = async (): Promise<void> => {
     `${API_URL}/api/v1/auth/logout`,
     { refresh_token: refreshToken },
   );
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("admin_access_token");
+  localStorage.removeItem("admin_refresh_token");
+  localStorage.removeItem("admin_role");
 };
 
 export async function refreshTokens() {
-  const refresh = localStorage.getItem("refresh_token");
+  const refresh = localStorage.getItem("admin_refresh_token");
   if (!refresh) return false;
 
   try {
@@ -61,8 +64,8 @@ export async function refreshTokens() {
       refresh_token: refresh,
     });
 
-    localStorage.setItem("access_token", res.data.access_token);
-    localStorage.setItem("refresh_token", res.data.refresh_token);
+    localStorage.setItem("admin_access_token", res.data.access_token);
+    localStorage.setItem("admin_refresh_token", res.data.refresh_token);
 
     axios.defaults.headers.common["Authorization"] =
       `Bearer ${res.data.access_token}`;

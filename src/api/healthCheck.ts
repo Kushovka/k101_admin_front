@@ -2,7 +2,7 @@ import adminApi from "./adminApi";
 
 
 const getHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (!token) {
     throw new Error("Access token not found");
   }

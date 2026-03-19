@@ -119,7 +119,7 @@ const UploadFiles = () => {
 
   const [datasetModal, setDatasetModal] = useState<any | null>(null);
 
-  const token = localStorage.getItem("access_token") ?? "";
+  const token = localStorage.getItem("admin_access_token") ?? "";
 
   /* ---------------- user ---------------- */
 

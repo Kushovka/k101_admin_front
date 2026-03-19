@@ -1,7 +1,7 @@
 import adminApi from "./adminApi";
 
 const getHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("admin_access_token");
   if (!token) {
     throw new Error("Access token not found");
   }
@@ -13,7 +13,7 @@ const getHeaders = (): Record<string, string> => {
 };
 
 export const systemStatistics = async () => {
-  const res = await adminApi.get(`/api/stats`, {
+  const res = await adminApi.get(`/admin-api/api/stats`, {
     headers: getHeaders(),
   });
 
