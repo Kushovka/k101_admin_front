@@ -11,12 +11,13 @@ import {
 import { RxHamburgerMenu } from "react-icons/rx";
 
 import clsx from "clsx";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
 import { FiMessageSquare } from "react-icons/fi";
+import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
   name: string;
@@ -27,6 +28,24 @@ interface SidebarLink {
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const count = await getPendingComplaintsCount();
+        setPendingCount(count);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchCount();
+
+    const interval = setInterval(fetchCount, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const { isOpen, setIsOpen } = useSidebar();
 
@@ -97,15 +116,17 @@ const Sidebar: React.FC = () => {
                 : "bg-transparent text-slate-300 hover:text-white",
             )}
           >
-            <span
-              className={clsx(
-                "flex-shrink-0 flex items-center justify-center transition-all duration-300",
-              )}
-            >
+            <div className="relative flex items-center">
               {React.cloneElement(link.icon, {
                 className: isOpen ? "w-8 h-8" : "w-5 h-5",
               })}
-            </span>
+
+              {link.path === "/account/complaints" && pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full px-[4px]">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </div>
             <span
               className={clsx(
                 "transition-opacity duration-300 whitespace-nowrap",

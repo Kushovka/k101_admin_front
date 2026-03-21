@@ -197,3 +197,15 @@ export const renameColumnInFile = async (
   console.log(data);
   return data;
 };
+
+export const getPendingComplaintsCount = async () => {
+  const { data } = await userApi.get(`/api/v1/complaints`, {
+    params: {
+      status: "pending",
+      page_size: 1,
+    },
+    headers: getHeaders(),
+  });
+
+  return data.total;
+};
