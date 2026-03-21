@@ -48,10 +48,12 @@ export interface SystemStatisticsResponse {
     files_processing: number;
     files_completed: number;
     files_failed: number;
+    total_raw_files_size_gb: number;
   };
 
   opensearch: {
     size_bytes: number;
     size_human: string;
+    size_gb: number;
   };
 }

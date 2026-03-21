@@ -167,10 +167,18 @@ const SystemStatistics = () => {
               <div className="pt-3 mt-2 border-t border-gray-100 flex flex-col gap-1">
                 <div className="flex justify-between">
                   <span className="text-slate-500">
+                    Общий объем необработанных файлов
+                  </span>
+                  <span className="font-medium">
+                    {stats.files.total_raw_files_size_gb} GB
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">
                     Объем обработанных данных
                   </span>
                   <span className="font-medium">
-                    {stats.opensearch.size_human}
+                    {stats.opensearch.size_gb} GB
                   </span>
                 </div>
               </div>
