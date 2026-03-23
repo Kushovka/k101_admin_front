@@ -172,7 +172,7 @@ const Plans: React.FC = () => {
       {error && (
         <Toast type="error" message={error} onClose={() => setError(null)} />
       )}
-      {loading && <Loader />}
+      {loading && <Loader fullScreen />}
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         {plans.map((plan, idx) => (

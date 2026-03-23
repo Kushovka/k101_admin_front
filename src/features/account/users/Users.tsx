@@ -218,7 +218,7 @@ export default function Users() {
       )}
 
       {loading ? (
-        <Loader />
+        <Loader fullScreen />
       ) : (
         <motion.div
           initial={{ opacity: 0 }}

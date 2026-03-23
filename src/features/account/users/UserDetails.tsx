@@ -148,7 +148,7 @@ const UserDetails = () => {
     }
   }, [user]);
 
-  if (loading) return <Loader />;
+  if (loading) return <Loader fullScreen />;
   if (!user) return <div>User not found</div>;
 
   /* ---------------- motion animated ---------------- */

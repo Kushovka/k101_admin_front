@@ -87,7 +87,7 @@ const SystemStatistics = () => {
           Системная статистика
         </h1>
 
-        {loading && <Loader />}
+        {loading && <Loader fullScreen />}
         {error && (
           <Toast type="error" message={error} onClose={() => setError(null)} />
         )}

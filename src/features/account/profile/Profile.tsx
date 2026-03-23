@@ -174,7 +174,7 @@ const Profile = () => {
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
 
-      {loading && <Loader />}
+      {loading && <Loader fullScreen />}
 
       <div className="max-w-[1100px] w-full mx-auto flex flex-col gap-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
