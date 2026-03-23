@@ -82,6 +82,7 @@ const SearchDetails: React.FC = () => {
   const { isOpen, setIsOpen } = useSidebar();
 
   const [notify, setNotify] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [openMain, setOpenMain] = useState(true);
   const [openDossier, setOpenDossier] = useState(false);
   const [aiDossier, setAIDossier] = useState("");
@@ -315,8 +316,17 @@ const SearchDetails: React.FC = () => {
       const filename = `dossier_${safeName || personId}.${format}`;
 
       downloadBlob(blob, filename);
-    } catch (e) {
-      console.error(e);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+
+      if (status === 402) {
+        setError("Недостаточно средств. Пополните баланс");
+      } else if (status === 500) {
+        setError("Ошибка сервера");
+      } else {
+        setError(data?.message || "Ошибка поиска");
+      }
     } finally {
       setExportLoading(false);
     }
@@ -334,6 +344,9 @@ const SearchDetails: React.FC = () => {
           message="СКОПИРОВАНО!"
           onClose={() => setNotify(false)}
         />
+      )}
+      {error && (
+        <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
       {toast && (
         <Toast
@@ -638,7 +651,13 @@ const SearchDetails: React.FC = () => {
                     if (!group.sources?.length) return null;
 
                     return (
-                      <div key={group.group_name} className="space-y-4">
+                      <div
+                        ref={(el) => {
+                          groupRefs.current[group.group_name] = el;
+                        }}
+                        key={group.group_name}
+                        className="space-y-4"
+                      >
                         {/* Заголовок группы */}
                         <div className="font-medium text-slate-800">
                           {group.group_name === "other"
