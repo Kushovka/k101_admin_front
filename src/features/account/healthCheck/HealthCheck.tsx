@@ -90,7 +90,7 @@ const HealthCheck: React.FC = () => {
         </h1>
 
         {loading ? (
-          <Loader />
+          <Loader fullScreen />
         ) : (
           <>
             <p className="text-[14px] text-slate-500">
