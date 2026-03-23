@@ -365,7 +365,7 @@ const Search = () => {
                 </div>
 
                 <div className="text-xs text-slate-500">или диапазон</div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <div>
                     <span className="text-xs text-slate-500">от:</span>
                     <input
