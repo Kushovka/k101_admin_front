@@ -651,7 +651,13 @@ const SearchDetails: React.FC = () => {
                     if (!group.sources?.length) return null;
 
                     return (
-                      <div key={group.group_name} className="space-y-4">
+                      <div
+                        ref={(el) => {
+                          groupRefs.current[group.group_name] = el;
+                        }}
+                        key={group.group_name}
+                        className="space-y-4"
+                      >
                         {/* Заголовок группы */}
                         <div className="font-medium text-slate-800">
                           {group.group_name === "other"
