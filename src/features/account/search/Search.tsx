@@ -145,6 +145,7 @@ const Search = () => {
     setRes: React.Dispatch<React.SetStateAction<SearchResponse>>;
   };
 
+  /* ---------------- helpers ---------------- */
   const chapterTitleSearch = [
     { id: 1, title: "№" },
     { id: 2, title: "Фамилия" },
@@ -154,6 +155,16 @@ const Search = () => {
     { id: 6, title: "Телефон" },
     { id: 7, title: "Подробнее..." },
   ];
+
+  const hasData = (item: SearchResultItem) => {
+    return (
+      cleanValue(item.last_name) ||
+      cleanValue(item.first_name) ||
+      cleanValue(item.middle_name) ||
+      cleanValue(item.emails?.[0]) ||
+      cleanValue(item.phones?.[0])
+    );
+  };
 
   const cleanValue = (value: unknown) => {
     if (value === null || value === undefined) return "";
@@ -352,6 +363,7 @@ const Search = () => {
                     }}
                   />
                 </div>
+
                 <div className="text-xs text-slate-500">или диапазон</div>
                 <div className="flex gap-2">
                   <div>
@@ -428,11 +440,11 @@ const Search = () => {
           </div>
 
           <div className="w-full">
-            {seeSearch && (
+            {/* {seeSearch && (
               <div className="text-[14px] text-slate-600">
-                Найдено: {res?.total_entities ?? 0}
+                Найдено: {result.filter(hasData).length}
               </div>
-            )}
+            )} */}
 
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="grid grid-cols-7 bg-gray-50 text-slate-700 text-[12px] uppercase tracking-wide font-medium py-3">
@@ -443,59 +455,60 @@ const Search = () => {
                 ))}
               </div>
 
-              {loading && <Loader />}
-
-              {result.length === 0 &&
-                (res?.total_entities ?? 0) === 0 &&
-                !loading && (
-                  <div className="py-10 text-center text-slate-400 text-[14px]">
-                    Нет результатов
-                  </div>
-                )}
-
-              {result.map((item, index) => (
-                <motion.div
-                  key={item.entity_id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15 }}
-                  className="grid grid-cols-7 text-[14px] text-slate-700 py-3 border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <span className="text-center">
-                    {(currentPage - 1) * pageSize + index + 1}
-                  </span>
-                  <span className="text-center">
-                    {cleanValue(item.last_name) || "-"}
-                  </span>
-                  <span className="text-center">
-                    {cleanValue(item.first_name) || "-"}
-                  </span>
-                  <span className="text-center">
-                    {cleanValue(item.middle_name) || "-"}
-                  </span>
-                  <span className="text-center truncate">
-                    {cleanValue(item.emails?.[0]) || "-"}
-                  </span>
-                  <span className="text-center">
-                    {cleanValue(item.phones?.[0]) || "-"}
-                  </span>
-                  <span
-                    className="text-cyan-600 font-medium text-center"
-                    onClick={() =>
-                      navigate(`/account/search/${item.entity_id}`, {
-                        state: {
-                          item,
-                          page: currentPage,
-                          mode,
-                          values,
-                        },
-                      })
-                    }
-                  >
-                    Подробнее →
-                  </span>
-                </motion.div>
-              ))}
+              {seeSearch && !loading && result.filter(hasData).length === 0 && (
+                <div className="py-10 text-center text-slate-400 text-[14px]">
+                  Ничего не найдено
+                </div>
+              )}
+              {loading ? (
+                <Loader center />
+              ) : (
+                <>
+                  {result.filter(hasData).map((item, index) => (
+                    <motion.div
+                      key={item.entity_id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.15 }}
+                      className="grid grid-cols-7 text-[14px] text-slate-700 py-3 border-t border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <span className="text-center">
+                        {(currentPage - 1) * pageSize + index + 1}
+                      </span>
+                      <span className="text-center">
+                        {cleanValue(item.last_name) || "-"}
+                      </span>
+                      <span className="text-center">
+                        {cleanValue(item.first_name) || "-"}
+                      </span>
+                      <span className="text-center">
+                        {cleanValue(item.middle_name) || "-"}
+                      </span>
+                      <span className="text-center truncate">
+                        {cleanValue(item.emails?.[0]) || "-"}
+                      </span>
+                      <span className="text-center">
+                        {cleanValue(item.phones?.[0]) || "-"}
+                      </span>
+                      <span
+                        className="text-cyan-600 font-medium text-center"
+                        onClick={() =>
+                          navigate(`/account/search/${item.entity_id}`, {
+                            state: {
+                              item,
+                              page: currentPage,
+                              mode,
+                              values,
+                            },
+                          })
+                        }
+                      >
+                        Подробнее →
+                      </span>
+                    </motion.div>
+                  ))}
+                </>
+              )}
             </div>
 
             {!loading && result.length > 0 && totalPages > 1 && (
