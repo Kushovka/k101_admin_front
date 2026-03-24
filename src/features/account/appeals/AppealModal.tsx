@@ -1,7 +1,7 @@
-import { useState } from "react";
 import clsx from "clsx";
-import { Appeal, updateAppeal } from "../../../api/appeals";
-
+import { useEffect, useState } from "react";
+import { updateAppeal } from "../../../api/appeals";
+import { Appeal } from "../../../types/appeals";
 
 type Props = {
   appeal: Appeal | null;
@@ -10,9 +10,17 @@ type Props = {
 };
 
 const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
-  const [answer, setAnswer] = useState(appeal?.answer || "");
-  const [status, setStatus] = useState(appeal?.status || "pending");
+  const [answer, setAnswer] = useState("");
+  const [status, setStatus] = useState<"new" | "in_progress" | "closed">("new");
   const [loading, setLoading] = useState(false);
+
+  // 🔥 синхронизация при смене обращения
+  useEffect(() => {
+    if (appeal) {
+      setAnswer(appeal.admin_reply || "");
+      setStatus(appeal.status);
+    }
+  }, [appeal]);
 
   if (!appeal) return null;
 
@@ -21,8 +29,8 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
       setLoading(true);
 
       await updateAppeal(appeal.id, {
-        answer,
-        status,
+        admin_reply: answer,
+        status: answer ? "in_progress" : status,
       });
 
       onUpdated();
@@ -35,13 +43,29 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-xl rounded-xl p-6 shadow-lg">
-        <h3 className="text-lg font-semibold mb-4">
-          Обращение #{appeal.id}
-        </h3>
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full max-w-xl rounded-xl p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold mb-4">Обращение #{appeal.id}</h3>
 
-        {/* текст обращения */}
+        {/* 👤 пользователь */}
+        <div className="mb-4 text-xs text-slate-500">
+          {appeal.username || appeal.telegram_username || "Без имени"} •{" "}
+          {appeal.source}
+        </div>
+
+        {/* 📌 тема */}
+        <div className="mb-4">
+          <div className="text-xs text-slate-400 mb-1">Тема</div>
+          <div className="text-sm font-medium">{appeal.subject}</div>
+        </div>
+
+        {/* 💬 сообщение */}
         <div className="mb-4">
           <div className="text-xs text-slate-400 mb-1">Сообщение</div>
           <div className="p-3 bg-slate-50 rounded-md text-sm">
@@ -49,21 +73,23 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
           </div>
         </div>
 
-        {/* статус */}
+        {/* 📊 статус */}
         <div className="mb-4">
           <div className="text-xs text-slate-400 mb-1">Статус</div>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) =>
+              setStatus(e.target.value as "new" | "in_progress" | "closed")
+            }
             className="w-full border rounded-md p-2 text-sm"
           >
-            <option value="pending">Ожидает</option>
-            <option value="answered">Отвечено</option>
-            <option value="closed">Закрыто</option>
+            <option value="new">Новые</option>
+            <option value="in_progress">В работе</option>
+            <option value="closed">Закрытые</option>
           </select>
         </div>
 
-        {/* ответ */}
+        {/* ✍️ ответ */}
         <div className="mb-6">
           <div className="text-xs text-slate-400 mb-1">Ответ</div>
           <textarea
@@ -75,7 +101,7 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
           />
         </div>
 
-        {/* кнопки */}
+        {/* 🔘 кнопки */}
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
