@@ -126,7 +126,7 @@ const Complaints = () => {
   return (
     <section
       className={clsx(
-        "min-h-screen bg-slate-50 py-10 transition-all",
+        "min-h-screen bg-slate-50 pr-[50px] py-10 transition-all",
         isOpen ? "pl-[116px]" : "pl-[336px]",
       )}
     >
@@ -157,10 +157,8 @@ const Complaints = () => {
       </div>
 
       {mode === "appeals" && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 max-w-6xl mx-auto">
-          <h2 className="text-lg font-semibold text-slate-900 mb-6">
-            Обращения пользователей
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 w-full my-6 mx-auto">
+      
 
           {/* 🔥 фильтр */}
           <div className="flex gap-3 mb-4">
@@ -295,10 +293,8 @@ const Complaints = () => {
       )}
 
       {mode === "complaints" && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 max-w-6xl mx-auto">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Обращения
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 w-full my-6 mx-auto">
+      
 
           {allComplaints.length === 0 ? (
             <p className="text-sm text-slate-500">У вас пока нет обращений</p>
