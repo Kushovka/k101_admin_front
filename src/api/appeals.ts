@@ -3,6 +3,7 @@ import userApi from "./userApi";
 
 export const getAppeals = async (params?: {
   status?: string;
+  category?: string;
   page?: number;
   page_size?: number;
 }) => {

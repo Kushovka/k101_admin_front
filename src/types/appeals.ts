@@ -1,3 +1,10 @@
+export type AppealCategory =
+  | "general"
+  | "billing"
+  | "technical"
+  | "data_error"
+  | "other";
+
 export type Appeal = {
   id: number;
   web_user_id: number | null;
@@ -5,7 +12,7 @@ export type Appeal = {
   telegram_username?: string;
   subject: string;
   message: string;
-  category: string;
+  category?: AppealCategory;
   category_label?: string;
   source: "web" | "telegram";
   status: "new" | "in_progress" | "closed";

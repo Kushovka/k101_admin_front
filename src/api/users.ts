@@ -25,12 +25,25 @@ const getHeaders = (): Record<string, string> => {
 
 /* ---------------- USERS ---------------- */
 
-export const getUsers = async (): Promise<ApiUser[]> => {
+export const getUsers = async ({
+  page = 1,
+  pageSize = 20,
+  search,
+}: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}): Promise<UsersResponse> => {
   const { data } = await adminApi.get<UsersResponse>(`/admin-api/admin/users`, {
     headers: getHeaders(),
+    params: {
+      page,
+      page_size: pageSize,
+      search: search || undefined,
+    },
   });
 
-  return data.users;
+  return data;
 };
 
 interface CreatedUserPayload {

@@ -30,7 +30,7 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
 
       await updateAppeal(appeal.id, {
         admin_reply: answer,
-        status: answer ? "in_progress" : status,
+        status: status,
       });
 
       onUpdated();
@@ -57,6 +57,14 @@ const AppealModal = ({ appeal, onClose, onUpdated }: Props) => {
         <div className="mb-4 text-xs text-slate-500">
           {appeal.username || appeal.telegram_username || "Без имени"} •{" "}
           {appeal.source}
+        </div>
+
+        {/* 📂 категория */}
+        <div className="mb-4">
+          <div className="text-xs text-slate-400 mb-1">Категория</div>
+          <div className="text-sm">
+            {appeal.category_label || appeal.category}
+          </div>
         </div>
 
         {/* 📌 тема */}

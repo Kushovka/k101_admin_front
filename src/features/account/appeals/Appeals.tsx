@@ -2,13 +2,21 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { getAppeals } from "../../../api/appeals";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-import { Appeal } from "../../../types/appeals";
+import { Appeal, AppealCategory } from "../../../types/appeals";
 import AppealModal from "./AppealModal";
 
 const statusMap = {
   new: "Новые",
   in_progress: "В работе",
   closed: "Закрытые",
+};
+
+const categoryMap: Record<AppealCategory, string> = {
+  general: "Общий вопрос",
+  billing: "Оплата",
+  technical: "Техническая",
+  data_error: "Ошибка в данных",
+  other: "Другое",
 };
 
 const Appeals = () => {
@@ -20,12 +28,16 @@ const Appeals = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [selectedAppeal, setSelectedAppeal] = useState<Appeal | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<
+    AppealCategory | undefined
+  >();
 
   const fetchAppeals = async () => {
     try {
       const data = await getAppeals({
         page,
         status: statusFilter,
+        category: categoryFilter,
       });
 
       setAppeals(data.items);
@@ -40,7 +52,24 @@ const Appeals = () => {
   useEffect(() => {
     setLoading(true);
     fetchAppeals();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, categoryFilter]);
+
+  const currentPage = page;
+
+  const maxVisible = 7;
+
+  let startPage = Math.max(currentPage - Math.floor(maxVisible / 2), 1);
+  let endPage = startPage + maxVisible - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(endPage - maxVisible + 1, 1);
+  }
+
+  const visiblePages = [];
+  for (let i = startPage; i <= endPage; i++) {
+    visiblePages.push(i);
+  }
 
   return (
     <section
@@ -55,29 +84,52 @@ const Appeals = () => {
         </h2>
 
         {/* 🔥 фильтр */}
-        <div className="flex gap-2 mb-4">
-          {[
-            { label: "Все", value: undefined },
-            { label: "Новые", value: "new" },
-            { label: "В работе", value: "in_progress" },
-            { label: "Закрытые", value: "closed" },
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={() => {
-                setPage(1);
-                setStatusFilter(item.value);
-              }}
-              className={clsx(
-                "px-3 py-1 rounded-md text-sm",
-                statusFilter === item.value
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="flex gap-3 mb-4">
+          {/* статус */}
+          <select
+            value={statusFilter ?? ""}
+            onChange={(e) => {
+              setPage(1);
+              setStatusFilter(e.target.value || undefined);
+            }}
+            className="px-3 py-2 rounded-md border border-gray-300 text-sm"
+          >
+            <option value="">Все статусы</option>
+            {Object.entries(statusMap).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+
+          {/* категория */}
+          <select
+            value={categoryFilter ?? ""}
+            onChange={(e) => {
+              setPage(1);
+              setCategoryFilter(
+                (e.target.value || undefined) as AppealCategory | undefined,
+              );
+            }}
+            className="px-3 py-2 rounded-md border border-gray-300 text-sm"
+          >
+            <option value="">Все категории</option>
+            {Object.entries(categoryMap).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              setStatusFilter(undefined);
+              setCategoryFilter(undefined);
+              setPage(1);
+            }}
+            className="text-xs text-blue-500 hover:underline"
+          >
+            Сбросить
+          </button>
         </div>
 
         {/* 🔥 список */}
@@ -110,9 +162,15 @@ const Appeals = () => {
                   </span>
                 </div>
 
-                {/* пользователь */}
-                <div className="text-xs text-slate-400 mb-1">
-                  {appeal.username || appeal.telegram_username || "Без имени"}
+                {/* пользователь + категория */}
+                <div className="text-xs text-slate-400 mb-1 flex items-center gap-2">
+                  <span>
+                    {appeal.username || appeal.telegram_username || "Без имени"}
+                  </span>
+
+                  <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                    {appeal.category_label || "Без категории"}
+                  </span>
                 </div>
 
                 {/* тема */}
@@ -133,27 +191,24 @@ const Appeals = () => {
         )}
 
         {/* 🔥 пагинация */}
-        <div className="flex justify-center gap-4 mt-6 items-center">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
-          >
-            Назад
-          </button>
-
-          <span className="text-sm text-slate-500">
-            {page} / {totalPages}
-          </span>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
-          >
-            Вперёд
-          </button>
-        </div>
+        {!loading && appeals.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1 pt-6">
+            {visiblePages.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={clsx(
+                  "px-3 py-1 rounded-full text-[14px] border transition",
+                  p === currentPage
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "border-gray-300 hover:bg-gray-100",
+                )}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 🔥 модалка */}
