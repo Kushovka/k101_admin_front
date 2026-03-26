@@ -98,3 +98,11 @@ export interface ApiTelegramUser {
 export interface TelegramUsersResponse {
   requests: ApiTelegramUser[];
 }
+
+export interface UserRequestsResponse {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  requests: any[];
+}

@@ -3,6 +3,7 @@ import userApi from "./userApi";
 
 import {
   TelegramUsersResponse,
+  UserRequestsResponse,
   type ApiTelegramUser,
   type ApiUser,
   type CreatedUserResponse,
@@ -168,5 +169,24 @@ export const isRejectRequest = async (
     reason ? { reason } : {},
     { headers: getHeaders() },
   );
+  return data;
+};
+
+export const getUserRequests = async (
+  userId: string,
+  page = 1,
+  pageSize = 10,
+): Promise<UserRequestsResponse> => {
+  const { data } = await adminApi.get<UserRequestsResponse>(
+    `/api/v1/users/admin/${userId}/requests`,
+    {
+      headers: getHeaders(),
+      params: {
+        page,
+        page_size: pageSize,
+      },
+    },
+  );
+
   return data;
 };

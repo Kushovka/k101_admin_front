@@ -5,6 +5,7 @@ import { IoExitOutline } from "react-icons/io5";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getUserById,
+  getUserRequests,
   isBlockedUser,
   isDeletedUser,
   postDeposit,
@@ -55,6 +56,29 @@ const UserDetails = () => {
     last_name: "",
     email: "",
   });
+
+  const [requests, setRequests] = useState<any[]>([]);
+  const [reqPage, setReqPage] = useState(1);
+  const [reqTotal, setReqTotal] = useState(0);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+
+  /* ---------------- helpers ---------------- */
+
+  const requestTypeLabels: Record<string, string> = {
+    advanced_phone: "Телефон",
+    advanced_name: "ФИО",
+    advanced_person_id: "ID",
+    advanced_email: "Email",
+    advanced_snils: "СНИЛС",
+    advanced_ipn: "ИНН",
+    advanced_address: "Адрес",
+    dossier: "Досье",
+  };
+
+  const statusStyles: Record<string, string> = {
+    success: "bg-green-100 text-green-700",
+    insufficient_funds: "bg-red-100 text-red-700",
+  };
 
   /* getUserById */
   useEffect(() => {
@@ -147,6 +171,29 @@ const UserDetails = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchRequests = async () => {
+      setLoadingRequests(true);
+      try {
+        const res = await getUserRequests(id, reqPage, 10);
+
+        setReqTotal(res.total);
+
+        setRequests((prev) =>
+          reqPage === 1 ? res.requests : [...prev, ...res.requests],
+        );
+      } catch (e) {
+        setError("Ошибка загрузки истории запросов");
+      } finally {
+        setLoadingRequests(false);
+      }
+    };
+
+    fetchRequests();
+  }, [id, reqPage]);
 
   if (loading) return <Loader fullScreen />;
   if (!user) return <div>User not found</div>;
@@ -315,6 +362,115 @@ const UserDetails = () => {
               пополнить баланс
             </button>
           </motion.div>
+        </motion.div>
+
+        {/* QUERY */}
+        <motion.div variants={item} className="flex flex-col gap-4">
+          <p className="text-[18px] font-semibold text-slate-900">
+            История запросов
+          </p>
+
+          {loadingRequests && (
+            <p className="text-sm text-slate-400 text-center">Загрузка...</p>
+          )}
+
+          {!loadingRequests && requests.length === 0 && (
+            <p className="text-sm text-slate-400 text-center">Нет запросов</p>
+          )}
+
+          {!loadingRequests && requests.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              {/* HEADER */}
+              <div className="grid grid-cols-[80px_1fr_1fr_120px_120px_140px_160px] text-xs font-medium text-slate-600 bg-slate-50 border-b border-gray-200">
+                <div className="py-3 text-center uppercase">ID</div>
+                <div className="py-3 text-center uppercase">Тип</div>
+                <div className="py-3 text-center uppercase">Запрос</div>
+                <div className="py-3 text-center uppercase">Цена</div>
+                <div className="py-3 text-center uppercase">Результаты</div>
+                <div className="py-3 text-center uppercase">Статус</div>
+                <div className="py-3 text-center uppercase">Дата</div>
+              </div>
+
+              {/* ROWS */}
+              <div className="flex flex-col divide-y divide-gray-100">
+                {requests.map((r) => (
+                  <div
+                    key={r.id}
+                    className="grid grid-cols-[80px_1fr_1fr_120px_120px_140px_160px] text-sm text-slate-700 py-3 items-center text-center hover:bg-slate-50 transition"
+                  >
+                    {/* ID */}
+                    <span className="font-mono text-xs text-slate-500">
+                      {r.id}
+                    </span>
+
+                    {/* TYPE */}
+                    <span>
+                      {requestTypeLabels[r.request_type] ?? r.request_type}
+                    </span>
+
+                    {/* QUERY */}
+                    <span className="text-xs truncate px-2">
+                      {r.search_query || "-"}
+                    </span>
+
+                    {/* COST */}
+                    <span
+                      className={clsx(
+                        "font-medium",
+                        Number(r.request_cost) === 0
+                          ? "text-green-600"
+                          : "text-slate-700",
+                      )}
+                    >
+                      {r.request_cost} ₽
+                    </span>
+
+                    {/* RESULTS */}
+                    <span className="text-xs text-slate-600">
+                      {r.results_count ?? "-"}
+                    </span>
+
+                    {/* STATUS */}
+                    <span
+                      className={clsx(
+                        "px-2 py-[3px] rounded-md text-xs mx-auto",
+                        statusStyles[r.status] ?? "bg-gray-100 text-gray-600",
+                      )}
+                    >
+                      {r.status === "success"
+                        ? "Успешно"
+                        : r.status === "insufficient_funds"
+                          ? "Нет средств"
+                          : r.status}
+                    </span>
+
+                    {/* DATE */}
+                    <span className="text-xs text-slate-600">
+                      {new Date(r.request_date).toLocaleString("ru-RU", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LOAD MORE */}
+          {requests.length < reqTotal && (
+            <div className="flex justify-center mt-2">
+              <button
+                onClick={() => setReqPage((p) => p + 1)}
+                className="px-4 py-2 text-sm border rounded-md hover:bg-slate-100"
+              >
+                Показать ещё
+              </button>
+            </div>
+          )}
         </motion.div>
 
         {/* MODAL */}
