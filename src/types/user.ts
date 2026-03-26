@@ -98,3 +98,21 @@ export interface ApiTelegramUser {
 export interface TelegramUsersResponse {
   requests: ApiTelegramUser[];
 }
+
+export interface UserRequestItem {
+  id: number;
+  request_type: string;
+  request_cost: string;
+  status: "success" | "insufficient_funds" | string;
+  request_date: string;
+  search_query: string;
+  results_count: number | null;
+}
+
+export interface UserRequestsResponse {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  requests: UserRequestItem[];
+}
