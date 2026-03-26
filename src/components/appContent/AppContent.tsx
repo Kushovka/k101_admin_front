@@ -81,6 +81,7 @@ const AppContent: React.FC = () => {
           {/* <Route path="health-check" element={<HealthCheck />} /> */}
           <Route path="system-stats" element={<SystemStatistics />} />
           <Route path="complaints" element={<Complaints />} />
+
           <Route path="plans" element={<Plans />} />
 
           <Route

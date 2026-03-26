@@ -32,6 +32,10 @@ export interface TableUser {
 }
 
 export interface UsersResponse {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
   users: ApiUser[];
 }
 

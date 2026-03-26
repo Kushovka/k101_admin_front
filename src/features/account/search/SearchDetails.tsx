@@ -537,15 +537,15 @@ const SearchDetails: React.FC = () => {
 
             {openMain && (
               <div className="px-4 py-3 border-t border-gray-200 space-y-2 text-[14px] text-slate-700">
-                {user?.first_name && isValidName(user.first_name) && (
-                  <p>
-                    Имя: <span>{cleanValue(user?.first_name)}</span>
-                  </p>
-                )}
-
                 {user?.last_name && isValidName(user.last_name) && (
                   <p>
                     Фамилия: <span>{cleanValue(user?.last_name)}</span>
+                  </p>
+                )}
+                
+                {user?.first_name && isValidName(user.first_name) && (
+                  <p>
+                    Имя: <span>{cleanValue(user?.first_name)}</span>
                   </p>
                 )}
 

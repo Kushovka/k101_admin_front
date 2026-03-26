@@ -16,7 +16,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
-import { FiMessageSquare } from "react-icons/fi";
+import { FiAlertCircle, FiMessageSquare } from "react-icons/fi";
 import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
@@ -70,7 +70,7 @@ const Sidebar: React.FC = () => {
     },
     {
       name: "Обращения",
-      icon: <FiMessageSquare />,
+      icon: <FiAlertCircle />,
       path: "/account/complaints",
     },
     {
