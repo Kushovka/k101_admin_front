@@ -433,6 +433,7 @@ const Complaints = () => {
           )}
         </div>
       )}
+      
       {reviewTarget && (
         <ReviewComplaintModal
           complaintId={reviewTarget.id}

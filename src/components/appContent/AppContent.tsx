@@ -20,6 +20,7 @@ import ProtectedRoute from "../protected-route/ProtectedRoute";
 import SidebarLayout from "../sidebar-layout/SidebarLayout";
 import { SidebarProvider } from "../sidebar/SidebarContext";
 import SessionExpiredModal from "./SessionExpiredModal";
+import News from "../../features/account/news/News";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -83,6 +84,7 @@ const AppContent: React.FC = () => {
           <Route path="system-stats" element={<SystemStatistics />} />
           <Route path="complaints" element={<Complaints />} />
           <Route path="appeals" element={<Appeals />} />
+          <Route path="news" element={<News />} />
           <Route path="plans" element={<Plans />} />
 
           <Route

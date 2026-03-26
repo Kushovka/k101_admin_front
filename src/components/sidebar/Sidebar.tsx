@@ -2,7 +2,7 @@ import { FaUsers } from "react-icons/fa";
 import { FaRegCircleUser } from "react-icons/fa6";
 import { GoChevronRight } from "react-icons/go";
 import { IoIosSearch } from "react-icons/io";
-import { IoExitOutline } from "react-icons/io5";
+
 import {
   MdAttachMoney,
   MdDownloading,
@@ -17,6 +17,7 @@ import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
 import { FiAlertCircle } from "react-icons/fi";
+import { IoExitOutline, IoNewspaperOutline } from "react-icons/io5";
 import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
@@ -72,6 +73,11 @@ const Sidebar: React.FC = () => {
       name: "Обращения",
       icon: <FiAlertCircle />,
       path: "/account/complaints",
+    },
+    {
+      name: "Новости",
+      icon: <IoNewspaperOutline />,
+      path: "/account/news",
     },
     // {
     //   name: "Обращения",
