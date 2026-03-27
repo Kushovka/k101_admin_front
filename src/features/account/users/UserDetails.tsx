@@ -31,10 +31,10 @@ const mapUser = (u: UserDetailsApi): UserDetailsUI => ({
   role: u.role === "user" ? "User" : "Admin",
   registrationDate: new Date(u.registration_date).toLocaleDateString(),
   status: u.is_blocked ? "Blocked" : "Active",
-  balance: u.balance ?? 0,
+  balance: Number(u.balance ?? 0),
   freeRequest: u.free_requests_count ?? 0,
-  allRequest: u.all_requests_count ?? 0,
-  totalSpend: u.total_spent ?? 0,
+  allRequest: u.total_requests ?? 0,
+  totalSpend: Number(u.total_spent ?? 0),
 });
 
 const UserDetails = () => {
@@ -61,6 +61,7 @@ const UserDetails = () => {
   const [reqPage, setReqPage] = useState(1);
   const [reqTotal, setReqTotal] = useState(0);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [isFullHistoryLoaded, setIsFullHistoryLoaded] = useState(false);
 
   /* ---------------- helpers ---------------- */
 
@@ -89,8 +90,10 @@ const UserDetails = () => {
       try {
         const res: UserDetailsApi = await getUserById(id);
         const mapped = mapUser(res);
-        setUser(mapped);
 
+        setUser(mapped);
+        setRequests(res.recent_requests ?? []);
+        setReqTotal(res.total_requests ?? 0);
         setFormData({
           first_name: mapped.name,
           last_name: mapped.surname,
@@ -172,28 +175,42 @@ const UserDetails = () => {
     }
   }, [user]);
 
-  useEffect(() => {
+  const handleLoadFullHistory = async () => {
     if (!id) return;
 
-    const fetchRequests = async () => {
-      setLoadingRequests(true);
-      try {
-        const res = await getUserRequests(id, reqPage, 10);
+    setLoadingRequests(true);
+    try {
+      const res = await getUserRequests(id, 1, 10);
 
-        setReqTotal(res.total);
+      setRequests(res.requests);
+      setReqTotal(res.total);
+      setReqPage(1);
+      setIsFullHistoryLoaded(true);
+    } catch {
+      setError("Ошибка загрузки истории запросов");
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
 
-        setRequests((prev) =>
-          reqPage === 1 ? res.requests : [...prev, ...res.requests],
-        );
-      } catch (e) {
-        setError("Ошибка загрузки истории запросов");
-      } finally {
-        setLoadingRequests(false);
-      }
-    };
+  const handleLoadMoreRequests = async () => {
+    if (!id) return;
 
-    fetchRequests();
-  }, [id, reqPage]);
+    const nextPage = reqPage + 1;
+    setLoadingRequests(true);
+
+    try {
+      const res = await getUserRequests(id, nextPage, 10);
+
+      setRequests((prev) => [...prev, ...res.requests]);
+      setReqTotal(res.total);
+      setReqPage(nextPage);
+    } catch {
+      setError("Ошибка загрузки истории запросов");
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
 
   if (loading) return <Loader fullScreen />;
   if (!user) return <div>User not found</div>;
@@ -228,6 +245,22 @@ const UserDetails = () => {
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
           Пользователь: {user.nickName}
         </h1>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/account/users")}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
+            Назад
+          </button>
+
+          <button
+            onClick={() => setOpenDelete(true)}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            Удалить пользователя
+          </button>
+        </div>
 
         <motion.div
           variants={container}
@@ -461,13 +494,25 @@ const UserDetails = () => {
           )}
 
           {/* LOAD MORE */}
-          {requests.length < reqTotal && (
+          {!isFullHistoryLoaded && user.allRequest > requests.length && (
             <div className="flex justify-center mt-2">
               <button
-                onClick={() => setReqPage((p) => p + 1)}
+                onClick={handleLoadFullHistory}
                 className="px-4 py-2 text-sm border rounded-md hover:bg-slate-100"
               >
-                Показать ещё
+                Показать всю историю
+              </button>
+            </div>
+          )}
+
+          {isFullHistoryLoaded && requests.length < reqTotal && (
+            <div className="flex justify-center mt-2">
+              <button
+                onClick={handleLoadMoreRequests}
+                disabled={loadingRequests}
+                className="px-4 py-2 text-sm border rounded-md hover:bg-slate-100 disabled:opacity-50"
+              >
+                {loadingRequests ? "Загрузка..." : "Показать ещё"}
               </button>
             </div>
           )}
@@ -594,23 +639,6 @@ const UserDetails = () => {
             </motion.div>
           </div>
         )}
-
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate("/account/users")}
-            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
-          >
-            <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
-            Назад
-          </button>
-
-          <button
-            onClick={() => setOpenDelete(true)}
-            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
-          >
-            Удалить пользователя
-          </button>
-        </div>
       </div>
     </section>
   );

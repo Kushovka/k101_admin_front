@@ -57,6 +57,8 @@ export interface UserDetailsApi {
   free_requests_count?: number;
   all_requests_count?: number;
   total_spent?: number;
+  recent_requests?: [];
+  total_requests?: number;
 }
 
 export interface UserDetailsUI {
@@ -98,7 +100,11 @@ export interface ApiTelegramUser {
 export interface TelegramUsersResponse {
   requests: ApiTelegramUser[];
 }
-
+export type RequestStatus =
+  | "success"
+  | "insufficient_funds"
+  | "failed"
+  | string;
 export interface UserRequestItem {
   id: number;
   request_type: string;
