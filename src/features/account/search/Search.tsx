@@ -6,6 +6,7 @@ import { FaCalendarAlt } from "react-icons/fa";
 import {
   IoCallSharp,
   IoCardSharp,
+  IoCarSportSharp,
   IoDocumentTextSharp,
   IoLocationSharp,
   IoMailSharp,
@@ -20,6 +21,7 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 import { useSearch } from "./SearchContext";
+import { HiOutlineIdentification } from "react-icons/hi";
 
 type SearchMode =
   | "name"
@@ -31,6 +33,8 @@ type SearchMode =
   | "city"
   | "passport"
   | "gender"
+  | "vin"
+  | "license_plate"
   | "birthday"
   | "birthday_from"
   | "birthday_to";
@@ -89,6 +93,18 @@ const SEARCH_TABS: {
     placeholder: "123456789000",
     icon: <IoCardSharp />,
   },
+  {
+    key: "vin",
+    label: "VIN-номер",
+    placeholder: "VF3MJAHXVHS101043",
+    icon: <HiOutlineIdentification />,
+  },
+  {
+    key: "license_plate",
+    label: "Автомобильный номер",
+    placeholder: "А000АА77",
+    icon: <IoCarSportSharp />,
+  },
 ];
 
 const getHeaders = () => ({
@@ -116,6 +132,8 @@ const Search = () => {
     city: "",
     passport: "",
     gender: "",
+    vin: "",
+    license_plate: "",
     birthday: "",
     birthday_from: "",
     birthday_to: "",
