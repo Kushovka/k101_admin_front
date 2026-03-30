@@ -228,17 +228,33 @@ const UserDetails = () => {
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
           Пользователь: {user.nickName}
         </h1>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/account/users")}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
+            Назад
+          </button>
+
+          <button
+            onClick={() => setOpenDelete(true)}
+            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
+          >
+            Удалить пользователя
+          </button>
+        </div>
 
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="flex w-full"
+          className="grid grid-cols-2 gap-8"
         >
           {/* LEFT */}
           <motion.div
             variants={item}
-            className="bg-white border w-full border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
+            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
           >
             <p className="text-[16px] font-medium text-slate-900 text-center">
               Основная информация
@@ -317,7 +333,7 @@ const UserDetails = () => {
           </motion.div>
 
           {/* RIGHT */}
-          {/* <motion.div
+          <motion.div
             variants={item}
             className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
           >
@@ -361,7 +377,7 @@ const UserDetails = () => {
             >
               пополнить баланс
             </button>
-          </motion.div> */}
+          </motion.div>
         </motion.div>
 
         {/* QUERY */}
@@ -594,23 +610,6 @@ const UserDetails = () => {
             </motion.div>
           </div>
         )}
-
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate("/account/users")}
-            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
-          >
-            <IoExitOutline className="rotate-180 h-[22px] w-[22px]" />
-            Назад
-          </button>
-
-          <button
-            onClick={() => setOpenDelete(true)}
-            className="flex items-center gap-3 border px-3 py-2 rounded-lg text-slate-700 hover:bg-gray-200 transition w-max"
-          >
-            Удалить пользователя
-          </button>
-        </div>
       </div>
     </section>
   );

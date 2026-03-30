@@ -185,12 +185,12 @@ const Profile = () => {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 gap-8"
+          className="flex w-full"
         >
           {/* LEFT CARD */}
           <motion.div
             variants={item}
-            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
+            className="bg-white border w-full border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
           >
             <p className="text-[16px] font-medium text-slate-900 text-center">
               Основная информация
@@ -243,7 +243,7 @@ const Profile = () => {
           </motion.div>
 
           {/* RIGHT CARD */}
-          <motion.div
+          {/* <motion.div
             variants={item}
             className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
           >
@@ -273,7 +273,7 @@ const Profile = () => {
             >
               пополнить баланс
             </button>
-          </motion.div>
+          </motion.div> */}
 
           {/* MODAL */}
           {openModal && (
