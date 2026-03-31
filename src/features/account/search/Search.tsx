@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import React, { ReactElement, SVGProps, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
 import { FaCalendarAlt } from "react-icons/fa";
+import { HiOutlineIdentification } from "react-icons/hi";
 import {
   IoCallSharp,
   IoCardSharp,
@@ -21,7 +22,6 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 import { useSearch } from "./SearchContext";
-import { HiOutlineIdentification } from "react-icons/hi";
 
 type SearchMode =
   | "name"
@@ -29,12 +29,12 @@ type SearchMode =
   | "email"
   | "snils"
   | "ipn"
+  | "vin"
+  | "license_plate"
   | "address"
   | "city"
   | "passport"
   | "gender"
-  | "vin"
-  | "license_plate"
   | "birthday"
   | "birthday_from"
   | "birthday_to";
@@ -128,12 +128,12 @@ const Search = () => {
     email: "",
     snils: "",
     ipn: "",
+    vin: "",
+    license_plate: "",
     address: "",
     city: "",
     passport: "",
     gender: "",
-    vin: "",
-    license_plate: "",
     birthday: "",
     birthday_from: "",
     birthday_to: "",
@@ -211,6 +211,8 @@ const Search = () => {
           email: "",
           snils: "",
           ipn: "",
+          vin: "",
+          license_plate: "",
           address: "",
           city: "",
           passport: "",

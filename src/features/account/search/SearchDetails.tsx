@@ -16,6 +16,17 @@ import { CorrectionModal } from "../complaints/CorrectionModal";
 import { RenameColumnModal } from "../complaints/RenameColumnModal";
 
 const fieldLabels: Record<string, string> = {
+  first_name: "Имя",
+  name: "Имя",
+  last_name: "Фамилия",
+  surname: "Фамилия",
+  middle_name: "Отчество",
+  fathername: "Отчество",
+  address: "Адрес",
+  phone: "Телефон",
+  city: "Город",
+  birthday: "Дата рождения",
+  ipn: "ИНН",
   height: "Рост",
   weight: "Вес",
   breast: "Грудь",
@@ -542,7 +553,7 @@ const SearchDetails: React.FC = () => {
                     Фамилия: <span>{cleanValue(user?.last_name)}</span>
                   </p>
                 )}
-                
+
                 {user?.first_name && isValidName(user.first_name) && (
                   <p>
                     Имя: <span>{cleanValue(user?.first_name)}</span>
