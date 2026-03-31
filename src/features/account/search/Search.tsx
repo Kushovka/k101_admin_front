@@ -286,7 +286,16 @@ const Search = () => {
       setCurrentPage(page);
       setSeeSearch(true);
     } catch (err: any) {
-      setError("Ошибка поиска");
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+
+      if (status === 402) {
+        setError("Недостаточно средств. Пополните баланс");
+      } else if (status === 500) {
+        setError("Ошибка сервера");
+      } else {
+        setError(data?.message || "Ошибка поиска");
+      }
     } finally {
       setLoading(false);
     }
