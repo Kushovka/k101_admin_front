@@ -17,7 +17,7 @@ import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
 import { FiAlertCircle } from "react-icons/fi";
-import { IoExitOutline, IoNewspaperOutline } from "react-icons/io5";
+import { IoExitOutline, IoNewspaperOutline, IoSearch } from "react-icons/io5";
 import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
@@ -79,11 +79,6 @@ const Sidebar: React.FC = () => {
       icon: <IoNewspaperOutline />,
       path: "/account/news",
     },
-    // {
-    //   name: "Обращения",
-    //   icon: <FiMessageSquare />,
-    //   path: "/account/appeals",
-    // },
     {
       name: "Тарифы",
       icon: <MdAttachMoney />,

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import Appeals from "../../features/account/appeals/Appeals";
 import Complaints from "../../features/account/complaints/Complaints";
+import News from "../../features/account/news/News";
 import Plans from "../../features/account/plans/Plans";
 import Profile from "../../features/account/profile/Profile";
 import Search from "../../features/account/search/Search";
@@ -20,7 +21,6 @@ import ProtectedRoute from "../protected-route/ProtectedRoute";
 import SidebarLayout from "../sidebar-layout/SidebarLayout";
 import { SidebarProvider } from "../sidebar/SidebarContext";
 import SessionExpiredModal from "./SessionExpiredModal";
-import News from "../../features/account/news/News";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
