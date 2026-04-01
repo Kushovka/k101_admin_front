@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { ReactElement, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
+import { IoIosArrowForward } from "react-icons/io";
 import {
   IoCallSharp,
   IoCardSharp,
@@ -56,12 +57,6 @@ const SEARCH_GROUPS: SearchGroup[] = [
         label: "Пол",
         placeholder: "м/ж",
         icon: <IoMaleFemale />,
-      },
-      {
-        key: "phone",
-        label: "Телефон",
-        placeholder: "+7 999 123-45-67",
-        icon: <IoCallSharp />,
       },
       {
         key: "birthday",
@@ -350,6 +345,7 @@ const Search = () => {
       setResult(response.data.entities?.map((item) => item.entity) ?? []);
       setTotalPages(Math.ceil((response.data.total_entities ?? 0) / pageSize));
       setCurrentPage(page);
+
       setSeeSearch(true);
     } catch (err: any) {
       const status = err?.response?.status;
@@ -407,6 +403,7 @@ const Search = () => {
               className="flex flex-col gap-3"
               onSubmit={(e) => handleSubmit(e)}
             >
+              {/* name */}
               <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
@@ -430,7 +427,66 @@ const Search = () => {
                   />
                 </div>
               </motion.div>
+              {/* birthday */}
+              <motion.div className=" bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoPersonSharp />
+                  </span>
+                  Дата рождения
+                </div>
 
+                <div>
+                  <input
+                    type="text"
+                    className="h-[36px] w-full px-2 text-[14px] border border-gray-300 rounded-lg"
+                    placeholder="ДД.ММ.ГГГГ"
+                    maxLength={10}
+                    value={values.birthday}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+
+                      if (v.length >= 5)
+                        v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
+                      else if (v.length >= 3)
+                        v = `${v.slice(0, 2)}.${v.slice(2)}`;
+
+                      setValues((prev) => ({
+                        ...prev,
+                        birthday: v,
+                        birthday_from: "",
+                        birthday_to: "",
+                      }));
+                    }}
+                  />
+                </div>
+              </motion.div>
+              {/* phone */}
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoCallSharp />
+                  </span>
+                  Телефон
+                </div>
+
+                <div>
+                  <input
+                    placeholder="+7 999 123-45-67"
+                    type="text"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.name}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </motion.div>
+
+              {/* email */}
               <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
@@ -648,16 +704,16 @@ const Search = () => {
                         onClick={() => toggleGroup(group.title)}
                         className="flex items-center justify-between cursor-pointer select-none"
                       >
-                        <span className="text-[13px] font-semibold text-slate-500">
+                        <span className="text-base font-semibold text-slate-600">
                           {group.title}
                         </span>
 
                         <motion.span
                           animate={{ rotate: isOpen ? 90 : 0 }}
                           transition={{ duration: 0.2 }}
-                          className="text-gray-400"
+                          className="text-gray-700"
                         >
-                          ▶
+                          <IoIosArrowForward />
                         </motion.span>
                       </div>
 
@@ -679,38 +735,9 @@ const Search = () => {
                                     key="birthday"
                                     className="flex flex-col gap-2"
                                   >
-                                    <div className="text-xs text-gray-500">
-                                      Дата рождения
-                                    </div>
-
-                                    <div className="border rounded-xl p-3 flex flex-col gap-2">
-                                      <input
-                                        type="text"
-                                        className="h-[36px] px-2 text-[14px] border border-gray-300 rounded-lg"
-                                        placeholder="ДД.ММ.ГГГГ"
-                                        maxLength={10}
-                                        value={values.birthday}
-                                        onChange={(e) => {
-                                          let v = e.target.value
-                                            .replace(/\D/g, "")
-                                            .slice(0, 8);
-
-                                          if (v.length >= 5)
-                                            v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
-                                          else if (v.length >= 3)
-                                            v = `${v.slice(0, 2)}.${v.slice(2)}`;
-
-                                          setValues((prev) => ({
-                                            ...prev,
-                                            birthday: v,
-                                            birthday_from: "",
-                                            birthday_to: "",
-                                          }));
-                                        }}
-                                      />
-
-                                      <div className="text-xs text-slate-500">
-                                        или диапазон
+                                    <div className="rounded-xl flex flex-col gap-2">
+                                      <div className="text-sm text-slate-500">
+                                        Диапазон даты рождения
                                       </div>
 
                                       <div className="flex flex-col gap-2">
@@ -726,7 +753,9 @@ const Search = () => {
                                             }))
                                           }
                                         />
-
+                                        <label className="text-xs text-slate-500">
+                                          до
+                                        </label>
                                         <input
                                           type="date"
                                           className="h-[36px] px-2 border border-gray-300 rounded-lg"
@@ -751,7 +780,7 @@ const Search = () => {
                                   key={field.key}
                                   className="flex flex-col gap-1"
                                 >
-                                  <label className="text-xs text-gray-500">
+                                  <label className="text-sm text-gray-500">
                                     {field.label}
                                   </label>
 
