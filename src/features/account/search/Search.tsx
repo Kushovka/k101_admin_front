@@ -1,13 +1,12 @@
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { ReactElement, SVGProps, useEffect, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
 import {
   IoCallSharp,
   IoCardSharp,
   IoDocumentTextSharp,
   IoLocationSharp,
-  IoMailSharp,
   IoMaleFemale,
   IoPersonSharp,
 } from "react-icons/io5";
@@ -17,6 +16,7 @@ import userApi from "../../../api/userApi";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
+
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 import { useSearch } from "./SearchContext";
 
@@ -34,59 +34,78 @@ type SearchMode =
   | "birthday_from"
   | "birthday_to";
 
-const SEARCH_TABS: {
+type SearchField = {
   key: SearchMode;
   label: string;
   placeholder: string;
-  icon: ReactElement<SVGProps<SVGAElement>>;
-}[] = [
+  icon: ReactElement;
+  type?: "input" | "birthday";
+};
+
+type SearchGroup = {
+  title: string;
+  fields: SearchField[];
+};
+
+const SEARCH_GROUPS: SearchGroup[] = [
   {
-    key: "gender",
-    label: "Пол",
-    placeholder: "м/ж/мужской/женский",
-    icon: <IoMaleFemale />,
+    title: "Личная информация",
+    fields: [
+      {
+        key: "gender",
+        label: "Пол",
+        placeholder: "м/ж",
+        icon: <IoMaleFemale />,
+      },
+      {
+        key: "phone",
+        label: "Телефон",
+        placeholder: "+7 999 123-45-67",
+        icon: <IoCallSharp />,
+      },
+      {
+        key: "birthday",
+        type: "birthday",
+        label: "",
+        placeholder: "",
+        icon: <></>,
+      },
+      {
+        key: "address",
+        label: "Адрес",
+        placeholder: "Город, улица, дом",
+        icon: <IoLocationSharp />,
+      },
+      {
+        key: "city",
+        label: "Город",
+        placeholder: "Москва",
+        icon: <PiCityFill />,
+      },
+    ],
   },
   {
-    key: "phone",
-    label: "Телефон",
-    placeholder: "+7 999 123-45-67",
-    icon: <IoCallSharp />,
-  },
-  {
-    key: "email",
-    label: "Email",
-    placeholder: "example@mail.ru",
-    icon: <IoMailSharp />,
-  },
-  {
-    key: "address",
-    label: "Адрес",
-    placeholder: "Город, улица, дом",
-    icon: <IoLocationSharp />,
-  },
-  {
-    key: "city",
-    label: "Город",
-    placeholder: "Москва",
-    icon: <PiCityFill />,
-  },
-  {
-    key: "passport",
-    label: "Серия и номер паспорта",
-    placeholder: "4510 123456",
-    icon: <BsPassportFill />,
-  },
-  {
-    key: "snils",
-    label: "СНИЛС",
-    placeholder: "123-456-789 00",
-    icon: <IoDocumentTextSharp />,
-  },
-  {
-    key: "ipn",
-    label: "ИНН",
-    placeholder: "123456789000",
-    icon: <IoCardSharp />,
+    title: "Документы",
+    fields: [
+      {
+        key: "passport",
+        label: "Паспорт",
+        placeholder: "4510 123456",
+        icon: <BsPassportFill />,
+      },
+      {
+        key: "snils",
+        label: "СНИЛС",
+        placeholder: "123-456-789 00",
+        icon: <IoDocumentTextSharp />,
+      },
+      {
+        key: "ipn",
+        label: "ИНН",
+        placeholder: "123456789000",
+        icon: <IoCardSharp />,
+      },
+    ],
   },
 ];
 const FILTER_LABELS: Record<string, string> = {
@@ -103,6 +122,23 @@ const FILTER_LABELS: Record<string, string> = {
   birthday_from: "Дата от",
   birthday_to: "Дата до",
 };
+
+const FILTER_GROUPS: Record<string, string> = {
+  name: "Основное",
+  birthday: "Основное",
+  birthday_from: "Основное",
+  birthday_to: "Основное",
+
+  phone: "Личная информация",
+  email: "Личная информация",
+  gender: "Личная информация",
+  address: "Личная информация",
+  city: "Личная информация",
+
+  passport: "Документы",
+  snils: "Документы",
+  ipn: "Документы",
+};
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
   "Content-Type": "application/json",
@@ -117,6 +153,12 @@ const Search = () => {
   const [seeSearch, setSeeSearch] = useState(false);
   const [mode, setMode] = useState<SearchMode>("name");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    Основное: true,
+    "Личная информация": true,
+    Документы: true,
+  });
 
   // хранит значения всех табов
   const [values, setValues] = useState<Record<SearchMode, string>>({
@@ -180,6 +222,13 @@ const Search = () => {
     );
   };
 
+  const toggleGroup = (title: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   const cleanValue = (value: unknown) => {
     if (value === null || value === undefined) return "";
     return String(value)
@@ -226,6 +275,15 @@ const Search = () => {
       handleSubmit(undefined, location.state.page ?? 1, restoredValues);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("search_groups");
+    if (saved) setOpenGroups(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("search_groups", JSON.stringify(openGroups));
+  }, [openGroups]);
 
   const handleSubmit = async (
     e?: React.FormEvent,
@@ -292,7 +350,6 @@ const Search = () => {
       setResult(response.data.entities?.map((item) => item.entity) ?? []);
       setTotalPages(Math.ceil((response.data.total_entities ?? 0) / pageSize));
       setCurrentPage(page);
-
       setSeeSearch(true);
     } catch (err: any) {
       const status = err?.response?.status;
@@ -578,87 +635,153 @@ const Search = () => {
               </div>
 
               <div className="flex flex-col gap-3">
-                {SEARCH_TABS.map((tab) => (
-                  <div key={tab.key} className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-500">{tab.label}</label>
-                    <input
-                      type="text"
-                      placeholder={tab.placeholder}
-                      className="h-[36px] px-2 border border-gray-300 rounded-md"
-                      value={values[tab.key]}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          [tab.key]: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
-                <motion.div className="bg-white  flex flex-col gap-2 border-gray-200 hover:border-gray-300">
-                  <div className="text-xs text-gray-500">Дата рождения</div>
-                  <div className="border rounded-xl p-4">
-                    <div>
-                      <input
-                        type="text"
-                        className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                        placeholder="ДД.ММ.ГГГГ"
-                        maxLength={10}
-                        value={values.birthday}
-                        onChange={(e) => {
-                          let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+                {SEARCH_GROUPS.map((group) => {
+                  const isOpen = openGroups[group.title];
 
-                          // автоформат
-                          if (v.length >= 5)
-                            v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
-                          else if (v.length >= 3)
-                            v = `${v.slice(0, 2)}.${v.slice(2)}`;
+                  return (
+                    <div
+                      key={group.title}
+                      className="flex flex-col gap-3 pb-3 border-b last:border-none"
+                    >
+                      {/* header */}
+                      <div
+                        onClick={() => toggleGroup(group.title)}
+                        className="flex items-center justify-between cursor-pointer select-none"
+                      >
+                        <span className="text-[13px] font-semibold text-slate-500">
+                          {group.title}
+                        </span>
 
-                          setValues((prev) => ({
-                            ...prev,
-                            birthday: v,
-                            birthday_from: "",
-                            birthday_to: "",
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="text-xs text-slate-500">или диапазон</div>
-                    <div className="flex flex-col gap-2">
-                      <div>
-                        <span className="text-xs text-slate-500">от:</span>
-                        <input
-                          type="date"
-                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                          value={values.birthday_from}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              birthday_from: e.target.value,
-                              birthday: "",
-                            }))
-                          }
-                        />
+                        <motion.span
+                          animate={{ rotate: isOpen ? 90 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-gray-400"
+                        >
+                          ▶
+                        </motion.span>
                       </div>
-                      <div>
-                        <span className="text-xs text-slate-500">до:</span>
-                        <input
-                          type="date"
-                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                          value={values.birthday_to}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              birthday_to: e.target.value,
-                              birthday: "",
-                            }))
-                          }
-                        />
-                      </div>
+
+                      {/* content */}
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="content"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden flex flex-col gap-3"
+                          >
+                            {group.fields.map((field, index) => {
+                              if (field.type === "birthday") {
+                                return (
+                                  <div
+                                    key="birthday"
+                                    className="flex flex-col gap-2"
+                                  >
+                                    <div className="text-xs text-gray-500">
+                                      Дата рождения
+                                    </div>
+
+                                    <div className="border rounded-xl p-3 flex flex-col gap-2">
+                                      <input
+                                        type="text"
+                                        className="h-[36px] px-2 text-[14px] border border-gray-300 rounded-lg"
+                                        placeholder="ДД.ММ.ГГГГ"
+                                        maxLength={10}
+                                        value={values.birthday}
+                                        onChange={(e) => {
+                                          let v = e.target.value
+                                            .replace(/\D/g, "")
+                                            .slice(0, 8);
+
+                                          if (v.length >= 5)
+                                            v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
+                                          else if (v.length >= 3)
+                                            v = `${v.slice(0, 2)}.${v.slice(2)}`;
+
+                                          setValues((prev) => ({
+                                            ...prev,
+                                            birthday: v,
+                                            birthday_from: "",
+                                            birthday_to: "",
+                                          }));
+                                        }}
+                                      />
+
+                                      <div className="text-xs text-slate-500">
+                                        или диапазон
+                                      </div>
+
+                                      <div className="flex flex-col gap-2">
+                                        <input
+                                          type="date"
+                                          className="h-[36px] px-2 border border-gray-300 rounded-lg"
+                                          value={values.birthday_from}
+                                          onChange={(e) =>
+                                            setValues((prev) => ({
+                                              ...prev,
+                                              birthday_from: e.target.value,
+                                              birthday: "",
+                                            }))
+                                          }
+                                        />
+
+                                        <input
+                                          type="date"
+                                          className="h-[36px] px-2 border border-gray-300 rounded-lg"
+                                          value={values.birthday_to}
+                                          onChange={(e) =>
+                                            setValues((prev) => ({
+                                              ...prev,
+                                              birthday_to: e.target.value,
+                                              birthday: "",
+                                            }))
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // обычные поля
+                              return (
+                                <div
+                                  key={field.key}
+                                  className="flex flex-col gap-1"
+                                >
+                                  <label className="text-xs text-gray-500">
+                                    {field.label}
+                                  </label>
+
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                                      {field.icon}
+                                    </span>
+
+                                    <input
+                                      type="text"
+                                      placeholder={field.placeholder}
+                                      className="h-[36px] pl-8 pr-2 border border-gray-300 rounded-md w-full"
+                                      value={values[field.key]}
+                                      onChange={(e) =>
+                                        setValues((prev) => ({
+                                          ...prev,
+                                          [field.key]: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </div>
-                </motion.div>
+                  );
+                })}
               </div>
 
               <div className="sticky bottom-0 bg-white pt-4 flex gap-2">
