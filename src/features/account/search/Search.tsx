@@ -2,7 +2,6 @@ import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { ReactElement, SVGProps, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
-import { FaCalendarAlt } from "react-icons/fa";
 import {
   IoCallSharp,
   IoCardSharp,
@@ -91,6 +90,7 @@ const SEARCH_TABS: {
   },
 ];
 const FILTER_LABELS: Record<string, string> = {
+  name: "ФИО",
   phone: "Телефон",
   email: "Email",
   snils: "СНИЛС",
@@ -99,6 +99,9 @@ const FILTER_LABELS: Record<string, string> = {
   city: "Город",
   passport: "Паспорт",
   gender: "Пол",
+  birthday: "Дата рождения",
+  birthday_from: "Дата от",
+  birthday_to: "Дата до",
 };
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
@@ -327,7 +330,7 @@ const Search = () => {
   return (
     <section
       className={clsx(
-        "section",
+        "section py-20 pr-[36px]",
         isOpen ? "pl-[116px]" : "pl-[336px]",
       )}
     >
@@ -340,7 +343,7 @@ const Search = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
+          className="bg-white border-t border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
         >
           <div className="grid grid-cols-[320px_1fr] gap-6">
             <form
@@ -374,69 +377,24 @@ const Search = () => {
               <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
-                    <FaCalendarAlt />
+                    <IoPersonSharp />
                   </span>
-                  Дата рождения
+                  Email
                 </div>
 
                 <div>
                   <input
+                    placeholder="example@mail.ru"
                     type="text"
-                    className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                    placeholder="ДД.ММ.ГГГГ"
-                    maxLength={10}
-                    value={values.birthday}
-                    onChange={(e) => {
-                      let v = e.target.value.replace(/\D/g, "").slice(0, 8);
-
-                      // автоформат
-                      if (v.length >= 5)
-                        v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
-                      else if (v.length >= 3)
-                        v = `${v.slice(0, 2)}.${v.slice(2)}`;
-
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.email}
+                    onChange={(e) =>
                       setValues((prev) => ({
                         ...prev,
-                        birthday: v,
-                        birthday_from: "",
-                        birthday_to: "",
-                      }));
-                    }}
+                        email: e.target.value,
+                      }))
+                    }
                   />
-                </div>
-
-                <div className="text-xs text-slate-500">или диапазон</div>
-                <div className="flex flex-col gap-2">
-                  <div>
-                    <span className="text-xs text-slate-500">от:</span>
-                    <input
-                      type="date"
-                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                      value={values.birthday_from}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          birthday_from: e.target.value,
-                          birthday: "",
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500">до:</span>
-                    <input
-                      type="date"
-                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                      value={values.birthday_to}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          birthday_to: e.target.value,
-                          birthday: "",
-                        }))
-                      }
-                    />
-                  </div>
                 </div>
               </motion.div>
 
@@ -467,7 +425,7 @@ const Search = () => {
             )} */}
             <div className="flex flex-wrap gap-2 mb-3">
               {Object.entries(values).map(([key, value]) => {
-                if (!value || key === "name" || key === "birthday") return null;
+                if (!value) return null;
 
                 return (
                   <motion.div
@@ -637,6 +595,70 @@ const Search = () => {
                     />
                   </div>
                 ))}
+                <motion.div className="bg-white  flex flex-col gap-2 border-gray-200 hover:border-gray-300">
+                  <div className="text-xs text-gray-500">Дата рождения</div>
+                  <div className="border rounded-xl p-4">
+                    <div>
+                      <input
+                        type="text"
+                        className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                        placeholder="ДД.ММ.ГГГГ"
+                        maxLength={10}
+                        value={values.birthday}
+                        onChange={(e) => {
+                          let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+
+                          // автоформат
+                          if (v.length >= 5)
+                            v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
+                          else if (v.length >= 3)
+                            v = `${v.slice(0, 2)}.${v.slice(2)}`;
+
+                          setValues((prev) => ({
+                            ...prev,
+                            birthday: v,
+                            birthday_from: "",
+                            birthday_to: "",
+                          }));
+                        }}
+                      />
+                    </div>
+
+                    <div className="text-xs text-slate-500">или диапазон</div>
+                    <div className="flex flex-col gap-2">
+                      <div>
+                        <span className="text-xs text-slate-500">от:</span>
+                        <input
+                          type="date"
+                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                          value={values.birthday_from}
+                          onChange={(e) =>
+                            setValues((prev) => ({
+                              ...prev,
+                              birthday_from: e.target.value,
+                              birthday: "",
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500">до:</span>
+                        <input
+                          type="date"
+                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                          value={values.birthday_to}
+                          onChange={(e) =>
+                            setValues((prev) => ({
+                              ...prev,
+                              birthday_to: e.target.value,
+                              birthday: "",
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
 
               <div className="sticky bottom-0 bg-white pt-4 flex gap-2">
