@@ -21,6 +21,7 @@ import ProtectedRoute from "../protected-route/ProtectedRoute";
 import SidebarLayout from "../sidebar-layout/SidebarLayout";
 import { SidebarProvider } from "../sidebar/SidebarContext";
 import SessionExpiredModal from "./SessionExpiredModal";
+import SearchByCar from "../../features/account/search/SearchByCar";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -96,6 +97,18 @@ const AppContent: React.FC = () => {
             }
           >
             <Route index element={<Search />} />
+            <Route path=":id" element={<SearchDetails />} />
+          </Route>
+
+          <Route
+            path="search-car/*"
+            element={
+              <SearchProvider>
+                <Outlet />
+              </SearchProvider>
+            }
+          >
+            <Route index element={<SearchByCar />} />
             <Route path=":id" element={<SearchDetails />} />
           </Route>
 

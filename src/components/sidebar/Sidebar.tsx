@@ -17,7 +17,11 @@ import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
 import { FiAlertCircle } from "react-icons/fi";
-import { IoExitOutline, IoNewspaperOutline, IoSearch } from "react-icons/io5";
+import {
+  IoCarSportSharp,
+  IoExitOutline,
+  IoNewspaperOutline,
+} from "react-icons/io5";
 import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
@@ -84,11 +88,20 @@ const Sidebar: React.FC = () => {
       icon: <MdAttachMoney />,
       path: "/account/plans",
     },
-    { name: "Поиск", icon: <IoIosSearch />, path: "/account/search" },
+    { name: "Поиск физ.лица", icon: <IoIosSearch />, path: "/account/search" },
+    {
+      name: "Поиск авто",
+      icon: <IoCarSportSharp />,
+      path: "/account/search-car",
+    },
   ];
 
-  const isActive = (path: string): boolean =>
-    location.pathname.startsWith(path);
+  const isActive = (path: string): boolean => {
+    if (path === "/account/search") {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <section

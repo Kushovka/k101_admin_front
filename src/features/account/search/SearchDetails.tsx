@@ -91,7 +91,7 @@ const SearchDetails: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isOpen, setIsOpen } = useSidebar();
-
+  const from = location.state?.from;
   const [notify, setNotify] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openMain, setOpenMain] = useState(true);
@@ -478,14 +478,19 @@ const SearchDetails: React.FC = () => {
             {/* back button */}
             <button
               onClick={() =>
-                navigate("/account/search", {
-                  state: {
-                    restore: true,
-                    page: location.state?.page,
-                    mode: location.state?.mode,
-                    values: location.state?.values,
+                navigate(
+                  from === "search-car"
+                    ? "/account/search-car"
+                    : "/account/search",
+                  {
+                    state: {
+                      restore: true,
+                      page: location.state?.page,
+                      mode: location.state?.mode,
+                      values: location.state?.values,
+                    },
                   },
-                })
+                )
               }
               className="flex items-center gap-3 h-[40px] w-fit border border-gray-300 text-slate-700 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition px-3 text-[14px]"
             >

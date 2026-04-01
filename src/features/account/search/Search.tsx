@@ -1,13 +1,11 @@
 import clsx from "clsx";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import React, { ReactElement, SVGProps, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
 import { FaCalendarAlt } from "react-icons/fa";
-import { HiOutlineIdentification } from "react-icons/hi";
 import {
   IoCallSharp,
   IoCardSharp,
-  IoCarSportSharp,
   IoDocumentTextSharp,
   IoLocationSharp,
   IoMailSharp,
@@ -36,8 +34,6 @@ type SearchMode =
   | "birthday"
   | "birthday_from"
   | "birthday_to";
-
-type SearchTab = "person" | "vehicle";
 
 const SEARCH_TABS: {
   key: SearchMode;
@@ -94,7 +90,16 @@ const SEARCH_TABS: {
     icon: <IoCardSharp />,
   },
 ];
-
+const FILTER_LABELS: Record<string, string> = {
+  phone: "Телефон",
+  email: "Email",
+  snils: "СНИЛС",
+  ipn: "ИНН",
+  address: "Адрес",
+  city: "Город",
+  passport: "Паспорт",
+  gender: "Пол",
+};
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
   "Content-Type": "application/json",
@@ -108,11 +113,8 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
   const [mode, setMode] = useState<SearchMode>("name");
-  const [activeTab, setActiveTab] = useState<SearchTab>("person");
-  const [vehicleValues, setVehicleValues] = useState({
-    vin: "",
-    license_plate: "",
-  });
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
   // хранит значения всех табов
   const [values, setValues] = useState<Record<SearchMode, string>>({
     name: "",
@@ -130,7 +132,7 @@ const Search = () => {
   });
 
   const { isOpen } = useSidebar();
-  const pageSize = 20;
+  const pageSize = 15;
 
   const {
     result,
@@ -191,6 +193,12 @@ const Search = () => {
   };
 
   useEffect(() => {
+    setResult([]);
+    setCurrentPage(1);
+    setTotalPages(1);
+  }, []);
+
+  useEffect(() => {
     if (location.state?.restore) {
       const restoredMode = location.state.mode ?? "name";
       const restoredValues =
@@ -220,70 +228,68 @@ const Search = () => {
     e?: React.FormEvent,
     page = 1,
     overrideValues?: Record<SearchMode, string>,
+    options?: { silent?: boolean },
   ) => {
     e?.preventDefault();
-    const searchValues = overrideValues ?? values;
+
+    const params: Record<string, string> = {
+      page: String(page),
+      page_size: String(pageSize),
+      cascade_mode: "quick",
+    };
+
+    const searchValues = overrideValues ?? { ...values };
+
+    if (searchValues.birthday) {
+      searchValues.birthday_from = "";
+      searchValues.birthday_to = "";
+    }
+
+    Object.entries(searchValues).forEach(([key, value]) => {
+      const v = value.trim();
+
+      if (!v) return;
+
+      if (key === "phone") {
+        params.phone = normalizePhone(v);
+      } else {
+        params[key] = v;
+      }
+    });
+
+    const filledFields = Object.entries(searchValues).filter(
+      ([, value]) => value.trim() !== "",
+    );
+
+    if (filledFields.length === 0) {
+      setSeeSearch(false);
+      setResult([]);
+
+      // ❗ показываем ошибку только если НЕ silent
+      if (!options?.silent) {
+        setError("Введите хотя бы один параметр поиска");
+      }
+
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // ---------------- PERSON ----------------
-      if (activeTab === "person") {
-        const params: Record<string, string> = {
-          page: String(page),
-          page_size: String(pageSize),
-          cascade_mode: "quick",
-        };
+      const qs = new URLSearchParams(params).toString();
 
-        Object.entries(searchValues).forEach(([key, value]) => {
-          const v = value.trim();
-          if (!v) return;
+      const response = await userApi.post<SearchResponse>(
+        `/api/v1/search/advanced?${qs}`,
+        null,
+        { headers: getHeaders() },
+      );
 
-          if (key === "phone") {
-            params.phone = normalizePhone(v);
-          } else {
-            params[key] = v;
-          }
-        });
-
-        const qs = new URLSearchParams(params).toString();
-
-        const res = await userApi.post(`/api/v1/search/advanced?${qs}`, null, {
-          headers: getHeaders(),
-        });
-
-        setResult(res.data.entities?.map((i) => i.entity) ?? []);
-        setTotalPages(Math.ceil((res.data.total_entities ?? 0) / pageSize));
-      }
-
-      // ---------------- VEHICLE ----------------
-      if (activeTab === "vehicle") {
-        let endpoint = "";
-        const params = new URLSearchParams({
-          page: String(page),
-          page_size: String(pageSize),
-        });
-
-        if (vehicleValues.vin.trim()) {
-          endpoint = "/api/v1/vehicle/by-vin";
-          params.append("vin", vehicleValues.vin.trim());
-        } else if (vehicleValues.license_plate.trim()) {
-          endpoint = "/api/v1/vehicle/by-plate";
-          params.append("license_plate", vehicleValues.license_plate.trim());
-        } else {
-          setError("Введите VIN или номер");
-          return;
-        }
-
-        const res = await userApi.get(`${endpoint}?${params.toString()}`, {
-          headers: getHeaders(),
-        });
-
-        setResult(res.data.results ?? []);
-        setTotalPages(res.data.total_pages ?? 1);
-      }
-
+      setRes(response.data);
+      setResult(response.data.entities?.map((item) => item.entity) ?? []);
+      setTotalPages(Math.ceil((response.data.total_entities ?? 0) / pageSize));
       setCurrentPage(page);
+
       setSeeSearch(true);
     } catch (err: any) {
       const status = err?.response?.status;
@@ -300,11 +306,6 @@ const Search = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    setResult([]);
-    setSeeSearch(false);
-  }, [activeTab]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -324,37 +325,16 @@ const Search = () => {
   for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
 
   return (
-    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
+    <section
+      className={clsx(
+        "section",
+        isOpen ? "pl-[116px]" : "pl-[336px]",
+      )}
+    >
       {error && (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
       <div className="w-full mx-auto flex flex-col gap-6">
-        <div className="grid grid-cols-2 rounded-xl overflow-hidden border border-gray-200 bg-white">
-          <button
-            onClick={() => setActiveTab("person")}
-            className={clsx(
-              "py-3 text-[18px] font-semibold transition",
-              activeTab === "person"
-                ? "bg-slate-100 text-slate-900"
-                : "text-slate-500 hover:bg-slate-50",
-            )}
-          >
-            Поиск по человеку
-          </button>
-
-          <button
-            onClick={() => setActiveTab("vehicle")}
-            className={clsx(
-              "py-3 text-[18px] font-semibold transition",
-              activeTab === "vehicle"
-                ? "bg-slate-100 text-slate-900"
-                : "text-slate-500 hover:bg-slate-50",
-            )}
-          >
-            Поиск по авто
-          </button>
-        </div>
-
         <h1 className="text-[20px] font-semibold text-slate-900">Поиск</h1>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -363,194 +343,120 @@ const Search = () => {
           className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
         >
           <div className="grid grid-cols-[320px_1fr] gap-6">
-            {activeTab === "person" ? (
-              <>
-                <form
-                  className="flex flex-col gap-3"
-                  onSubmit={(e) => handleSubmit(e)}
-                >
-                  <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
-                    <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
-                      <span className="text-[18px]">
-                        <IoPersonSharp />
-                      </span>
-                      ФИО
-                    </div>
-
-                    <div>
-                      <input
-                        placeholder="Фамилия Имя Отчество"
-                        type="text"
-                        className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
-                        value={values.name}
-                        onChange={(e) =>
-                          setValues((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </motion.div>
-
-                  <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
-                    <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
-                      <span className="text-[18px]">
-                        <FaCalendarAlt />
-                      </span>
-                      Дата рождения
-                    </div>
-
-                    <div>
-                      <input
-                        type="text"
-                        className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                        placeholder="ДД.ММ.ГГГГ"
-                        maxLength={10}
-                        value={values.birthday}
-                        onChange={(e) => {
-                          let v = e.target.value.replace(/\D/g, "").slice(0, 8);
-
-                          // автоформат
-                          if (v.length >= 5)
-                            v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
-                          else if (v.length >= 3)
-                            v = `${v.slice(0, 2)}.${v.slice(2)}`;
-
-                          setValues((prev) => ({
-                            ...prev,
-                            birthday: v,
-                            birthday_from: "",
-                            birthday_to: "",
-                          }));
-                        }}
-                      />
-                    </div>
-
-                    <div className="text-xs text-slate-500">или диапазон</div>
-                    <div className="flex flex-col gap-2">
-                      <div>
-                        <span className="text-xs text-slate-500">от:</span>
-                        <input
-                          type="date"
-                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                          value={values.birthday_from}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              birthday_from: e.target.value,
-                              birthday: "",
-                            }))
-                          }
-                        />
-                      </div>
-                      <div>
-                        <span className="text-xs text-slate-500">до:</span>
-                        <input
-                          type="date"
-                          className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                          value={values.birthday_to}
-                          onChange={(e) =>
-                            setValues((prev) => ({
-                              ...prev,
-                              birthday_to: e.target.value,
-                              birthday: "",
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                  {SEARCH_TABS.map((tab) => (
-                    <motion.div
-                      key={tab.key}
-                      className={clsx(
-                        "bg-white border rounded-xl p-4 cursor-pointer transition flex flex-col gap-3",
-                        mode === tab.key
-                          ? "border-cyan-500 shadow"
-                          : "border-gray-200 hover:border-gray-300",
-                      )}
-                      onClick={() => setMode(tab.key)}
-                    >
-                      <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
-                        <span className="text-[18px]">{tab.icon}</span>
-                        {tab.label}
-                      </div>
-
-                      <input
-                        type="text"
-                        placeholder={tab.placeholder}
-                        className="h-[38px] px-3 border border-gray-300 rounded-lg"
-                        value={values[tab.key]}
-                        onChange={(e) =>
-                          setValues((prev) => ({
-                            ...prev,
-                            [tab.key]: e.target.value,
-                          }))
-                        }
-                      />
-                    </motion.div>
-                  ))}
-
-                  <button
-                    type="submit"
-                    className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium
-  hover:bg-cyan-600 transition"
-                  >
-                    Найти
-                  </button>
-                </form>
-              </>
-            ) : (
-              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-4 border-gray-200">
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => handleSubmit(e)}
+            >
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
-                    <HiOutlineIdentification />
+                    <IoPersonSharp />
                   </span>
-                  VIN-номер
+                  ФИО
                 </div>
 
-                <input
-                  placeholder="XTA210990Y1234567"
-                  className="h-[38px] px-3 border border-gray-300 rounded-lg"
-                  value={vehicleValues.vin}
-                  onChange={(e) =>
-                    setVehicleValues((prev) => ({
-                      ...prev,
-                      vin: e.target.value,
-                      license_plate: "",
-                    }))
-                  }
-                />
-
-                <div className="text-xs text-slate-400 text-center">или</div>
-
-                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
-                  <span className="text-[18px]">
-                    <IoCarSportSharp />
-                  </span>
-                  Автомобильный номер
+                <div>
+                  <input
+                    placeholder="Фамилия Имя Отчество"
+                    type="text"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.name}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
-                <input
-                  placeholder="А001АА77"
-                  className="h-[38px] px-3 border border-gray-300 rounded-lg"
-                  value={vehicleValues.license_plate}
-                  onChange={(e) =>
-                    setVehicleValues((prev) => ({
-                      ...prev,
-                      license_plate: e.target.value,
-                      vin: "",
-                    }))
-                  }
-                />
-                <button
-                  onClick={(e) => handleSubmit(e)}
-                  className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium hover:bg-cyan-600 transition"
-                >
-                  Найти
-                </button>
               </motion.div>
-            )}
+
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <FaCalendarAlt />
+                  </span>
+                  Дата рождения
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                    placeholder="ДД.ММ.ГГГГ"
+                    maxLength={10}
+                    value={values.birthday}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+
+                      // автоформат
+                      if (v.length >= 5)
+                        v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
+                      else if (v.length >= 3)
+                        v = `${v.slice(0, 2)}.${v.slice(2)}`;
+
+                      setValues((prev) => ({
+                        ...prev,
+                        birthday: v,
+                        birthday_from: "",
+                        birthday_to: "",
+                      }));
+                    }}
+                  />
+                </div>
+
+                <div className="text-xs text-slate-500">или диапазон</div>
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <span className="text-xs text-slate-500">от:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_from}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_from: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-slate-500">до:</span>
+                    <input
+                      type="date"
+                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                      value={values.birthday_to}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          birthday_to: e.target.value,
+                          birthday: "",
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              <button
+                type="button"
+                onClick={() => setIsFiltersOpen(true)}
+                className="h-[40px] border border-gray-300 rounded-lg text-[14px] hover:bg-gray-50"
+              >
+                + Дополнительные фильтры
+              </button>
+
+              <button
+                type="submit"
+                onClick={() => handleSubmit(undefined, 1)}
+                className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium
+  hover:bg-cyan-600 transition"
+              >
+                Найти
+              </button>
+            </form>
           </div>
 
           <div className="w-full">
@@ -559,7 +465,45 @@ const Search = () => {
                 Найдено: {result.filter(hasData).length}
               </div>
             )} */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {Object.entries(values).map(([key, value]) => {
+                if (!value || key === "name" || key === "birthday") return null;
 
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="flex items-center gap-2 px-3 py-1.5 
+                   bg-cyan-50 text-cyan-700 
+                   border border-cyan-200 
+                   rounded-full text-[12px] font-medium
+                   hover:bg-cyan-100 transition"
+                  >
+                    <span className="opacity-70">
+                      {FILTER_LABELS[key] || key}:
+                    </span>
+
+                    <span className="truncate max-w-[120px]">{value}</span>
+
+                    <button
+                      onClick={() => {
+                        setValues((prev) => {
+                          const updated = { ...prev, [key]: "" };
+                          handleSubmit(undefined, 1, updated, { silent: true });
+                          return updated;
+                        });
+                      }}
+                      className="w-4 h-4 flex items-center justify-center 
+                     rounded-full hover:bg-cyan-200 transition"
+                    >
+                      ✕
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </div>
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="grid grid-cols-7 bg-gray-50 text-slate-700 text-[12px] uppercase tracking-wide font-medium py-3">
                 {chapterTitleSearch.map((chapter) => (
@@ -613,6 +557,7 @@ const Search = () => {
                               page: currentPage,
                               mode,
                               values,
+                              from: "search",
                             },
                           })
                         }
@@ -646,6 +591,91 @@ const Search = () => {
           </div>
         </motion.div>
       </div>
+      <AnimatePresence>
+        {isFiltersOpen && (
+          <div className="fixed inset-0 z-50 flex">
+            {/* overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 bg-black/30"
+              onClick={() => setIsFiltersOpen(false)}
+            />
+
+            {/* panel */}
+            <motion.div
+              initial={{ x: 420 }}
+              animate={{ x: 0 }}
+              exit={{ x: 420 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="w-[420px] bg-white h-full shadow-xl p-5 overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-[16px] font-semibold">
+                  Дополнительные фильтры
+                </h2>
+                <button onClick={() => setIsFiltersOpen(false)}>✕</button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {SEARCH_TABS.map((tab) => (
+                  <div key={tab.key} className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">{tab.label}</label>
+                    <input
+                      type="text"
+                      placeholder={tab.placeholder}
+                      className="h-[36px] px-2 border border-gray-300 rounded-md"
+                      value={values[tab.key]}
+                      onChange={(e) =>
+                        setValues((prev) => ({
+                          ...prev,
+                          [tab.key]: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="sticky bottom-0 bg-white pt-4 flex gap-2">
+                <button
+                  onClick={() =>
+                    setValues({
+                      name: "",
+                      phone: "",
+                      email: "",
+                      snils: "",
+                      ipn: "",
+                      address: "",
+                      city: "",
+                      passport: "",
+                      gender: "",
+                      birthday: "",
+                      birthday_from: "",
+                      birthday_to: "",
+                    })
+                  }
+                  className="flex-1 border rounded-lg h-[40px]"
+                >
+                  Очистить
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsFiltersOpen(false);
+                    handleSubmit(undefined, 1);
+                  }}
+                  className="flex-1 bg-cyan-500 text-white rounded-lg h-[40px]"
+                >
+                  Применить
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

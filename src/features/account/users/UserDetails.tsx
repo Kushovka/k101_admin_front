@@ -74,6 +74,8 @@ const UserDetails = () => {
     advanced_ipn: "ИНН",
     advanced_address: "Адрес",
     dossier: "Досье",
+    search_license_plate: "Автомобильный номер",
+    search_vin: "VIN-номер",
   };
 
   const statusStyles: Record<string, string> = {
