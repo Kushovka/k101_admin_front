@@ -2,7 +2,7 @@ import { FaUsers } from "react-icons/fa";
 import { FaRegCircleUser } from "react-icons/fa6";
 import { GoChevronRight } from "react-icons/go";
 import { IoIosSearch } from "react-icons/io";
-import { IoExitOutline, IoNewspaperOutline } from "react-icons/io5";
+
 import {
   MdAttachMoney,
   MdDownloading,
@@ -17,6 +17,11 @@ import { useSidebar } from "./SidebarContext";
 
 import type { ReactElement, SVGProps } from "react";
 import { FiAlertCircle } from "react-icons/fi";
+import {
+  IoCarSportSharp,
+  IoExitOutline,
+  IoNewspaperOutline,
+} from "react-icons/io5";
 import { getPendingComplaintsCount } from "../../api/complaints";
 
 interface SidebarLink {
@@ -83,11 +88,20 @@ const Sidebar: React.FC = () => {
       icon: <MdAttachMoney />,
       path: "/account/plans",
     },
-    { name: "Поиск", icon: <IoIosSearch />, path: "/account/search" },
+    { name: "Поиск физ.лица", icon: <IoIosSearch />, path: "/account/search" },
+    {
+      name: "Поиск авто",
+      icon: <IoCarSportSharp />,
+      path: "/account/search-car",
+    },
   ];
 
-  const isActive = (path: string): boolean =>
-    location.pathname.startsWith(path);
+  const isActive = (path: string): boolean => {
+    if (path === "/account/search") {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <section

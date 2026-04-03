@@ -1,16 +1,13 @@
 import clsx from "clsx";
-import { motion } from "framer-motion";
-import React, { ReactElement, SVGProps, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import React, { ReactElement, useEffect, useState } from "react";
 import { BsPassportFill } from "react-icons/bs";
-import { FaCalendarAlt } from "react-icons/fa";
-import { HiOutlineIdentification } from "react-icons/hi";
+import { IoIosArrowForward } from "react-icons/io";
 import {
   IoCallSharp,
   IoCardSharp,
-  IoCarSportSharp,
   IoDocumentTextSharp,
   IoLocationSharp,
-  IoMailSharp,
   IoMaleFemale,
   IoPersonSharp,
 } from "react-icons/io5";
@@ -20,6 +17,7 @@ import userApi from "../../../api/userApi";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
+
 import { SearchResponse, SearchResultItem } from "../../../types/search";
 import { useSearch } from "./SearchContext";
 
@@ -29,8 +27,6 @@ type SearchMode =
   | "email"
   | "snils"
   | "ipn"
-  | "vin"
-  | "license_plate"
   | "address"
   | "city"
   | "passport"
@@ -39,74 +35,105 @@ type SearchMode =
   | "birthday_from"
   | "birthday_to";
 
-const SEARCH_TABS: {
+type SearchField = {
   key: SearchMode;
   label: string;
   placeholder: string;
-  icon: ReactElement<SVGProps<SVGAElement>>;
-}[] = [
+  icon: ReactElement;
+  type?: "input" | "birthday";
+};
+
+type SearchGroup = {
+  title: string;
+  fields: SearchField[];
+};
+
+const SEARCH_GROUPS: SearchGroup[] = [
   {
-    key: "gender",
-    label: "Пол",
-    placeholder: "м/ж/мужской/женский",
-    icon: <IoMaleFemale />,
+    title: "Личная информация",
+    fields: [
+      {
+        key: "gender",
+        label: "Пол",
+        placeholder: "м/ж",
+        icon: <IoMaleFemale />,
+      },
+      {
+        key: "birthday",
+        type: "birthday",
+        label: "",
+        placeholder: "",
+        icon: <></>,
+      },
+      {
+        key: "address",
+        label: "Адрес",
+        placeholder: "Город, улица, дом",
+        icon: <IoLocationSharp />,
+      },
+      {
+        key: "city",
+        label: "Город",
+        placeholder: "Москва",
+        icon: <PiCityFill />,
+      },
+    ],
   },
   {
-    key: "phone",
-    label: "Телефон",
-    placeholder: "+7 999 123-45-67",
-    icon: <IoCallSharp />,
-  },
-  {
-    key: "email",
-    label: "Email",
-    placeholder: "example@mail.ru",
-    icon: <IoMailSharp />,
-  },
-  {
-    key: "address",
-    label: "Адрес",
-    placeholder: "Город, улица, дом",
-    icon: <IoLocationSharp />,
-  },
-  {
-    key: "city",
-    label: "Город",
-    placeholder: "Москва",
-    icon: <PiCityFill />,
-  },
-  {
-    key: "passport",
-    label: "Серия и номер паспорта",
-    placeholder: "4510 123456",
-    icon: <BsPassportFill />,
-  },
-  {
-    key: "snils",
-    label: "СНИЛС",
-    placeholder: "123-456-789 00",
-    icon: <IoDocumentTextSharp />,
-  },
-  {
-    key: "ipn",
-    label: "ИНН",
-    placeholder: "123456789000",
-    icon: <IoCardSharp />,
-  },
-  {
-    key: "vin",
-    label: "VIN-номер",
-    placeholder: "VF3MJAHXVHS101043",
-    icon: <HiOutlineIdentification />,
-  },
-  {
-    key: "license_plate",
-    label: "Автомобильный номер",
-    placeholder: "А000АА77",
-    icon: <IoCarSportSharp />,
+    title: "Документы",
+    fields: [
+      {
+        key: "passport",
+        label: "Паспорт",
+        placeholder: "4510 123456",
+        icon: <BsPassportFill />,
+      },
+      {
+        key: "snils",
+        label: "СНИЛС",
+        placeholder: "123-456-789 00",
+        icon: <IoDocumentTextSharp />,
+      },
+      {
+        key: "ipn",
+        label: "ИНН",
+        placeholder: "123456789000",
+        icon: <IoCardSharp />,
+      },
+    ],
   },
 ];
+const FILTER_LABELS: Record<string, string> = {
+  name: "ФИО",
+  phone: "Телефон",
+  email: "Email",
+  snils: "СНИЛС",
+  ipn: "ИНН",
+  address: "Адрес",
+  city: "Город",
+  passport: "Паспорт",
+  gender: "Пол",
+  birthday: "Дата рождения",
+  birthday_from: "Дата от",
+  birthday_to: "Дата до",
+};
 
+const FILTER_GROUPS: Record<string, string> = {
+  name: "Основное",
+  birthday: "Основное",
+  birthday_from: "Основное",
+  birthday_to: "Основное",
+
+  phone: "Личная информация",
+  email: "Личная информация",
+  gender: "Личная информация",
+  address: "Личная информация",
+  city: "Личная информация",
+
+  passport: "Документы",
+  snils: "Документы",
+  ipn: "Документы",
+};
 const getHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
   "Content-Type": "application/json",
@@ -120,6 +147,13 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
   const [seeSearch, setSeeSearch] = useState(false);
   const [mode, setMode] = useState<SearchMode>("name");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    Основное: true,
+    "Личная информация": true,
+    Документы: true,
+  });
 
   // хранит значения всех табов
   const [values, setValues] = useState<Record<SearchMode, string>>({
@@ -128,8 +162,6 @@ const Search = () => {
     email: "",
     snils: "",
     ipn: "",
-    vin: "",
-    license_plate: "",
     address: "",
     city: "",
     passport: "",
@@ -140,7 +172,7 @@ const Search = () => {
   });
 
   const { isOpen } = useSidebar();
-  const pageSize = 20;
+  const pageSize = 15;
 
   const {
     result,
@@ -185,6 +217,13 @@ const Search = () => {
     );
   };
 
+  const toggleGroup = (title: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   const cleanValue = (value: unknown) => {
     if (value === null || value === undefined) return "";
     return String(value)
@@ -201,6 +240,12 @@ const Search = () => {
   };
 
   useEffect(() => {
+    setResult([]);
+    setCurrentPage(1);
+    setTotalPages(1);
+  }, []);
+
+  useEffect(() => {
     if (location.state?.restore) {
       const restoredMode = location.state.mode ?? "name";
       const restoredValues =
@@ -211,8 +256,6 @@ const Search = () => {
           email: "",
           snils: "",
           ipn: "",
-          vin: "",
-          license_plate: "",
           address: "",
           city: "",
           passport: "",
@@ -228,10 +271,20 @@ const Search = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("search_groups");
+    if (saved) setOpenGroups(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("search_groups", JSON.stringify(openGroups));
+  }, [openGroups]);
+
   const handleSubmit = async (
     e?: React.FormEvent,
     page = 1,
     overrideValues?: Record<SearchMode, string>,
+    options?: { silent?: boolean },
   ) => {
     e?.preventDefault();
 
@@ -265,7 +318,14 @@ const Search = () => {
     );
 
     if (filledFields.length === 0) {
-      setError("Введите хотя бы один параметр поиска");
+      setSeeSearch(false);
+      setResult([]);
+
+      // ❗ показываем ошибку только если НЕ silent
+      if (!options?.silent) {
+        setError("Введите хотя бы один параметр поиска");
+      }
+
       return;
     }
 
@@ -285,6 +345,7 @@ const Search = () => {
       setResult(response.data.entities?.map((item) => item.entity) ?? []);
       setTotalPages(Math.ceil((response.data.total_entities ?? 0) / pageSize));
       setCurrentPage(page);
+
       setSeeSearch(true);
     } catch (err: any) {
       const status = err?.response?.status;
@@ -320,23 +381,29 @@ const Search = () => {
   for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
 
   return (
-    <section className={clsx("section", isOpen ? "pl-[116px]" : "pl-[336px]")}>
+    <section
+      className={clsx(
+        "section py-20 pr-[36px]",
+        isOpen ? "pl-[116px]" : "pl-[336px]",
+      )}
+    >
       {error && (
         <Toast message={error} type="error" onClose={() => setError(null)} />
       )}
-      <div className="max-w-[1500px] w-full mx-auto flex flex-col gap-6">
+      <div className="w-full mx-auto flex flex-col gap-6">
         <h1 className="text-[20px] font-semibold text-slate-900">Поиск</h1>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
+          className="bg-white border-t border-gray-200 rounded-xl shadow-sm p-6 flex  gap-5"
         >
           <div className="grid grid-cols-[320px_1fr] gap-6">
             <form
               className="flex flex-col gap-3"
               onSubmit={(e) => handleSubmit(e)}
             >
+              {/* name */}
               <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
@@ -360,11 +427,11 @@ const Search = () => {
                   />
                 </div>
               </motion.div>
-
-              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+              {/* birthday */}
+              <motion.div className=" bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
                 <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
                   <span className="text-[18px]">
-                    <FaCalendarAlt />
+                    <IoPersonSharp />
                   </span>
                   Дата рождения
                 </div>
@@ -372,14 +439,13 @@ const Search = () => {
                 <div>
                   <input
                     type="text"
-                    className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
+                    className="h-[36px] w-full px-2 text-[14px] border border-gray-300 rounded-lg"
                     placeholder="ДД.ММ.ГГГГ"
                     maxLength={10}
                     value={values.birthday}
                     onChange={(e) => {
                       let v = e.target.value.replace(/\D/g, "").slice(0, 8);
 
-                      // автоформат
                       if (v.length >= 5)
                         v = `${v.slice(0, 2)}.${v.slice(2, 4)}.${v.slice(4)}`;
                       else if (v.length >= 3)
@@ -394,74 +460,68 @@ const Search = () => {
                     }}
                   />
                 </div>
-
-                <div className="text-xs text-slate-500">или диапазон</div>
-                <div className="flex flex-col gap-2">
-                  <div>
-                    <span className="text-xs text-slate-500">от:</span>
-                    <input
-                      type="date"
-                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                      value={values.birthday_from}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          birthday_from: e.target.value,
-                          birthday: "",
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500">до:</span>
-                    <input
-                      type="date"
-                      className="h-[38px] px-2 text-[14px] border border-gray-300 rounded-lg w-full"
-                      value={values.birthday_to}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          birthday_to: e.target.value,
-                          birthday: "",
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
               </motion.div>
-              {SEARCH_TABS.map((tab) => (
-                <motion.div
-                  key={tab.key}
-                  className={clsx(
-                    "bg-white border rounded-xl p-4 cursor-pointer transition flex flex-col gap-3",
-                    mode === tab.key
-                      ? "border-cyan-500 shadow"
-                      : "border-gray-200 hover:border-gray-300",
-                  )}
-                  onClick={() => setMode(tab.key)}
-                >
-                  <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
-                    <span className="text-[18px]">{tab.icon}</span>
-                    {tab.label}
-                  </div>
+              {/* phone */}
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoCallSharp />
+                  </span>
+                  Телефон
+                </div>
 
+                <div>
                   <input
+                    placeholder="+7 999 123-45-67"
                     type="text"
-                    placeholder={tab.placeholder}
-                    className="h-[38px] px-3 border border-gray-300 rounded-lg"
-                    value={values[tab.key]}
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.name}
                     onChange={(e) =>
                       setValues((prev) => ({
                         ...prev,
-                        [tab.key]: e.target.value,
+                        name: e.target.value,
                       }))
                     }
                   />
-                </motion.div>
-              ))}
+                </div>
+              </motion.div>
+
+              {/* email */}
+              <motion.div className="bg-white border rounded-xl p-4 flex flex-col gap-3 border-gray-200 hover:border-gray-300">
+                <div className="flex items-center gap-3 text-[15px] font-medium text-slate-700">
+                  <span className="text-[18px]">
+                    <IoPersonSharp />
+                  </span>
+                  Email
+                </div>
+
+                <div>
+                  <input
+                    placeholder="example@mail.ru"
+                    type="text"
+                    className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
+                    value={values.email}
+                    onChange={(e) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </motion.div>
+
+              <button
+                type="button"
+                onClick={() => setIsFiltersOpen(true)}
+                className="h-[40px] border border-gray-300 rounded-lg text-[14px] hover:bg-gray-50"
+              >
+                + Дополнительные фильтры
+              </button>
 
               <button
                 type="submit"
+                onClick={() => handleSubmit(undefined, 1)}
                 className="mt-2 h-[44px] bg-cyan-500 text-white rounded-lg font-medium
   hover:bg-cyan-600 transition"
               >
@@ -476,7 +536,45 @@ const Search = () => {
                 Найдено: {result.filter(hasData).length}
               </div>
             )} */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {Object.entries(values).map(([key, value]) => {
+                if (!value) return null;
 
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="flex items-center gap-2 px-3 py-1.5 
+                   bg-cyan-50 text-cyan-700 
+                   border border-cyan-200 
+                   rounded-full text-[12px] font-medium
+                   hover:bg-cyan-100 transition"
+                  >
+                    <span className="opacity-70">
+                      {FILTER_LABELS[key] || key}:
+                    </span>
+
+                    <span className="truncate max-w-[120px]">{value}</span>
+
+                    <button
+                      onClick={() => {
+                        setValues((prev) => {
+                          const updated = { ...prev, [key]: "" };
+                          handleSubmit(undefined, 1, updated, { silent: true });
+                          return updated;
+                        });
+                      }}
+                      className="w-4 h-4 flex items-center justify-center 
+                     rounded-full hover:bg-cyan-200 transition"
+                    >
+                      ✕
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </div>
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="grid grid-cols-7 bg-gray-50 text-slate-700 text-[12px] uppercase tracking-wide font-medium py-3">
                 {chapterTitleSearch.map((chapter) => (
@@ -530,6 +628,7 @@ const Search = () => {
                               page: currentPage,
                               mode,
                               values,
+                              from: "search",
                             },
                           })
                         }
@@ -563,6 +662,194 @@ const Search = () => {
           </div>
         </motion.div>
       </div>
+      <AnimatePresence>
+        {isFiltersOpen && (
+          <div className="fixed inset-0 z-50 flex">
+            {/* overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 bg-black/30"
+              onClick={() => setIsFiltersOpen(false)}
+            />
+
+            {/* panel */}
+            <motion.div
+              initial={{ x: 420 }}
+              animate={{ x: 0 }}
+              exit={{ x: 420 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="w-[420px] bg-white h-full shadow-xl p-5 overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-[16px] font-semibold">
+                  Дополнительные фильтры
+                </h2>
+                <button onClick={() => setIsFiltersOpen(false)}>✕</button>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {SEARCH_GROUPS.map((group) => {
+                  const isOpen = openGroups[group.title];
+
+                  return (
+                    <div
+                      key={group.title}
+                      className="flex flex-col gap-3 pb-3 border-b last:border-none"
+                    >
+                      {/* header */}
+                      <div
+                        onClick={() => toggleGroup(group.title)}
+                        className="flex items-center justify-between cursor-pointer select-none"
+                      >
+                        <span className="text-base font-semibold text-slate-600">
+                          {group.title}
+                        </span>
+
+                        <motion.span
+                          animate={{ rotate: isOpen ? 90 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-gray-700"
+                        >
+                          <IoIosArrowForward />
+                        </motion.span>
+                      </div>
+
+                      {/* content */}
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="content"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden flex flex-col gap-3"
+                          >
+                            {group.fields.map((field, index) => {
+                              if (field.type === "birthday") {
+                                return (
+                                  <div
+                                    key="birthday"
+                                    className="flex flex-col gap-2"
+                                  >
+                                    <div className="rounded-xl flex flex-col gap-2">
+                                      <div className="text-sm text-slate-500">
+                                        Диапазон даты рождения
+                                      </div>
+
+                                      <div className="flex flex-col gap-2">
+                                        <input
+                                          type="date"
+                                          className="h-[36px] px-2 border border-gray-300 rounded-lg"
+                                          value={values.birthday_from}
+                                          onChange={(e) =>
+                                            setValues((prev) => ({
+                                              ...prev,
+                                              birthday_from: e.target.value,
+                                              birthday: "",
+                                            }))
+                                          }
+                                        />
+                                        <label className="text-xs text-slate-500">
+                                          до
+                                        </label>
+                                        <input
+                                          type="date"
+                                          className="h-[36px] px-2 border border-gray-300 rounded-lg"
+                                          value={values.birthday_to}
+                                          onChange={(e) =>
+                                            setValues((prev) => ({
+                                              ...prev,
+                                              birthday_to: e.target.value,
+                                              birthday: "",
+                                            }))
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              // обычные поля
+                              return (
+                                <div
+                                  key={field.key}
+                                  className="flex flex-col gap-1"
+                                >
+                                  <label className="text-sm text-gray-500">
+                                    {field.label}
+                                  </label>
+
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                                      {field.icon}
+                                    </span>
+
+                                    <input
+                                      type="text"
+                                      placeholder={field.placeholder}
+                                      className="h-[36px] pl-8 pr-2 border border-gray-300 rounded-md w-full"
+                                      value={values[field.key]}
+                                      onChange={(e) =>
+                                        setValues((prev) => ({
+                                          ...prev,
+                                          [field.key]: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="sticky bottom-0 bg-white pt-4 flex gap-2">
+                <button
+                  onClick={() =>
+                    setValues({
+                      name: "",
+                      phone: "",
+                      email: "",
+                      snils: "",
+                      ipn: "",
+                      address: "",
+                      city: "",
+                      passport: "",
+                      gender: "",
+                      birthday: "",
+                      birthday_from: "",
+                      birthday_to: "",
+                    })
+                  }
+                  className="flex-1 border rounded-lg h-[40px]"
+                >
+                  Очистить
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsFiltersOpen(false);
+                    handleSubmit(undefined, 1);
+                  }}
+                  className="flex-1 bg-cyan-500 text-white rounded-lg h-[40px]"
+                >
+                  Применить
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
