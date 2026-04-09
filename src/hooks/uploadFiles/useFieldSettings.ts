@@ -25,9 +25,12 @@ export type FieldSetting = {
   mapping_id?: number | null;
 };
 
-type FieldSettingsResponse = {
-  fields?: FieldSetting[];
-  opensearch_available?: boolean;
+export type AllowedTargetField = {
+  id: number;
+  name: string;
+  label: string;
+  sort_order: number;
+  is_active: boolean;
 };
 
 type SaveFieldSettingsResponse = {
@@ -55,14 +58,46 @@ export type SaveFieldSettingPayload = {
   target_field: string | null;
 };
 
+type AllowedTargetFieldCreatePayload = {
+  name: string;
+  label: string;
+  sort_order: number;
+};
+
+type AllowedTargetFieldUpdatePayload = {
+  label: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+const mapAllowedFieldsToSettings = (
+  allowedFields: AllowedTargetField[],
+): FieldSetting[] =>
+  allowedFields
+    .filter((field) => field.is_active)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((field) => ({
+      original_field_name: field.name,
+      display_name: field.label,
+      is_additional: false,
+      target_field: null,
+      reindex_status: null,
+      reindex_task_id: null,
+      mapping_id: field.id,
+    }));
+
 export const useFieldSettings = (file: FileLike | null, token: string) => {
   const [fields, setFields] = useState<FieldSetting[]>([]);
+  const [allowedTargetFields, setAllowedTargetFields] = useState<
+    AllowedTargetField[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
   const [status, setStatus] = useState<ReindexStatus>("idle");
   const [opensearchAvailable, setOpensearchAvailable] = useState(false);
+  const [managingAllowedFields, setManagingAllowedFields] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -79,16 +114,20 @@ export const useFieldSettings = (file: FileLike | null, token: string) => {
     setSaveError(null);
 
     try {
-      const res = await userApi.get<FieldSettingsResponse>(
-        `/api/v1/files/${file.id}/field-settings`,
+      const res = await userApi.get<AllowedTargetField[]>(
+        `/api/v1/allowed-target-fields`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
 
-      setFields(Array.isArray(res.data.fields) ? res.data.fields : []);
-      setOpensearchAvailable(Boolean(res.data.opensearch_available));
+      const allowedFields = Array.isArray(res.data) ? res.data : [];
+
+      setAllowedTargetFields(allowedFields);
+      setFields(mapAllowedFieldsToSettings(allowedFields));
+      setOpensearchAvailable(true);
     } catch {
+      setAllowedTargetFields([]);
       setFields([]);
       setOpensearchAvailable(false);
       setSaveError("Не удалось загрузить настройки полей");
@@ -149,19 +188,6 @@ export const useFieldSettings = (file: FileLike | null, token: string) => {
     [file, loadFieldSettings, stopPolling, token],
   );
 
-  const updateFieldDisplayName = useCallback(
-    (originalFieldName: string, displayName: string) => {
-      setFields((prev) =>
-        prev.map((field) =>
-          field.original_field_name === originalFieldName
-            ? { ...field, display_name: displayName }
-            : field,
-        ),
-      );
-    },
-    [],
-  );
-
   const saveAll = useCallback(
     async (payloadFields?: SaveFieldSettingPayload[]) => {
       if (!file) return;
@@ -210,16 +236,80 @@ export const useFieldSettings = (file: FileLike | null, token: string) => {
     [file, fields, loadFieldSettings, pollStatus, token],
   );
 
+  const addAllowedTargetField = useCallback(
+    async (payload: AllowedTargetFieldCreatePayload) => {
+      setManagingAllowedFields(true);
+      setSaveError(null);
+
+      try {
+        await userApi.post(`/api/v1/allowed-target-fields`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        await loadFieldSettings();
+      } catch {
+        setSaveError("Не удалось добавить допустимое поле");
+        throw new Error("add_allowed_target_field_failed");
+      } finally {
+        setManagingAllowedFields(false);
+      }
+    },
+    [loadFieldSettings, token],
+  );
+
+  const updateAllowedTargetField = useCallback(
+    async (fieldId: number, payload: AllowedTargetFieldUpdatePayload) => {
+      setManagingAllowedFields(true);
+      setSaveError(null);
+
+      try {
+        await userApi.put(`/api/v1/allowed-target-fields/${fieldId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        await loadFieldSettings();
+      } catch {
+        setSaveError("Не удалось обновить допустимое поле");
+        throw new Error("update_allowed_target_field_failed");
+      } finally {
+        setManagingAllowedFields(false);
+      }
+    },
+    [loadFieldSettings, token],
+  );
+
+  const deleteAllowedTargetField = useCallback(
+    async (fieldId: number) => {
+      setManagingAllowedFields(true);
+      setSaveError(null);
+
+      try {
+        await userApi.delete(`/api/v1/allowed-target-fields/${fieldId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        await loadFieldSettings();
+      } catch {
+        setSaveError("Не удалось удалить допустимое поле");
+        throw new Error("delete_allowed_target_field_failed");
+      } finally {
+        setManagingAllowedFields(false);
+      }
+    },
+    [loadFieldSettings, token],
+  );
+
   return {
     fields,
+    allowedTargetFields,
     loading,
     saving,
     saveError,
     taskId,
     status,
     opensearchAvailable,
-    updateFieldDisplayName,
+    managingAllowedFields,
     saveAll,
+    addAllowedTargetField,
+    updateAllowedTargetField,
+    deleteAllowedTargetField,
     reload: loadFieldSettings,
   };
 };

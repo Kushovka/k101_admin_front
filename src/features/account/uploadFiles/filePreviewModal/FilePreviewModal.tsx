@@ -5,6 +5,7 @@ import { IoMdClose } from "react-icons/io";
 import { Tooltip } from "react-tooltip";
 import Toast from "../../../../components/toast/Toast";
 import {
+  AllowedTargetField,
   FieldSetting,
   SaveFieldSettingPayload,
   useFieldSettings,
@@ -34,13 +35,48 @@ type ColumnConfig = {
   target_field: string | null;
 };
 
+type AllowedFieldDraft = {
+  id: number;
+  name: string;
+  label: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+type ColumnSettingsModalProps = {
+  columnConfigs: ColumnConfig[];
+  fieldsLoading: boolean;
+  selectableFields: Array<{ value: string; label: string }>;
+  saving: boolean;
+  statusText: string;
+  taskId: string | null;
+  opensearchAvailable: boolean;
+  onClose: () => void;
+  onOpenAllowedFields: () => void;
+  onChange: (originalFieldName: string, nextDisplayName: string) => void;
+  onSave: () => void;
+};
+
+type AllowedFieldsManagerModalProps = {
+  fields: AllowedTargetField[];
+  loading: boolean;
+  onClose: () => void;
+  onAdd: (payload: { name: string; label: string; sort_order: number }) => Promise<void>;
+  onUpdate: (
+    fieldId: number,
+    payload: { label: string; sort_order: number; is_active: boolean },
+  ) => Promise<void>;
+  onDelete: (fieldId: number) => Promise<void>;
+};
+
 const findFieldConfig = (
   fields: FieldSetting[],
   columnName: string,
 ): FieldSetting | undefined =>
   fields.find(
     (field) =>
-      field.original_field_name === columnName || field.display_name === columnName,
+      field.original_field_name === columnName ||
+      field.display_name === columnName,
   );
 
 const STATUS_LABELS: Record<string, string> = {
@@ -54,6 +90,310 @@ const STATUS_LABELS: Record<string, string> = {
   ERROR: "Ошибка при переиндексации",
 };
 
+const ColumnSettingsModal = ({
+  columnConfigs,
+  fieldsLoading,
+  selectableFields,
+  saving,
+  statusText,
+  taskId,
+  opensearchAvailable,
+  onClose,
+  onOpenAllowedFields,
+  onChange,
+  onSave,
+}: ColumnSettingsModalProps) => {
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/45 flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-[900px] h-[min(80vh,700px)] bg-white rounded-xl shadow-2xl flex flex-col">
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b">
+          <div>
+            <h3 className="font-semibold text-lg">Настройка колонок</h3>
+            <p className="text-sm text-gray-500">
+              Выберите новое название для каждой колонки файла.
+            </p>
+          </div>
+          <div className="flex items-start gap-4">
+            <div className="text-right text-sm text-gray-500">
+              <div>{statusText}</div>
+              {taskId && <div>ID задачи: {taskId}</div>}
+              {!opensearchAvailable && (
+                <div className="text-orange-600">
+                  OpenSearch недоступен, очередь может не стартовать
+                </div>
+              )}
+            </div>
+            <button onClick={onClose} className="shrink-0">
+              <IoMdClose size={22} />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-b flex justify-end">
+          <button
+            onClick={onOpenAllowedFields}
+            className="px-4 py-2 border rounded hover:bg-gray-50"
+          >
+            Изменить выбор колонок
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {fieldsLoading ? (
+            <div className="text-sm text-gray-500">Загрузка настроек...</div>
+          ) : (
+            <div className="border rounded divide-y">
+              {columnConfigs.map((field) => (
+                <div
+                  key={field.original_field_name}
+                  className="flex items-center gap-3 px-3 py-3 text-sm"
+                >
+                  <div className="min-w-[140px] font-medium">
+                    {field.original_field_name}
+                  </div>
+                  <div className="flex-1 min-w-[220px]">
+                    <select
+                      value={field.display_name}
+                      onChange={(e) =>
+                        onChange(field.original_field_name, e.target.value)
+                      }
+                      className="w-full border rounded px-2 py-1"
+                    >
+                      <option value={field.original_field_name}>
+                        {field.original_field_name}
+                      </option>
+                      {selectableFields.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="shrink-0 text-xs text-gray-500 whitespace-nowrap">
+                    {field.is_additional
+                      ? "Будет при необходимости"
+                      : "Не нужен"}
+                  </div>
+                </div>
+              ))}
+
+              {columnConfigs.length === 0 && (
+                <div className="px-3 py-4 text-center text-sm text-gray-500">
+                  Нет колонок для настройки
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border rounded">
+            Закрыть
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving || columnConfigs.length === 0}
+            className={clsx(
+              "px-4 py-2 bg-blue-600 text-white rounded",
+              (saving || columnConfigs.length === 0) &&
+                "opacity-60 cursor-not-allowed",
+            )}
+          >
+            {saving ? "Сохраняем..." : "Сохранить"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AllowedFieldsManagerModal = ({
+  fields,
+  loading,
+  onClose,
+  onAdd,
+  onUpdate,
+  onDelete,
+}: AllowedFieldsManagerModalProps) => {
+  const [newName, setNewName] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [newSortOrder, setNewSortOrder] = useState("0");
+  const [drafts, setDrafts] = useState<AllowedFieldDraft[]>([]);
+
+  useEffect(() => {
+    setDrafts(
+      fields
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((field) => ({ ...field })),
+    );
+  }, [fields]);
+
+  const updateDraft = (
+    fieldId: number,
+    patch: Partial<AllowedFieldDraft>,
+  ) => {
+    setDrafts((prev) =>
+      prev.map((field) => (field.id === fieldId ? { ...field, ...patch } : field)),
+    );
+  };
+
+  const handleAdd = async () => {
+    if (!newName.trim() || !newLabel.trim()) return;
+
+    await onAdd({
+      name: newName.trim(),
+      label: newLabel.trim(),
+      sort_order: Number(newSortOrder) || 0,
+    });
+
+    setNewName("");
+    setNewLabel("");
+    setNewSortOrder("0");
+  };
+
+  const handleUpdate = async (field: AllowedFieldDraft) => {
+    await onUpdate(field.id, {
+      label: field.label.trim(),
+      sort_order: Number(field.sort_order) || 0,
+      is_active: field.is_active,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-[980px] h-[min(85vh,760px)] bg-white rounded-xl shadow-2xl flex flex-col">
+        <div className="flex items-center justify-between gap-4 px-6 py-5 border-b">
+          <div>
+            <h3 className="font-semibold text-lg">Управление вариантами выбора</h3>
+            <p className="text-sm text-gray-500">
+              Здесь можно добавить, изменить или удалить допустимые значения
+              дропдауна.
+            </p>
+          </div>
+          <button onClick={onClose}>
+            <IoMdClose size={22} />
+          </button>
+        </div>
+
+        <div className="px-6 py-4 border-b">
+          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1.1fr_120px_140px] gap-3 items-end">
+            <label className="text-sm">
+              <div className="mb-1 text-gray-600">Name</div>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                placeholder="first_name"
+              />
+            </label>
+            <label className="text-sm">
+              <div className="mb-1 text-gray-600">Label</div>
+              <input
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                placeholder="Имя"
+              />
+            </label>
+            <label className="text-sm">
+              <div className="mb-1 text-gray-600">Sort</div>
+              <input
+                value={newSortOrder}
+                onChange={(e) => setNewSortOrder(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                inputMode="numeric"
+              />
+            </label>
+            <button
+              onClick={handleAdd}
+              disabled={loading}
+              className={clsx(
+                "px-4 py-2 bg-blue-600 text-white rounded",
+                loading && "opacity-60 cursor-not-allowed",
+              )}
+            >
+              Добавить
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="border rounded divide-y">
+            {drafts.map((field) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_120px_120px_110px_100px] gap-3 items-center px-3 py-3 text-sm"
+              >
+                <div className="font-medium">{field.name}</div>
+                <input
+                  value={field.label}
+                  onChange={(e) =>
+                    updateDraft(field.id, { label: e.target.value })
+                  }
+                  className="w-full border rounded px-3 py-2"
+                />
+                <input
+                  value={String(field.sort_order)}
+                  onChange={(e) =>
+                    updateDraft(field.id, {
+                      sort_order: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full border rounded px-3 py-2"
+                  inputMode="numeric"
+                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={field.is_active}
+                    onChange={(e) =>
+                      updateDraft(field.id, { is_active: e.target.checked })
+                    }
+                  />
+                  Активно
+                </label>
+                <button
+                  onClick={() => void handleUpdate(field)}
+                  disabled={loading}
+                  className={clsx(
+                    "px-3 py-2 border rounded hover:bg-gray-50",
+                    loading && "opacity-60 cursor-not-allowed",
+                  )}
+                >
+                  Сохранить
+                </button>
+                <button
+                  onClick={() => void onDelete(field.id)}
+                  disabled={loading}
+                  className={clsx(
+                    "px-3 py-2 border border-red-200 text-red-600 rounded hover:bg-red-50",
+                    loading && "opacity-60 cursor-not-allowed",
+                  )}
+                >
+                  Удалить
+                </button>
+              </div>
+            ))}
+
+            {drafts.length === 0 && (
+              <div className="px-3 py-4 text-center text-sm text-gray-500">
+                Допустимые значения пока не добавлены
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 border rounded">
+            Закрыть
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const FilePreviewModal = ({
   file,
   onClose,
@@ -65,6 +405,8 @@ const FilePreviewModal = ({
   const [activeBtn, setActiveBtn] = useState<string>("10");
   const [notify, setNotify] = useState<string | null>(null);
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAllowedFieldsOpen, setIsAllowedFieldsOpen] = useState(false);
 
   const {
     fileAlias,
@@ -85,6 +427,7 @@ const FilePreviewModal = ({
 
   const {
     fields,
+    allowedTargetFields,
     saveAll,
     loading: fieldsLoading,
     saving,
@@ -92,6 +435,10 @@ const FilePreviewModal = ({
     taskId,
     status,
     opensearchAvailable,
+    managingAllowedFields,
+    addAllowedTargetField,
+    updateAllowedTargetField,
+    deleteAllowedTargetField,
   } = useFieldSettings(file, token);
 
   useEffect(() => {
@@ -105,6 +452,16 @@ const FilePreviewModal = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (isAllowedFieldsOpen) {
+          setIsAllowedFieldsOpen(false);
+          return;
+        }
+
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+          return;
+        }
+
         onClose();
       }
     };
@@ -114,7 +471,7 @@ const FilePreviewModal = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [isAllowedFieldsOpen, isSettingsOpen, onClose]);
 
   const renderCellValue = (value: unknown): string => {
     if (value === null || value === undefined) return "";
@@ -148,7 +505,9 @@ const FilePreviewModal = ({
         return {
           original_field_name: columnName,
           display_name:
-            matchedField?.display_name || matchedField?.original_field_name || columnName,
+            matchedField?.display_name ||
+            matchedField?.original_field_name ||
+            columnName,
           is_additional: matchedField?.is_additional ?? true,
           target_field: matchedField?.target_field ?? null,
         };
@@ -158,11 +517,10 @@ const FilePreviewModal = ({
 
   const selectableFields = useMemo(
     () =>
-      fields
-        .map((field) => ({
-          value: field.original_field_name,
-          label: field.display_name || field.original_field_name,
-        })),
+      fields.map((field) => ({
+        value: field.original_field_name,
+        label: field.display_name || field.original_field_name,
+      })),
     [fields],
   );
 
@@ -197,6 +555,7 @@ const FilePreviewModal = ({
       await saveAll(payload);
       setNotify("Настройки полей сохранены");
       setError(null);
+      setIsSettingsOpen(false);
     } catch {
       setError("Не удалось сохранить настройки полей");
     }
@@ -247,27 +606,30 @@ const FilePreviewModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 overflow-y-auto p-4 sm:p-6 lg:p-8">
-      {notify && (
-        <Toast type="access" message={notify} onClose={() => setNotify(null)} />
-      )}
+    <>
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        {notify && (
+          <Toast
+            type="access"
+            message={notify}
+            onClose={() => setNotify(null)}
+          />
+        )}
 
-      <div className="min-h-full flex items-center justify-center">
-        <div className="bg-white rounded-lg px-6 py-6 w-full max-w-[1800px] my-6 shadow-xl">
-          <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="bg-white rounded-lg px-6 py-6 w-full max-w-[1800px] h-[min(88vh,980px)] shadow-xl flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-4">
             {!editingFileAlias ? (
-              <div className="flex items-center gap-3 subtitle">
+              <div className="flex items-center gap-3 subtitle min-w-0">
                 <h2>Предпросмотр:</h2>
                 <div
                   onClick={() => setEditingFileAlias(true)}
                   data-tooltip-id="file_alias-tooltip"
-                  className="flex items-center gap-1 group cursor-pointer select-none font-semibold"
+                  className="flex items-center gap-1 group cursor-pointer select-none font-semibold min-w-0"
                 >
-                  <span className="px-2 py-1 cursor-pointer">
+                  <span className="px-2 py-1 truncate">
                     {fileAlias || file.display_name || file.file_name}
                   </span>
                   {fileAlias && <span>({file.file_name})</span>}
-
                   <FaPen className="group-hover:scale-125 transition duration-300 w-[14px] h-[14px]" />
                 </div>
                 <Tooltip
@@ -302,9 +664,18 @@ const FilePreviewModal = ({
                 </button>
               </div>
             )}
-            <button onClick={onClose}>
-              <IoMdClose size={22} />
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="px-4 py-2 border rounded hover:bg-gray-50"
+              >
+                Настройка колонок
+              </button>
+              <button onClick={onClose}>
+                <IoMdClose size={22} />
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -319,94 +690,8 @@ const FilePreviewModal = ({
             />
           )}
 
-          <div className="mb-4 border rounded p-4">
-            <div className="flex items-center justify-between gap-4 mb-3">
-              <div>
-                <h3 className="font-semibold">Настройка колонок</h3>
-                <p className="text-sm text-gray-500">
-                  Выберите новое название для каждой колонки из пользователей
-                </p>
-              </div>
-              <div className="text-right text-sm text-gray-500">
-                <div>{statusText}</div>
-                {taskId && <div>ID задачи: {taskId}</div>}
-                {!opensearchAvailable && (
-                  <div className="text-orange-600">
-                    OpenSearch недоступен, очередь может не стартовать
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {fieldsLoading ? (
-              <div className="text-sm text-gray-500">Загрузка настроек...</div>
-            ) : (
-              <div className="max-h-[280px] overflow-auto border rounded">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr>
-                      <th className="border px-3 py-2 text-left bg-gray-50">
-                        Колонка из файла
-                      </th>
-                      <th className="border px-3 py-2 text-left bg-gray-50">
-                        Новое название
-                      </th>
-                      <th className="border px-3 py-2 text-left bg-gray-50">
-                        Reindex
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {columnConfigs.map((field) => (
-                      <tr key={field.original_field_name}>
-                        <td className="border px-3 py-2 font-medium">
-                          {field.original_field_name}
-                        </td>
-                        <td className="border px-3 py-2">
-                          <select
-                            value={field.display_name}
-                            onChange={(e) =>
-                              handleDisplayNameChange(
-                                field.original_field_name,
-                                e.target.value,
-                              )
-                            }
-                            className="border rounded px-2 py-1 min-w-[260px]"
-                          >
-                            <option value={field.original_field_name}>
-                              {field.original_field_name}
-                            </option>
-                            {selectableFields.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="border px-3 py-2">
-                          {field.is_additional ? "Будет при необходимости" : "Не нужен"}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {columnConfigs.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={3}
-                          className="border px-3 py-4 text-center text-gray-500"
-                        >
-                          Нет колонок для настройки
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
           <div
-            className="h-[60vh] border rounded overflow-auto p-2 overscroll-contain"
+            className="flex-1 border rounded overflow-auto p-2 overscroll-contain"
             style={{ scrollbarGutter: "stable both-edges" }}
           >
             <div className="min-w-max">
@@ -504,22 +789,38 @@ const FilePreviewModal = ({
                   </button>
                 </div>
               ))}
-              <button
-                onClick={handleSaveAll}
-                disabled={saving || columnConfigs.length === 0}
-                className={clsx(
-                  "px-4 py-2 bg-blue-600 text-white rounded",
-                  (saving || columnConfigs.length === 0) &&
-                    "opacity-60 cursor-not-allowed",
-                )}
-              >
-                {saving ? "Сохраняем..." : "Сохранить"}
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {isSettingsOpen && (
+        <ColumnSettingsModal
+          columnConfigs={columnConfigs}
+          fieldsLoading={fieldsLoading}
+          selectableFields={selectableFields}
+          saving={saving}
+          statusText={statusText}
+          taskId={taskId}
+          opensearchAvailable={opensearchAvailable}
+          onClose={() => setIsSettingsOpen(false)}
+          onOpenAllowedFields={() => setIsAllowedFieldsOpen(true)}
+          onChange={handleDisplayNameChange}
+          onSave={handleSaveAll}
+        />
+      )}
+
+      {isAllowedFieldsOpen && (
+        <AllowedFieldsManagerModal
+          fields={allowedTargetFields}
+          loading={managingAllowedFields}
+          onClose={() => setIsAllowedFieldsOpen(false)}
+          onAdd={addAllowedTargetField}
+          onUpdate={updateAllowedTargetField}
+          onDelete={deleteAllowedTargetField}
+        />
+      )}
+    </>
   );
 };
 
