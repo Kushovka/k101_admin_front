@@ -3,7 +3,12 @@ import { motion } from "framer-motion";
 import { JSX, useEffect, useState } from "react";
 import { CgDanger } from "react-icons/cg";
 import { FaPlay, FaStop } from "react-icons/fa6";
-import { IoIosArrowDown, IoIosClose, IoMdClose } from "react-icons/io";
+import {
+  IoIosArrowDown,
+  IoIosArrowForward,
+  IoIosClose,
+  IoMdClose,
+} from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { MdDelete, MdMoreVert, MdRestartAlt } from "react-icons/md";
 import {
@@ -105,6 +110,10 @@ const UploadFiles = () => {
   const [searchPage, setSearchPage] = useState(1);
   const [searchTotal, setSearchTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [globalSortOrder, setGlobalSortOrder] = useState<"newest" | "oldest">(
+    "newest",
+  );
+  const [isGlobalListMode, setIsGlobalListMode] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
   const [duplicatesCount, setDuplicatesCount] = useState(0);
@@ -262,6 +271,18 @@ const UploadFiles = () => {
     value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const safeSearch = search ? escapeRegExp(search) : "";
+  const hasGlobalListFilters =
+    isGlobalListMode || Boolean(search.trim()) || Boolean(statusFilter);
+
+  const resetGlobalListFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setGlobalSortOrder("newest");
+    setIsGlobalListMode(false);
+    setSearchPage(1);
+    setSearchResults([]);
+    setSearchTotal(0);
+  };
 
   const loadGroupFiles = async (
     groupName: string,
@@ -331,9 +352,10 @@ const UploadFiles = () => {
   };
 
   useEffect(() => {
-    if (!search.trim() && !statusFilter) {
+    if (!hasGlobalListFilters) {
       setSearchResults([]);
       setSearchPage(1);
+      setSearchTotal(0);
       return;
     }
 
@@ -344,6 +366,7 @@ const UploadFiles = () => {
         const res = await getAllFiles({
           page: searchPage,
           pageSize: 50,
+          sortOrder: globalSortOrder,
           search: search || undefined,
           status: statusFilter || undefined,
         });
@@ -360,7 +383,7 @@ const UploadFiles = () => {
     };
 
     loadSearch();
-  }, [search, statusFilter, searchPage]);
+  }, [globalSortOrder, hasGlobalListFilters, search, searchPage, statusFilter]);
 
   useEffect(() => {
     const loadStatuses = async () => {
@@ -391,6 +414,7 @@ const UploadFiles = () => {
       const data = await getAllFiles({
         page: pageToLoad,
         pageSize,
+        sortOrder: globalSortOrder,
         search,
         status: status ?? statusFilter ?? undefined,
       });
@@ -1138,16 +1162,55 @@ const UploadFiles = () => {
             </h2>
           </div>
 
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center justify-end">
+            {hasGlobalListFilters && (
+              <motion.button
+                type="button"
+                onClick={resetGlobalListFilters}
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.18 }}
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-[14px] font-medium text-slate-700 border border-slate-300 rounded-xl bg-slate-50 shadow-sm hover:bg-slate-100 hover:border-slate-400 transition"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-500">
+                  <IoClose className="w-3.5 h-3.5" />
+                </span>
+                Сбросить
+              </motion.button>
+            )}
+
+            <button
+              onClick={() => {
+                setIsGlobalListMode(true);
+                setGlobalSortOrder((prev) =>
+                  prev === "newest" ? "oldest" : "newest",
+                );
+                setSearchPage(1);
+                setSearchResults([]);
+              }}
+              className="px-3 py-2 text-[14px] border border-gray-300 rounded-xl bg-white shadow-sm hover:bg-slate-50 hover:border-slate-400 transition flex gap-2 items-center"
+            >
+              Сортировать по дате
+              <IoIosArrowForward
+                className={clsx(
+                  "w-5 h-5 transition-transform",
+                  globalSortOrder === "newest" ? "rotate-90" : "-rotate-90",
+                )}
+              />
+            </button>
+
+            <Tooltip id="sort_order" content="Сортировать по дате" />
+
             <select
               value={statusFilter}
               onChange={(e) => {
                 const value = e.target.value;
                 setStatusFilter(value);
-                loadFiles(1, true, value);
+                setIsGlobalListMode(Boolean(value) || Boolean(search.trim()));
                 setSearchPage(1);
+                setSearchResults([]);
               }}
-              className="px-3 py-2 text-[14px] border border-gray-300 rounded-lg bg-white"
+              className="px-3 py-2 text-[14px] border border-gray-300 rounded-xl bg-white hover:bg-slate-50 shadow-sm hover:border-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition cursor-pointer"
             >
               <option value="">Все статусы</option>
               <option value="extracting">Обработка</option>
@@ -1161,10 +1224,13 @@ const UploadFiles = () => {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
+                setIsGlobalListMode(
+                  Boolean(e.target.value.trim()) || Boolean(statusFilter),
+                );
                 setSearchPage(1);
               }}
               placeholder="Поиск по названию файла"
-              className="w-64 px-3 py-2 text-[14px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
+              className="w-64 px-3 py-2 text-[14px] border border-gray-300 rounded-xl bg-white shadow-sm hover:border-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
             />
           </div>
         </div>
@@ -1199,8 +1265,8 @@ const UploadFiles = () => {
           </div>
         )}
 
-        {/* SEARCH RESULTS */}
-        {search.trim() || statusFilter ? (
+        {/* GLOBAL LIST / SEARCH RESULTS */}
+        {hasGlobalListFilters ? (
           <div className="mt-5 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="px-4 py-3 border-b">
               <h3 className="text-[15px] font-semibold text-slate-900">
