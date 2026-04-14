@@ -2,6 +2,7 @@ import adminApi from "./adminApi";
 import userApi from "./userApi";
 
 import {
+  SortOrder,
   TelegramUsersResponse,
   UserRequestsResponse,
   type ApiTelegramUser,
@@ -10,6 +11,7 @@ import {
   type UpdateUserPayload,
   type UserRole,
   type UsersResponse,
+  type UsersSortField,
 } from "../types/user";
 
 const getHeaders = (): Record<string, string> => {
@@ -30,10 +32,14 @@ export const getUsers = async ({
   page = 1,
   pageSize = 20,
   search,
+  sortBy = "id",
+  sortOrder = "asc",
 }: {
   page?: number;
   pageSize?: number;
   search?: string;
+  sortBy?: UsersSortField;
+  sortOrder?: SortOrder;
 }): Promise<UsersResponse> => {
   const { data } = await adminApi.get<UsersResponse>(`/admin-api/admin/users`, {
     headers: getHeaders(),
@@ -41,6 +47,8 @@ export const getUsers = async ({
       page,
       page_size: pageSize,
       search: search || undefined,
+      sort_by: sortBy,
+      sort_order: sortOrder,
     },
   });
 

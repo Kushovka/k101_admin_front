@@ -2,7 +2,13 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CgDanger } from "react-icons/cg";
-import { IoIosClose, IoMdCheckmark, IoMdClose } from "react-icons/io";
+import {
+  IoIosArrowRoundDown,
+  IoIosArrowRoundUp,
+  IoIosClose,
+  IoMdCheckmark,
+  IoMdClose,
+} from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +24,9 @@ import Toast from "../../../components/toast/Toast";
 import {
   type ApiTelegramUser,
   type CreatedUserResponse,
+  type SortOrder,
   type TableUser,
+  type UsersSortField,
 } from "../../../types/user";
 
 type NotifyType = "user_create" | "access_copy";
@@ -43,6 +51,8 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [telegramUsersModal, setTelegramUsersModal] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<UsersSortField>("id");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   const [dataAddUser, setDataAddUser] = useState<CreatedUserResponse | null>(
     null,
@@ -66,6 +76,8 @@ export default function Users() {
         page,
         pageSize: 15,
         search: search || undefined,
+        sortBy,
+        sortOrder,
       });
 
       setTotal(res.total);
@@ -114,7 +126,7 @@ export default function Users() {
     }, 400);
 
     return () => clearTimeout(delay);
-  }, [search, page]);
+  }, [page, search, sortBy, sortOrder]);
 
   /* заявки из телеграма */
   useEffect(() => {
@@ -210,6 +222,34 @@ export default function Users() {
   ] as const;
 
   /* функция для копирования */
+  const usersChapterTitle = chapterTitle.map((item) => ({
+    ...item,
+    sortBy: (
+      {
+        2: "username",
+        3: "first_name",
+        4: "last_name",
+        5: "email",
+        6: "role",
+        7: "last_login",
+        9: "id",
+      } as Partial<Record<(typeof chapterTitle)[number]["id"], UsersSortField>>
+    )[item.id],
+  }));
+
+  const handleSort = (field: UsersSortField) => {
+    setPage(1);
+    setUsers([]);
+
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortBy(field);
+    setSortOrder("asc");
+  };
+
   const handleCopy = (text: string): void => {
     navigator.clipboard.writeText(text).then(() => {
       setNotify("access_copy");
@@ -268,7 +308,26 @@ export default function Users() {
             Заявки из Telegram
           </button>
         </div>
-
+        {openModal === "users" && (
+          <div className="flex items-center justify-between py-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+                setUsers([]);
+              }}
+              placeholder="Поиск по пользователям..."
+              className="w-72 px-3 py-2 text-[14px] border border-gray-300 rounded-lg 
+      focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
+            />
+            {loadingSearch && (
+              <span className="text-xs text-slate-400">поиск...</span>
+            )}
+            <span className="text-sm text-slate-500">Найдено: {total}</span>
+          </div>
+        )}
         {/* TABLE */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           {/* HEADER */}
@@ -278,37 +337,41 @@ export default function Users() {
               openModal === "users" ? "grid-cols-8" : "grid-cols-7",
             )}
           >
-            {(openModal === "users" ? chapterTitle : chapterTitleTg).map(
+            {(openModal === "users" ? usersChapterTitle : chapterTitleTg).map(
               (c) => (
                 <div
                   key={c.id}
-                  className="px-3 py-3 text-center uppercase tracking-wide text-[11px]"
+                  onClick={() => {
+                    if (openModal === "users" && "sortBy" in c && c.sortBy) {
+                      handleSort(c.sortBy);
+                    }
+                  }}
+                  className={clsx(
+                    "px-3 py-3 text-center uppercase tracking-wide text-[11px]",
+                    openModal === "users" && "sortBy" in c && c.sortBy
+                      ? "cursor-pointer select-none hover:bg-slate-100 transition"
+                      : "",
+                  )}
                 >
-                  {c.title}
+                  <span className="inline-flex items-center justify-center gap-1">
+                    {c.title}
+                    {openModal === "users" &&
+                      "sortBy" in c &&
+                      c.sortBy &&
+                      sortBy === c.sortBy && (
+                        <span className="text-[10px] text-cyan-600">
+                          {sortOrder === "asc" ? (
+                            <IoIosArrowRoundDown className="w-4 h-4" />
+                          ) : (
+                            <IoIosArrowRoundUp className="w-4 h-4" />
+                          )}
+                        </span>
+                      )}
+                  </span>
                 </div>
               ),
             )}
           </div>
-          {openModal === "users" && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                  setUsers([]);
-                }}
-                placeholder="Поиск по пользователям..."
-                className="w-72 px-3 py-2 text-[14px] border border-gray-300 rounded-lg 
-      focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none"
-              />
-              {loadingSearch && (
-                <span className="text-xs text-slate-400">поиск...</span>
-              )}
-              <span className="text-sm text-slate-500">Найдено: {total}</span>
-            </div>
-          )}
 
           {/* BODY */}
           <div className="flex flex-col divide-y divide-gray-100">

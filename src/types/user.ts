@@ -41,6 +41,17 @@ export interface UsersResponse {
   users: ApiUser[];
 }
 
+export type UsersSortField =
+  | "id"
+  | "first_name"
+  | "last_name"
+  | "username"
+  | "email"
+  | "role"
+  | "last_login";
+
+export type SortOrder = "asc" | "desc";
+
 export interface CreatedUserResponse {
   username: string;
   temporary_password: string;
