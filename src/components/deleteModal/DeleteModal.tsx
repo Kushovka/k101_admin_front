@@ -42,6 +42,7 @@ const DeleteModal = ({
     try {
       await userApi.delete(`/api/v1/files/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: { delete_content: true },
       });
 
       setNotify("delete_file");
