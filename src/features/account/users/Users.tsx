@@ -52,6 +52,12 @@ export default function Users() {
 
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
+  const formatLastLogin = (lastLogin?: string): string => {
+    if (!lastLogin) return "-";
+
+    return new Date(lastLogin).toLocaleString();
+  };
+
   const fetchUsers = async (): Promise<void> => {
     setError(null);
     setLoadingSearch(true);
@@ -80,6 +86,15 @@ export default function Users() {
         freeRequest: u.free_requests_count ?? 0,
         allRequest: u.all_requests_count ?? 0,
         totalSpend: u.total_spent ?? 0,
+        lastLogin: u.last_login
+          ? new Date(u.last_login).toLocaleString([], {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "-",
       }));
 
       setUsers((prev) =>
@@ -179,7 +194,7 @@ export default function Users() {
     { id: 4, title: "Фамилия" },
     { id: 5, title: "Почта" },
     { id: 6, title: "Роль" },
-    { id: 7, title: "Дата регистрации" },
+    { id: 7, title: "Последняя активность" },
     { id: 8, title: "Статус" },
     { id: 9, title: "Идентификатор" },
   ] as const;
@@ -314,9 +329,7 @@ export default function Users() {
                   <span>{u.surname}</span>
                   <span className="text-xs">{u.email}</span>
                   <span className="font-medium">{u.role}</span>
-                  <span className="text-xs text-slate-600">
-                    {u.registrationDate}
-                  </span>
+                  <span className="text-xs text-slate-600">{u.lastLogin}</span>
                   <span
                     className={clsx(
                       "px-2 py-[3px] rounded-md text-xs mx-auto",

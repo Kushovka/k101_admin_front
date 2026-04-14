@@ -178,7 +178,7 @@ export const getUserRequests = async (
   pageSize = 10,
 ): Promise<UserRequestsResponse> => {
   const { data } = await adminApi.get<UserRequestsResponse>(
-    `/api/v1/users/admin/${userId}/requests`,
+    `/admin/users/${userId}/requests`,
     {
       headers: getHeaders(),
       params: {

@@ -126,7 +126,7 @@ const Complaints = () => {
   return (
     <section
       className={clsx(
-        "min-h-screen bg-slate-50 py-10 transition-all",
+        "min-h-screen bg-slate-50 pr-[50px] py-10 transition-all",
         isOpen ? "pl-[116px]" : "pl-[336px]",
       )}
     >
@@ -158,8 +158,6 @@ const Complaints = () => {
 
       {mode === "appeals" && (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 w-full my-6 mx-auto">
-       
-
           {/* 🔥 фильтр */}
           <div className="flex gap-3 mb-4">
             {/* статус */}
@@ -294,8 +292,6 @@ const Complaints = () => {
 
       {mode === "complaints" && (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 w-full my-6 mx-auto">
-       
-
           {allComplaints.length === 0 ? (
             <p className="text-sm text-slate-500">У вас пока нет обращений</p>
           ) : (
@@ -317,6 +313,11 @@ const Complaints = () => {
                     reviewed: "Проверено",
                   }[item.status] ?? item.status;
 
+                const complaintFileName =
+                  item.file_name ?? item.doc_summary?.file_name ?? null;
+                const complaintFileGroup =
+                  item.file_group ?? item.doc_summary?.file_group ?? null;
+
                 return (
                   <div
                     key={item.id}
@@ -324,17 +325,31 @@ const Complaints = () => {
                   >
                     {/* верхняя строка */}
                     <div className="flex justify-between items-center">
-                      <div className="text-sm text-slate-500">
-                        Документ:{" "}
-                        <span className="font-medium text-slate-700">
-                          {item.doc_id}
-                        </span>
-                      </div>
-
                       <span
                         className={`px-2 py-1 rounded-md text-xs font-medium ${statusColor}`}
                       >
                         {statusLabel}
+                      </span>
+                    </div>
+
+                    {(complaintFileName || complaintFileGroup) && (
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                        {complaintFileName && (
+                          <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-700">
+                            Файл: {complaintFileName}
+                          </span>
+                        )}
+                        {complaintFileGroup && (
+                          <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-700">
+                            Группа: {complaintFileGroup}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-sm text-slate-500">
+                      Документ ID:{" "}
+                      <span className="font-medium text-slate-700">
+                        {item.doc_id}
                       </span>
                     </div>
 
@@ -433,7 +448,7 @@ const Complaints = () => {
           )}
         </div>
       )}
-      
+
       {reviewTarget && (
         <ReviewComplaintModal
           complaintId={reviewTarget.id}

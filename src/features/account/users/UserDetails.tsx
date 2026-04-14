@@ -14,7 +14,6 @@ import {
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 import Loader from "../../../components/loader/Loader";
 import { useSidebar } from "../../../components/sidebar/SidebarContext";
-
 import Toast from "../../../components/toast/Toast";
 import type {
   UpdateUserPayload,
@@ -35,6 +34,15 @@ const mapUser = (u: UserDetailsApi): UserDetailsUI => ({
   freeRequest: u.free_requests_count ?? 0,
   allRequest: u.total_requests ?? 0,
   totalSpend: Number(u.total_spent ?? 0),
+  lastLogin: u.last_login
+    ? new Date(u.last_login).toLocaleString([], {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-",
 });
 
 const UserDetails = () => {
@@ -61,9 +69,6 @@ const UserDetails = () => {
   const [reqPage, setReqPage] = useState(1);
   const [reqTotal, setReqTotal] = useState(0);
   const [loadingRequests, setLoadingRequests] = useState(false);
-  const [isFullHistoryLoaded, setIsFullHistoryLoaded] = useState(false);
-
-  /* ---------------- helpers ---------------- */
 
   const requestTypeLabels: Record<string, string> = {
     advanced_phone: "Телефон",
@@ -83,19 +88,23 @@ const UserDetails = () => {
     insufficient_funds: "bg-red-100 text-red-700",
   };
 
-  /* getUserById */
   useEffect(() => {
     if (!id) return;
 
     (async () => {
       setLoading(true);
       try {
-        const res: UserDetailsApi = await getUserById(id);
-        const mapped = mapUser(res);
+        const [userRes, requestsRes] = await Promise.all([
+          getUserById(id),
+          getUserRequests(id, 1, 10),
+        ]);
+
+        const mapped = mapUser(userRes);
 
         setUser(mapped);
-        setRequests(res.recent_requests ?? []);
-        setReqTotal(res.total_requests ?? 0);
+        setRequests(requestsRes.requests ?? []);
+        setReqTotal(requestsRes.total ?? 0);
+        setReqPage(1);
         setFormData({
           first_name: mapped.name,
           last_name: mapped.surname,
@@ -107,7 +116,6 @@ const UserDetails = () => {
     })();
   }, [id]);
 
-  /* blocked */
   const toggleBlocked = async () => {
     if (!user || !id) return;
     setLoading(true);
@@ -124,10 +132,9 @@ const UserDetails = () => {
     try {
       await isDeletedUser(id);
       navigate("/account/users");
-    } catch (err) {}
+    } catch {}
   };
 
-  /* deposit users */
   const handleDeposit = async () => {
     if (!id) return;
 
@@ -136,6 +143,7 @@ const UserDetails = () => {
       setTimeout(() => setNotify(null), 3000);
       return;
     }
+
     setLoading(true);
     try {
       await postDeposit(payInput, id);
@@ -152,7 +160,6 @@ const UserDetails = () => {
     }
   };
 
-  /* updateUser */
   const saveUser = async () => {
     if (!id || !user) return;
 
@@ -164,7 +171,7 @@ const UserDetails = () => {
         surname: res.last_name,
         email: res.email,
       });
-    } catch (err) {}
+    } catch {}
   };
 
   useEffect(() => {
@@ -177,24 +184,6 @@ const UserDetails = () => {
     }
   }, [user]);
 
-  const handleLoadFullHistory = async () => {
-    if (!id) return;
-
-    setLoadingRequests(true);
-    try {
-      const res = await getUserRequests(id, 1, 10);
-
-      setRequests(res.requests);
-      setReqTotal(res.total);
-      setReqPage(1);
-      setIsFullHistoryLoaded(true);
-    } catch {
-      setError("Ошибка загрузки истории запросов");
-    } finally {
-      setLoadingRequests(false);
-    }
-  };
-
   const handleLoadMoreRequests = async () => {
     if (!id) return;
 
@@ -203,7 +192,6 @@ const UserDetails = () => {
 
     try {
       const res = await getUserRequests(id, nextPage, 10);
-
       setRequests((prev) => [...prev, ...res.requests]);
       setReqTotal(res.total);
       setReqPage(nextPage);
@@ -216,8 +204,6 @@ const UserDetails = () => {
 
   if (loading) return <Loader fullScreen />;
   if (!user) return <div>User not found</div>;
-
-  /* ---------------- motion animated ---------------- */
 
   const container = {
     hidden: {},
@@ -243,10 +229,12 @@ const UserDetails = () => {
           onClose={() => setNotify(null)}
         />
       )}
+
       <div className="max-w-[1100px] mx-auto flex flex-col gap-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
           Пользователь: {user.nickName}
         </h1>
+
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/account/users")}
@@ -270,7 +258,6 @@ const UserDetails = () => {
           animate="show"
           className="grid grid-cols-2 gap-8"
         >
-          {/* LEFT */}
           <motion.div
             variants={item}
             className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
@@ -315,6 +302,14 @@ const UserDetails = () => {
                   {user.registrationDate}
                 </span>
               </p>
+
+              <p className="flex justify-between text-slate-600">
+                <span>Последняя активность:</span>
+                <span className="font-medium text-slate-900">
+                  {user.lastLogin}
+                </span>
+              </p>
+
               <p className="flex justify-between text-slate-600">
                 <span>Статус:</span>
                 <span
@@ -346,12 +341,11 @@ const UserDetails = () => {
                 onClick={saveUser}
                 className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
               >
-                сохранить изменения
+                Сохранить изменения
               </button>
             </div>
           </motion.div>
 
-          {/* RIGHT */}
           <motion.div
             variants={item}
             className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
@@ -394,12 +388,11 @@ const UserDetails = () => {
               onClick={() => setOpenModal(true)}
               className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
             >
-              пополнить баланс
+              Пополнить баланс
             </button>
           </motion.div>
         </motion.div>
 
-        {/* QUERY */}
         <motion.div variants={item} className="flex flex-col gap-4">
           <p className="text-[18px] font-semibold text-slate-900">
             История запросов
@@ -415,7 +408,6 @@ const UserDetails = () => {
 
           {!loadingRequests && requests.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              {/* HEADER */}
               <div className="grid grid-cols-[80px_1fr_1fr_120px_120px_140px_160px] text-xs font-medium text-slate-600 bg-slate-50 border-b border-gray-200">
                 <div className="py-3 text-center uppercase">ID</div>
                 <div className="py-3 text-center uppercase">Тип</div>
@@ -426,29 +418,24 @@ const UserDetails = () => {
                 <div className="py-3 text-center uppercase">Дата</div>
               </div>
 
-              {/* ROWS */}
               <div className="flex flex-col divide-y divide-gray-100">
                 {requests.map((r) => (
                   <div
                     key={r.id}
                     className="grid grid-cols-[80px_1fr_1fr_120px_120px_140px_160px] text-sm text-slate-700 py-3 items-center text-center hover:bg-slate-50 transition"
                   >
-                    {/* ID */}
                     <span className="font-mono text-xs text-slate-500">
                       {r.id}
                     </span>
 
-                    {/* TYPE */}
                     <span>
                       {requestTypeLabels[r.request_type] ?? r.request_type}
                     </span>
 
-                    {/* QUERY */}
                     <span className="text-xs truncate px-2">
                       {r.search_query || "-"}
                     </span>
 
-                    {/* COST */}
                     <span
                       className={clsx(
                         "font-medium",
@@ -460,12 +447,10 @@ const UserDetails = () => {
                       {r.request_cost} ₽
                     </span>
 
-                    {/* RESULTS */}
                     <span className="text-xs text-slate-600">
                       {r.results_count ?? "-"}
                     </span>
 
-                    {/* STATUS */}
                     <span
                       className={clsx(
                         "px-2 py-[3px] rounded-md text-xs mx-auto",
@@ -479,7 +464,6 @@ const UserDetails = () => {
                           : r.status}
                     </span>
 
-                    {/* DATE */}
                     <span className="text-xs text-slate-600">
                       {new Date(r.request_date).toLocaleString("ru-RU", {
                         day: "2-digit",
@@ -495,19 +479,7 @@ const UserDetails = () => {
             </div>
           )}
 
-          {/* LOAD MORE */}
-          {!isFullHistoryLoaded && user.allRequest > requests.length && (
-            <div className="flex justify-center mt-2">
-              <button
-                onClick={handleLoadFullHistory}
-                className="px-4 py-2 text-sm border rounded-md hover:bg-slate-100"
-              >
-                Показать всю историю
-              </button>
-            </div>
-          )}
-
-          {isFullHistoryLoaded && requests.length < reqTotal && (
+          {requests.length < reqTotal && (
             <div className="flex justify-center mt-2">
               <button
                 onClick={handleLoadMoreRequests}
@@ -520,7 +492,6 @@ const UserDetails = () => {
           )}
         </motion.div>
 
-        {/* MODAL */}
         {openModal && (
           <div
             onClick={() => {
@@ -586,13 +557,12 @@ const UserDetails = () => {
                 onClick={handleDeposit}
                 className="px-3 py-2 rounded-lg border text-sm font-medium text-slate-900 hover:bg-green-500/70 hover:text-white transition w-full"
               >
-                оплатить
+                Оплатить
               </button>
             </motion.div>
           </div>
         )}
 
-        {/* DELETE MODAL */}
         {openDelete && (
           <div
             onClick={() => setOpenDelete(false)}

@@ -13,6 +13,7 @@ export interface ApiUser {
   free_requests_count?: number;
   all_requests_count?: number;
   total_spent?: number;
+  last_login?: string;
 }
 
 export interface TableUser {
@@ -29,6 +30,7 @@ export interface TableUser {
   freeRequest: number;
   allRequest: number;
   totalSpend: number;
+  lastLogin: string;
 }
 
 export interface UsersResponse {
@@ -59,6 +61,7 @@ export interface UserDetailsApi {
   total_spent?: number;
   recent_requests?: [];
   total_requests?: number;
+  last_login?: string;
 }
 
 export interface UserDetailsUI {
@@ -74,6 +77,7 @@ export interface UserDetailsUI {
   freeRequest: number;
   allRequest: number;
   totalSpend: number;
+  lastLogin: string;
 }
 
 export interface UpdateUserPayload {
