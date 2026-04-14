@@ -256,13 +256,13 @@ const UserDetails = () => {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 gap-8"
+          className="grid grid-cols-1 xl:grid-cols-2 gap-8"
         >
           <motion.div
             variants={item}
-            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
+            className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col gap-6"
           >
-            <p className="text-[16px] font-medium text-slate-900 text-center">
+            <p className="text-[18px] font-semibold text-slate-900">
               Основная информация
             </p>
 
@@ -291,30 +291,30 @@ const UserDetails = () => {
                 }
               />
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600">
                 <span>Роль:</span>
                 <span className="font-medium text-slate-900">{user.role}</span>
               </p>
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600">
                 <span>Дата регистрации:</span>
                 <span className="font-medium text-slate-900">
                   {user.registrationDate}
                 </span>
               </p>
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600">
                 <span>Последняя активность:</span>
                 <span className="font-medium text-slate-900">
                   {user.lastLogin}
                 </span>
               </p>
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600">
                 <span>Статус:</span>
                 <span
                   className={clsx(
-                    "px-2 py-[2px] rounded text-xs font-medium",
+                    "px-3 py-1 rounded-full text-xs font-medium",
                     user.status === "Active"
                       ? "bg-green-100 text-green-700"
                       : "bg-red-100 text-red-700",
@@ -325,11 +325,11 @@ const UserDetails = () => {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
               {user.role === "User" && (
                 <button
                   onClick={toggleBlocked}
-                  className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
+                  className="px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition"
                 >
                   {user.status === "Active"
                     ? "Заблокировать пользователя"
@@ -339,7 +339,7 @@ const UserDetails = () => {
 
               <button
                 onClick={saveUser}
-                className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+                className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
               >
                 Сохранить изменения
               </button>
@@ -348,45 +348,45 @@ const UserDetails = () => {
 
           <motion.div
             variants={item}
-            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
+            className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col justify-between gap-6"
           >
             <div className="flex flex-col gap-4">
-              <p className="text-[16px] font-medium text-slate-900 text-center">
+              <p className="text-[18px] font-semibold text-slate-900">
                 Баланс и расходы
               </p>
 
-              <p className="flex justify-between text-slate-600 text-[15px]">
+              <p className="flex items-center justify-between rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-slate-50 px-5 py-4 text-slate-700 text-[15px]">
                 Баланс:
-                <span className="text-[20px] font-semibold text-slate-900">
+                <span className="text-[28px] font-semibold text-slate-900">
                   {user.balance} ₽
                 </span>
               </p>
 
-              <p className="flex justify-between text-slate-600 text-[15px]">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600 text-[15px]">
                 Бесплатные запросы:
                 <span className="font-medium text-slate-900">
                   {user.freeRequest}
                 </span>
               </p>
 
-              <p className="flex justify-between text-slate-600 text-[15px]">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600 text-[15px]">
                 Всего запросов:
                 <span className="font-medium text-slate-900">
                   {user.allRequest}
                 </span>
               </p>
 
-              <p className="flex justify-between text-slate-600 text-[15px]">
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600 text-[15px]">
                 Потрачено:
                 <span className="font-medium text-slate-900">
-                  {user.totalSpend}
+                  {user.totalSpend} ₽
                 </span>
               </p>
             </div>
 
             <button
               onClick={() => setOpenModal(true)}
-              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+              className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
             >
               Пополнить баланс
             </button>

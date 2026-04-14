@@ -3,6 +3,7 @@ export type UserRole = "user" | "admin";
 export interface ApiUser {
   id: string;
   username: string;
+  telegram_username: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -19,6 +20,7 @@ export interface ApiUser {
 export interface TableUser {
   id: string;
   nickName: string;
+  telegramUsername: string;
   name: string;
   surname: string;
   email: string;

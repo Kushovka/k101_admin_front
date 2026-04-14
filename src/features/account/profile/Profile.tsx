@@ -185,19 +185,19 @@ const Profile = () => {
           variants={container}
           initial="hidden"
           animate="show"
-          className="flex w-full"
+          className="grid grid-cols-1 gap-8 w-full"
         >
           {/* LEFT CARD */}
           <motion.div
             variants={item}
-            className="bg-white border w-full border-gray-200 shadow-sm rounded-xl p-6 flex flex-col gap-6"
+            className="bg-white border w-full border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col gap-6"
           >
-            <p className="text-[16px] font-medium text-slate-900 text-center">
+            <p className="text-[18px] font-semibold text-slate-900">
               Основная информация
             </p>
 
             <div className="space-y-3 text-[15px]">
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl  text-slate-600">
                 <span>Никнейм:</span>
                 <span className="font-medium text-slate-900">
                   {user?.username}
@@ -214,12 +214,12 @@ const Profile = () => {
 
               <EditableField label="Email" value={email} onChange={setEmail} />
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl text-slate-600">
                 <span>Роль:</span>
                 <span className="font-medium text-slate-900">{user?.role}</span>
               </p>
 
-              <p className="flex justify-between text-slate-600">
+              <p className="flex items-center justify-between rounded-xl text-slate-600">
                 <span>Дата регистрации:</span>
                 <span className="font-medium text-slate-900">
                   {user?.registration_date
@@ -236,11 +236,46 @@ const Profile = () => {
 
             <button
               onClick={saveProfile}
-              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+              className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
             >
               сохранить изменения
             </button>
           </motion.div>
+
+          {/* <motion.div
+            variants={item}
+            className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col justify-between gap-6"
+          >
+            <div className="flex flex-col gap-4">
+              <p className="text-[18px] font-semibold text-slate-900">
+                Баланс и лимиты
+              </p>
+
+              <div className="rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-slate-50 px-5 py-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-cyan-700/70">
+                  Текущий баланс
+                </p>
+                <span className="mt-3 block text-[34px] leading-none font-semibold text-slate-900">
+                  {user?.balance ?? 0} ₽
+                </span>
+              </div>
+
+              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600 text-[15px]">
+                <span>Бесплатные запросы:</span>
+                <span className="font-medium text-slate-900">
+                  {user?.free_requests_count ?? 0}
+                </span>
+              </p>
+
+            </div>
+
+            <button
+              onClick={() => setOpenModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+            >
+              Пополнить баланс
+            </button>
+          </motion.div> */}
 
           {/* RIGHT CARD */}
           {/* <motion.div
