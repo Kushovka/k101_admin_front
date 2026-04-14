@@ -31,13 +31,13 @@ const EditableField: React.FC<EditableFieldProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-5 text-gray01">
-      <p>{label}:</p>
+    <div className="flex items-center justify-between gap-5 text-gray01 min-h-[24px]">
+      <p className="text-slate-600">{label}:</p>
       {isEditing ? (
-        <>
+        <div className="flex items-center gap-2">
           <input
             type="text"
-            className="border rounded px-2 py-1"
+            className="border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
             value={tempValue}
             onChange={(e) => setTempValue(e.target.value)}
             autoFocus
@@ -48,24 +48,24 @@ const EditableField: React.FC<EditableFieldProps> = ({
           />
           <IoMdCheckmark
             data-testid="checkmark-icon"
-            className="cursor-pointer w-[30px] h-[30px] text-green-500"
+            className="cursor-pointer w-[24px] h-[24px] text-green-500"
             onClick={save}
           />
           <IoMdClose
             data-testid="cancel-icon"
-            className="cursor-pointer w-[30px] h-[30px] text-red-500"
+            className="cursor-pointer w-[24px] h-[24px] text-red-500"
             onClick={cancel}
           />
-        </>
+        </div>
       ) : (
-        <>
-          <span className="text-black">{value}</span>
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-slate-900">{value}</span>
           <FaPen
-            className="cursor-pointer"
+            className="cursor-pointer text-slate-400 hover:text-slate-600 transition"
             onClick={() => setIsEditing(true)}
             data-testid="pencil-icon"
           />
-        </>
+        </div>
       )}
     </div>
   );

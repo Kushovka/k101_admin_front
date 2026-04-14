@@ -85,6 +85,7 @@ export default function Users() {
       const formattedUsers: TableUser[] = res.users.map((u) => ({
         id: u.id,
         nickName: u.username ?? "-",
+        telegramUsername: u.telegram_username ?? "-",
         name: u.first_name ?? "-",
         surname: u.last_name ?? "-",
         email: u.email ?? "-",
@@ -202,6 +203,7 @@ export default function Users() {
   /* названия столбцов */
   const chapterTitle = [
     { id: 2, title: "Никнейм" },
+    { id: 1, title: "Telegram никнейм" },
     { id: 3, title: "Имя" },
     { id: 4, title: "Фамилия" },
     { id: 5, title: "Почта" },
@@ -334,7 +336,7 @@ export default function Users() {
           <div
             className={clsx(
               "grid text-sm font-medium text-slate-600 bg-slate-50 border-b border-gray-200",
-              openModal === "users" ? "grid-cols-8" : "grid-cols-7",
+              openModal === "users" ? "grid-cols-9" : "grid-cols-7",
             )}
           >
             {(openModal === "users" ? usersChapterTitle : chapterTitleTg).map(
@@ -385,9 +387,10 @@ export default function Users() {
                 <div
                   key={u.id}
                   onClick={() => navigate(`/account/users/${u.identifier}`)}
-                  className="grid grid-cols-8 text-sm text-slate-700 py-3 items-center text-center cursor-pointer hover:bg-slate-50 transition"
+                  className="grid grid-cols-9 text-sm text-slate-700 py-3 items-center text-center cursor-pointer hover:bg-slate-50 transition"
                 >
                   <span>{u.nickName}</span>
+                  <span> {u.telegramUsername || "Не привязан"}</span>
                   <span>{u.name}</span>
                   <span>{u.surname}</span>
                   <span className="text-xs">{u.email}</span>
