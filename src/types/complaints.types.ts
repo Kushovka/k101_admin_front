@@ -13,4 +13,10 @@ export type Complaint = {
   reviewed_at: string;
   admin_username: string;
   reviewed_by_admin_id: string;
+  file_name?: string | null;
+  file_group?: string | null;
+  doc_summary?: {
+    file_name?: string | null;
+    file_group?: string | null;
+  } | null;
 };
