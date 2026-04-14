@@ -58,6 +58,8 @@ const UploadFiles = () => {
 
   const {
     processingQueue,
+    queuedQueue,
+    pausedQueue,
     waitingQueue,
     completedQueue,
     failedQueue,
@@ -894,12 +896,36 @@ const UploadFiles = () => {
                         <p className="text-[13px] text-slate-500">
                           {formatFileSize(item.file_size)}
                         </p>
+                        {typeof item.progress_percent === "number" && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-[12px] text-slate-500 mb-1">
+                              <span>
+                                {item.processed_rows ?? 0}
+                                {item.total_rows ? ` / ${item.total_rows}` : ""} строк
+                              </span>
+                              <span>{item.progress_percent}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-500 transition-all duration-300"
+                                style={{ width: `${item.progress_percent}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* STATUS */}
-                      <span className="text-green-600 text-sm text-center">
-                        Идёт обработка
-                      </span>
+                      <div className="text-center">
+                        <span className="text-green-600 text-sm">
+                          Идёт обработка
+                        </span>
+                        {item.started_at && (
+                          <p className="text-[12px] text-slate-400 mt-1">
+                            c {new Date(item.started_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
 
                       {/* POSITION */}
                       <div className="text-center text-[12px] text-slate-400">
@@ -912,16 +938,16 @@ const UploadFiles = () => {
             )}
 
             {/* ================= WAITING ================= */}
-            {waitingQueue.length > 0 && (
+            {queuedQueue.length > 0 && (
               <div>
                 <h3 className="text-[15px] font-semibold text-blue-600 mb-3">
                   В очереди
                 </h3>
 
                 <div className="bg-white border border-blue-200 rounded-xl divide-y">
-                  {waitingQueue.slice(0, queueLimit).map((item) => (
+                  {queuedQueue.slice(0, queueLimit).map((item) => (
                     <div
-                      key={`waiting-${item.raw_file_id}`}
+                      key={`queued-${item.raw_file_id}`}
                       className="grid grid-cols-6 gap-4 items-center px-4 py-3"
                     >
                       {/* NAME */}
@@ -936,12 +962,7 @@ const UploadFiles = () => {
 
                       {/* STATUS */}
                       <span className="text-sm text-center">
-                        {item.status === "queued" && (
-                          <span className="text-blue-600">В очереди</span>
-                        )}
-                        {item.status === "paused" && (
-                          <span className="text-cyan-600">На паузе</span>
-                        )}
+                        <span className="text-blue-600">В очереди</span>
                       </span>
 
                       {/* PRIORITY */}
@@ -1005,7 +1026,7 @@ const UploadFiles = () => {
                   ))}
                 </div>
 
-                {waitingQueue.length > queueLimit && (
+                {queuedQueue.length > queueLimit && (
                   <button
                     onClick={() => setQueueLimit((p) => p + 20)}
                     className="mt-3 text-sm text-cyan-600 hover:underline"
@@ -1013,6 +1034,80 @@ const UploadFiles = () => {
                     Показать ещё
                   </button>
                 )}
+              </div>
+            )}
+
+            {pausedQueue.length > 0 && (
+              <div>
+                <h3 className="text-[15px] font-semibold text-cyan-600 mb-3">
+                  На паузе
+                </h3>
+
+                <div className="bg-white border border-cyan-200 rounded-xl divide-y">
+                  {pausedQueue.slice(0, queueLimit).map((item) => (
+                    <div
+                      key={`paused-${item.raw_file_id}`}
+                      className="grid grid-cols-6 gap-4 items-center px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-900">
+                          {item.file_name}
+                        </p>
+                        <p className="text-[13px] text-slate-500">
+                          {formatFileSize(item.file_size)}
+                        </p>
+                      </div>
+
+                      <span className="text-sm text-center text-cyan-600">
+                        На паузе
+                      </span>
+
+                      <select
+                        value={item.priority}
+                        onChange={(e) =>
+                          changePriority(
+                            item.raw_file_id,
+                            Number(e.target.value),
+                          )
+                        }
+                        className="text-[12px] px-2 py-[4px] rounded border border-gray-300 bg-white hover:border-gray-400"
+                      >
+                        {[1, 100, 999].map((p) => (
+                          <option key={p} value={p}>
+                            приоритет {p}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="text-center text-[12px] text-slate-400">
+                        pos: {item.position ?? "-"}
+                      </div>
+
+                      <div className="flex justify-end gap-2 col-span-2">
+                        <button
+                          onClick={() => moveToTop(item.raw_file_id)}
+                          className="px-2 py-[3px] rounded border border-gray-300 text-[12px] hover:bg-gray-100 transition"
+                        >
+                          ↑ в топ
+                        </button>
+
+                        <button
+                          onClick={() => resume(item.raw_file_id)}
+                          className="p-1 rounded hover:bg-slate-200"
+                        >
+                          <FaPlay />
+                        </button>
+
+                        <button
+                          onClick={() => cancel(item.raw_file_id)}
+                          className="p-1 rounded hover:bg-red-100 text-red-500"
+                        >
+                          <IoClose />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
