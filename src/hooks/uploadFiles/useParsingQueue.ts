@@ -1,6 +1,7 @@
 // hooks/uploadFiles/useParsingQueue.ts
 import { useEffect, useMemo, useState } from "react";
 import {
+  getParsingCurrent,
   getParsingQueue,
   patchPriorityFile,
   pauseAllFiles,
@@ -39,6 +40,17 @@ type ParsingQueueResponse = {
   entries?: ParsingQueueItem[];
 };
 
+type ParsingCurrentResponse = {
+  raw_file_id: string;
+  file_name: string;
+  file_size?: number;
+  progress_percent?: number;
+  processed_rows?: number;
+  total_rows?: number | null;
+  started_at?: string;
+  celery_task_id?: string;
+};
+
 export const useParsingQueue = () => {
   const [queue, setQueue] = useState<ParsingQueueItem[]>([]);
   const [parsingCurrent, setParsingCurrent] = useState<ParsingQueueItem[]>([]);
@@ -67,9 +79,19 @@ export const useParsingQueue = () => {
 
   const processingQueue = parsingCurrent;
 
-  const waitingQueue = useMemo(
-    () => queue.filter((i) => i.status === "queued" || i.status === "paused"),
+  const queuedQueue = useMemo(
+    () => queue.filter((i) => i.status === "queued"),
     [queue],
+  );
+
+  const pausedQueue = useMemo(
+    () => queue.filter((i) => i.status === "paused"),
+    [queue],
+  );
+
+  const waitingQueue = useMemo(
+    () => [...queuedQueue, ...pausedQueue],
+    [pausedQueue, queuedQueue],
   );
 
   const failedQueue = useMemo(
@@ -87,11 +109,56 @@ export const useParsingQueue = () => {
     setError(null);
 
     try {
-      const res = (await getParsingQueue()) as ParsingQueueResponse;
+      const [queueRes, processingRes, currentRes] = await Promise.all([
+        getParsingQueue(),
+        getParsingQueue({ status: "processing", limit: 100 }),
+        getParsingCurrent().catch(() => null),
+      ]);
 
-      setParsingCurrent(normalizeQueue(res.currently_processing ?? []));
+      const queueData = queueRes as ParsingQueueResponse;
+      const processingData = processingRes as ParsingQueueResponse;
+      const currentData = currentRes as ParsingCurrentResponse | null;
 
-      setQueue(normalizeQueue(res.entries ?? []));
+      const processingItems = normalizeQueue([
+        ...(queueData.currently_processing ?? []),
+        ...(processingData.currently_processing ?? []),
+      ]);
+
+      const processingWithCurrent = processingItems.map((item) =>
+        currentData && item.raw_file_id === currentData.raw_file_id
+          ? {
+              ...item,
+              progress_percent: currentData.progress_percent,
+              processed_rows: currentData.processed_rows,
+              total_rows: currentData.total_rows ?? item.total_rows,
+              started_at: currentData.started_at ?? item.started_at,
+              celery_task_id: currentData.celery_task_id ?? item.celery_task_id,
+            }
+          : item,
+      );
+
+      if (
+        currentData &&
+        !processingWithCurrent.some(
+          (item) => item.raw_file_id === currentData.raw_file_id,
+        )
+      ) {
+        processingWithCurrent.unshift({
+          raw_file_id: currentData.raw_file_id,
+          file_name: currentData.file_name,
+          file_size: currentData.file_size,
+          status: "processing",
+          progress_percent: currentData.progress_percent,
+          processed_rows: currentData.processed_rows,
+          total_rows: currentData.total_rows ?? undefined,
+          started_at: currentData.started_at,
+          celery_task_id: currentData.celery_task_id,
+          error_code: "",
+        });
+      }
+
+      setParsingCurrent(normalizeQueue(processingWithCurrent));
+      setQueue(normalizeQueue(queueData.entries ?? []));
     } catch (e: any) {
       setError(e?.response?.data?.detail ?? "Ошибка загрузки очереди");
     } finally {
@@ -186,6 +253,8 @@ export const useParsingQueue = () => {
 
     // derived
     processingQueue,
+    queuedQueue,
+    pausedQueue,
     waitingQueue,
     completedQueue,
     failedQueue,

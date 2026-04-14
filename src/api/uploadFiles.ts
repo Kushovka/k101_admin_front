@@ -160,8 +160,15 @@ export const postToTopFile = async (id: string): Promise<ApiPriority> => {
   return data;
 };
 
-export const getParsingQueue = async () => {
-  const { data } = await userApi.get("/api/v1/parsing-queue?limit=100", {
+export const getParsingQueue = async (params?: {
+  status?: "queued" | "processing" | "paused" | "completed" | "failed" | "cancelled";
+  limit?: number;
+}) => {
+  const { data } = await userApi.get("/api/v1/parsing-queue", {
+    params: {
+      limit: params?.limit ?? 100,
+      ...(params?.status ? { status: params.status } : {}),
+    },
     headers: getHeaders(),
   });
   return data;

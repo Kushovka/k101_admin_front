@@ -347,10 +347,6 @@ const Complaints = () => {
                       </div>
                     )}
                     <div className="text-sm text-slate-500">
-                      Документ ID:{" "}
-                      <span className="font-medium text-slate-700">
-                        {item.doc_id}
-                      </span>
                     </div>
 
                     {/* поле */}
