@@ -491,7 +491,7 @@ const Search = () => {
                     placeholder="+7 999 123-45-67"
                     type="text"
                     className="h-[38px] px-3 border border-gray-300 rounded-lg w-full"
-                    value={values.name}
+                    value={values.phone}
                     onChange={(e) =>
                       setValues((prev) => ({
                         ...prev,
