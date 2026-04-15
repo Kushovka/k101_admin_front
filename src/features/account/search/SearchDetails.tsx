@@ -19,7 +19,7 @@ const fieldLabels: Record<string, string> = {
   first_name: "Имя",
   name: "Имя",
   last_name: "Фамилия",
-  surname: "Фамилия",
+  surname: "Фамилия", 
   middle_name: "Отчество",
   fathername: "Отчество",
   address: "Адрес",
@@ -466,6 +466,7 @@ const SearchDetails: React.FC = () => {
             </div>
           </div>
         </div>
+
         <div className="flex-1 flex flex-col gap-6">
           {/* title */}
           <h1 className="text-[20px] font-semibold text-slate-900">
@@ -839,6 +840,7 @@ const SearchDetails: React.FC = () => {
           )}
         </div>
       </div>
+
       {openCorrection && (
         <CorrectionModal
           docId={openCorrection.docId}
