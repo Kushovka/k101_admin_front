@@ -657,7 +657,7 @@ const SearchDetails: React.FC = () => {
               }}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
+              className="scroll-mt-10 overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
             >
               <div
                 onClick={() => setOpenMain(!openMain)}
@@ -767,7 +767,7 @@ const SearchDetails: React.FC = () => {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
+              className="scroll-mt-10 overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
             >
               <div
                 onClick={() => setOpenDossier(!openDossier)}
@@ -904,7 +904,7 @@ const SearchDetails: React.FC = () => {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
+              className="scroll-mt-10 overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
             >
               <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/70 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -968,7 +968,7 @@ const SearchDetails: React.FC = () => {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
+                className="scroll-mt-10 overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/90 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur"
               >
                 <div className="border-b border-slate-100 bg-slate-50/70 px-6 py-5">
                   <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">
