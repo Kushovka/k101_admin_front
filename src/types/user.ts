@@ -99,6 +99,12 @@ export interface UpdateUserPayload {
   email: string;
 }
 
+export interface TelegramLinkResponse {
+  deep_link: string;
+  expires_in: number;
+  message: string;
+}
+
 export interface DepositPayload {
   amount: number;
 }
