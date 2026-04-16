@@ -1,8 +1,11 @@
 import {
   ApiPriority,
+  BulkRestartPayload,
+  BulkRestartResponse,
   DatasetUploadPayload,
   FilePosition,
   FilePriority,
+  ReparseStatsResponse,
 } from "../types/file";
 import userApi from "./userApi";
 
@@ -44,12 +47,14 @@ export const getAllFiles = async ({
   sortOrder,
   search,
   status,
+  date,
 }: {
   page: number;
   pageSize: number;
   sortOrder?: "newest" | "oldest";
   search?: string;
-  status?: string;
+  status?: string | string[];
+  date?: string;
 }) => {
   const { data } = await userApi.get("/api/v1/files", {
     params: {
@@ -58,6 +63,7 @@ export const getAllFiles = async ({
       sort_order: sortOrder,
       ...(search?.trim() && { search: search.trim() }),
       ...(status && { status }),
+      ...(date && { date }),
     },
     headers: getHeaders(),
   });
@@ -189,6 +195,32 @@ export const postRestartFile = async (id: string) => {
       Authorization: `Bearer ${localStorage.getItem("admin_access_token")}`,
     },
   });
+  return data;
+};
+
+export const getReparseStats = async (): Promise<ReparseStatsResponse> => {
+  const { data } = await userApi.get("/api/v1/files/reparse-stats", {
+    headers: getHeaders(),
+  });
+
+  return data;
+};
+
+export const postBulkRestartFiles = async ({
+  file_ids,
+  priority = 50,
+}: BulkRestartPayload): Promise<BulkRestartResponse> => {
+  const { data } = await userApi.post(
+    "/api/v1/files/bulk-restart",
+    {
+      file_ids,
+      priority,
+    },
+    {
+      headers: getHeaders(),
+    },
+  );
+
   return data;
 };
 

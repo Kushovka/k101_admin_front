@@ -26,7 +26,9 @@ import {
   getAllFiles,
   getAllGroup,
   getFilesByGroup,
+  getReparseStats,
   patchFileGroup,
+  postBulkRestartFiles,
   postRestartFile,
 } from "../../../api/uploadFiles";
 import userApi from "../../../api/userApi";
@@ -37,7 +39,12 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { useParsingQueue } from "../../../hooks/uploadFiles/useParsingQueue";
 import { useUploadStore } from "../../../store/useUploadStore";
-import type { FileGroup, FileItem } from "../../../types/file";
+import type {
+  FileGroup,
+  FileItem,
+  FileStatusesResponse,
+  ReparseStatsResponse,
+} from "../../../types/file";
 import DatasetsList from "./dataset/DatasetsList";
 import DatasetModal from "./DatasetModal";
 import DatasetUploadBlock from "./DatasetUploadBlock";
@@ -99,10 +106,12 @@ const UploadFiles = () => {
     Record<string, boolean>
   >({});
 
-  const [fileStatuses, setFileStatuses] = useState<{
-    total: number;
-    statuses: { status: string; count: number }[];
-  } | null>(null);
+  const [fileStatuses, setFileStatuses] = useState<FileStatusesResponse | null>(
+    null,
+  );
+  const [reparseStats, setReparseStats] = useState<ReparseStatsResponse | null>(
+    null,
+  );
 
   const [sortByGroup, setSortByGroup] = useState<
     Record<string, "newest" | "oldest">
@@ -112,11 +121,14 @@ const UploadFiles = () => {
   const [searchPage, setSearchPage] = useState(1);
   const [searchTotal, setSearchTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("");
   const [globalSortOrder, setGlobalSortOrder] = useState<"newest" | "oldest">(
     "newest",
   );
   const [isGlobalListMode, setIsGlobalListMode] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+  const [bulkRestartLoading, setBulkRestartLoading] = useState(false);
 
   const [duplicatesCount, setDuplicatesCount] = useState(0);
 
@@ -255,6 +267,60 @@ const UploadFiles = () => {
     },
   };
 
+  const markFilesAsRestarted = (fileIds: string[]) => {
+    const fileIdSet = new Set(fileIds);
+
+    setAllFiles((prev) =>
+      prev.map((f) =>
+        fileIdSet.has(f.id)
+          ? {
+              ...f,
+              processing_status: "uploaded",
+              progress_percent: 0,
+            }
+          : f,
+      ),
+    );
+
+    setSearchResults((prev) =>
+      prev.map((f) =>
+        fileIdSet.has(f.id)
+          ? {
+              ...f,
+              processing_status: "uploaded",
+              progress_percent: 0,
+            }
+          : f,
+      ),
+    );
+
+    setFilesByGroup((prev) => {
+      const next = { ...prev };
+
+      for (const group in next) {
+        next[group] = next[group].map((f) =>
+          fileIdSet.has(f.id)
+            ? {
+                ...f,
+                processing_status: "uploaded",
+                progress_percent: 0,
+              }
+            : f,
+        );
+      }
+
+      return next;
+    });
+  };
+
+  const toggleSelectedFile = (fileId: string) => {
+    setSelectedFileIds((prev) =>
+      prev.includes(fileId)
+        ? prev.filter((id) => id !== fileId)
+        : [...prev, fileId],
+    );
+  };
+
   /* ---------------- API ---------------- */
   const loadGroups = async () => {
     try {
@@ -274,11 +340,15 @@ const UploadFiles = () => {
 
   const safeSearch = search ? escapeRegExp(search) : "";
   const hasGlobalListFilters =
-    isGlobalListMode || Boolean(search.trim()) || Boolean(statusFilter);
+    isGlobalListMode ||
+    Boolean(search.trim()) ||
+    Boolean(statusFilter) ||
+    Boolean(dateFilter);
 
   const resetGlobalListFilters = () => {
     setSearch("");
     setStatusFilter("");
+    setDateFilter("");
     setGlobalSortOrder("newest");
     setIsGlobalListMode(false);
     setSearchPage(1);
@@ -371,6 +441,7 @@ const UploadFiles = () => {
           sortOrder: globalSortOrder,
           search: search || undefined,
           status: statusFilter || undefined,
+          date: dateFilter || undefined,
         });
         setSearchTotal(res.total);
 
@@ -385,7 +456,14 @@ const UploadFiles = () => {
     };
 
     loadSearch();
-  }, [globalSortOrder, hasGlobalListFilters, search, searchPage, statusFilter]);
+  }, [
+    dateFilter,
+    globalSortOrder,
+    hasGlobalListFilters,
+    search,
+    searchPage,
+    statusFilter,
+  ]);
 
   useEffect(() => {
     const loadStatuses = async () => {
@@ -399,6 +477,28 @@ const UploadFiles = () => {
 
     loadStatuses();
   }, []);
+
+  useEffect(() => {
+    const loadReparseStats = async () => {
+      try {
+        const data = await getReparseStats();
+        setReparseStats(data);
+      } catch (e) {
+        console.error("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё СЃС‚Р°С‚РёСЃС‚РёРєРё СЂРµРїР°СЂСЃРёРЅРіР°", e);
+      }
+    };
+
+    loadReparseStats();
+    const interval = setInterval(loadReparseStats, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    setSelectedFileIds((prev) =>
+      prev.filter((id) => searchResults.some((file) => file.id === id)),
+    );
+  }, [searchResults]);
 
   /* ---------------- пагинация ---------------- */
 
@@ -419,6 +519,7 @@ const UploadFiles = () => {
         sortOrder: globalSortOrder,
         search,
         status: status ?? statusFilter ?? undefined,
+        date: dateFilter || undefined,
       });
 
       setAllFiles((prev) => (replace ? data.files : [...prev, ...data.files]));
@@ -466,55 +567,44 @@ const UploadFiles = () => {
   const handleRestartFile = async (id: string) => {
     try {
       await postRestartFile(id);
+      markFilesAsRestarted([id]);
+      setNotify("restart success");
 
-      // 2. allFiles
-      setAllFiles((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? {
-                ...f,
-                processing_status: "uploaded",
-                progress_percent: 0,
-              }
-            : f,
-        ),
-      );
-
-      // 3. searchResults
-      setSearchResults((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? {
-                ...f,
-                processing_status: "uploaded",
-                progress_percent: 0,
-              }
-            : f,
-        ),
-      );
-
-      // 4. filesByGroup
-      setFilesByGroup((prev) => {
-        const next = { ...prev };
-
-        for (const group in next) {
-          next[group] = next[group].map((f) =>
-            f.id === id
-              ? {
-                  ...f,
-                  processing_status: "uploaded",
-                  progress_percent: 0,
-                }
-              : f,
-          );
-        }
-        setNotify("restart success");
-
-        return next;
-      });
     } catch (e: any) {
       console.error(e);
       setError(e?.response?.data?.detail ?? "Ошибка при перезапуске файла");
+    }
+  };
+
+  const handleBulkRestart = async () => {
+    if (!selectedFileIds.length) return;
+
+    try {
+      setBulkRestartLoading(true);
+
+      const response = await postBulkRestartFiles({
+        file_ids: selectedFileIds,
+        priority: 50,
+      });
+
+      const restartedIds = response.results
+        .filter((item) => item.status === "queued" || item.status === "success")
+        .map((item) => item.file_id);
+
+      if (restartedIds.length) {
+        markFilesAsRestarted(restartedIds);
+      }
+
+      setSelectedFileIds([]);
+      setNotify("restart success");
+    } catch (e: any) {
+      console.error(e);
+      setError(
+        e?.response?.data?.detail ??
+          "Ошибка при массовом перезапуске файлов",
+      );
+    } finally {
+      setBulkRestartLoading(false);
     }
   };
 
@@ -1301,7 +1391,9 @@ const UploadFiles = () => {
               onChange={(e) => {
                 const value = e.target.value;
                 setStatusFilter(value);
-                setIsGlobalListMode(Boolean(value) || Boolean(search.trim()));
+                setIsGlobalListMode(
+                  Boolean(value) || Boolean(search.trim()) || Boolean(dateFilter),
+                );
                 setSearchPage(1);
                 setSearchResults([]);
               }}
@@ -1313,6 +1405,22 @@ const UploadFiles = () => {
               <option value="failed">Ошибка</option>
               <option value="reprocessing">Переобработка</option>
             </select>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => {
+                const value = e.target.value;
+                setDateFilter(value);
+                setIsGlobalListMode(
+                  Boolean(value) ||
+                    Boolean(search.trim()) ||
+                    Boolean(statusFilter),
+                );
+                setSearchPage(1);
+                setSearchResults([]);
+              }}
+              className="px-3 py-2 text-[14px] border border-gray-300 rounded-xl bg-white shadow-sm hover:border-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
+            />
             {/* SEARCH */}
             <input
               type="text"
@@ -1320,7 +1428,9 @@ const UploadFiles = () => {
               onChange={(e) => {
                 setSearch(e.target.value);
                 setIsGlobalListMode(
-                  Boolean(e.target.value.trim()) || Boolean(statusFilter),
+                  Boolean(e.target.value.trim()) ||
+                    Boolean(statusFilter) ||
+                    Boolean(dateFilter),
                 );
                 setSearchPage(1);
               }}
@@ -1339,6 +1449,12 @@ const UploadFiles = () => {
             <div className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
               {fileStatuses.total}
             </div>
+
+            {typeof fileStatuses.reprocessing === "number" && (
+              <div className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700">
+                Репарсинг: {fileStatuses.reprocessing}
+              </div>
+            )}
 
             {fileStatuses.statuses
               .filter((s) => s.status !== "uploaded")
@@ -1360,6 +1476,63 @@ const UploadFiles = () => {
           </div>
         )}
 
+        {reparseStats && (
+          <div className="mb-4 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <div className="text-sm font-semibold text-slate-900">
+                Репарсинг файлов
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                В процессе: {reparseStats.total_reprocessing}
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                В очереди: {reparseStats.queued_count}
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-green-700">
+                Завершено сегодня: {reparseStats.completed_today}
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-red-700">
+                Ошибок сегодня: {reparseStats.failed_today}
+              </div>
+            </div>
+
+            {reparseStats.in_progress.length > 0 ? (
+              <div className="space-y-2">
+                {reparseStats.in_progress.map((item) => (
+                  <div
+                    key={item.file_id}
+                    className="rounded-lg border border-cyan-100 bg-white px-3 py-3"
+                  >
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">
+                          {item.file_name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Старт: {formatDateTime(item.started_at)}
+                        </p>
+                      </div>
+                      <div className="text-sm font-semibold text-cyan-700">
+                        {item.progress_percent ?? 0}%
+                      </div>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-cyan-500 transition-all"
+                        style={{ width: `${item.progress_percent ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">
+                Сейчас активного репарсинга нет.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* GLOBAL LIST / SEARCH RESULTS */}
         {hasGlobalListFilters ? (
           <div className="mt-5 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -1367,6 +1540,35 @@ const UploadFiles = () => {
               <h3 className="text-[15px] font-semibold text-slate-900">
                 Найдено файлов: {searchTotal}
               </h3>
+              {searchResults.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedFileIds(
+                        selectedFileIds.length === searchResults.length
+                          ? []
+                          : searchResults.map((file) => file.id),
+                      )
+                    }
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    {selectedFileIds.length === searchResults.length
+                      ? "Снять выделение"
+                      : "Выбрать все"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkRestart}
+                    disabled={!selectedFileIds.length || bulkRestartLoading}
+                    className="rounded-lg bg-cyan-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {bulkRestartLoading
+                      ? "Перезапуск..."
+                      : `Массовый перезапуск (${selectedFileIds.length})`}
+                  </button>
+                </div>
+              )}
             </div>
 
             {searchLoading && (
@@ -1386,11 +1588,20 @@ const UploadFiles = () => {
                 <div
                   key={file.id}
                   className={clsx(
-                    "grid grid-cols-4 gap-4 items-center py-3 px-4 border-b last:border-0 transition",
+                    "grid grid-cols-[auto_minmax(0,1.4fr)_140px_250px_220px] gap-4 items-center py-3 px-4 border-b last:border-0 transition",
                     file.uploaded_by_user_id === currentUser?.id &&
                       "bg-green-50/60",
                   )}
                 >
+                  <label className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedFileIds.includes(file.id)}
+                      onChange={() => toggleSelectedFile(file.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                    />
+                  </label>
+
                   {/* LEFT */}
                   <div className="flex flex-col min-w-0">
                     <p

@@ -72,6 +72,51 @@ export type FileGroup = {
   total: number;
 };
 
+export type FileStatusesResponse = {
+  total: number;
+  reprocessing?: number;
+  statuses: { status: string; count: number }[];
+};
+
+export type ReparseProgressItem = {
+  file_id: string;
+  file_name: string;
+  processing_status?: string;
+  queue_status?: string;
+  total_rows?: number;
+  extracted_entities?: number;
+  progress_percent?: number;
+  started_at?: string;
+};
+
+export type ReparseStatsResponse = {
+  in_progress: ReparseProgressItem[];
+  queued_count: number;
+  completed_today: number;
+  failed_today: number;
+  total_reprocessing: number;
+};
+
+export type BulkRestartPayload = {
+  file_ids: string[];
+  priority?: number;
+};
+
+export type BulkRestartResultItem = {
+  file_id: string;
+  status: string;
+  task_id?: string;
+  message?: string;
+};
+
+export type BulkRestartResponse = {
+  total: number;
+  queued: number;
+  skipped: number;
+  failed: number;
+  results: BulkRestartResultItem[];
+};
+
 export type GlobalPauseStatus = {
   is_paused: boolean;
   paused_by: string | null;
