@@ -1,7 +1,9 @@
-import { ApiUser, UpdateUserPayload } from "../types/user";
+import {
+  ApiUser,
+  TelegramLinkResponse,
+  UpdateUserPayload,
+} from "../types/user";
 import userApi from "./userApi";
-
-const USER_API_URL = import.meta.env.VITE_USER_API_URL;
 
 const getHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("admin_access_token");
@@ -30,14 +32,15 @@ export const updateProfile = async (
   return data;
 };
 
-// /* ---------------- link for telegram ---------------- */
-// export const linkForTelegram = async () => {
-//   const { data } = await userApi.post(
-//     "/api/v1/users/link-telegram",
-//     {},
-//     {
-//       headers: getHeaders(),
-//     },
-//   );
-//   return data;
-// };
+/* ---------------- link telegram ---------------- */
+export const linkTelegramAccount = async (): Promise<TelegramLinkResponse> => {
+  const { data } = await userApi.post<TelegramLinkResponse>(
+    "/api/v1/users/link-telegram",
+    {},
+    {
+      headers: getHeaders(),
+    },
+  );
+
+  return data;
+};

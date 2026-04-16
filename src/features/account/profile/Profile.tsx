@@ -1,9 +1,8 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { createInvoice } from "../../../api/payments";
-import { updateProfile } from "../../../api/profile";
+import { FaTelegramPlane } from "react-icons/fa";
+import { linkTelegramAccount, updateProfile } from "../../../api/profile";
 import { getCurrentUser } from "../../../api/users";
 import EditableField from "../../../components/editable-field-props/EditableFieldProps";
 import Loader from "../../../components/loader/Loader";
@@ -11,28 +10,23 @@ import { useSidebar } from "../../../components/sidebar/SidebarContext";
 import Toast from "../../../components/toast/Toast";
 import { ApiUser } from "../../../types/user";
 
-type NotifyType = "access_pay" | "error_pay" | "access_save" | "error_save";
+type NotifyType =
+  | "access_save"
+  | "error_save"
+  | "error_telegram";
 
 const Profile = () => {
-  const navigate = useNavigate();
   const [user, setUser] = useState<ApiUser | null>(null);
-  const [openModal, setOpenModal] = useState(false);
-  const [payInput, setPayInput] = useState<number>(100);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notify, setNotify] = useState<NotifyType | null>(null);
-  const [provider, setProvider] = useState<
-    "cryptocloud" | "bithide" | "plisio"
-  >("plisio");
 
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [email, setEmail] = useState("");
-  // const [link, setLink] = useState("");
 
   const { isOpen } = useSidebar();
 
-  /* ---------------- ger user ---------------- */
   useEffect(() => {
     const fetchUser = async (): Promise<void> => {
       setLoading(true);
@@ -44,16 +38,16 @@ const Profile = () => {
         setName(data.first_name ?? "");
         setSurname(data.last_name ?? "");
         setEmail(data.email ?? "");
-      } catch (err) {
-        setError("Ошибка при загрузке пользователя");
+      } catch {
+        setError("Ошибка при загрузке профиля");
       } finally {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, []);
 
-  /* ---------------- updated profile ---------------- */
   const saveProfile = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -70,7 +64,7 @@ const Profile = () => {
 
       setNotify("access_save");
       setTimeout(() => setNotify(null), 3000);
-    } catch (err) {
+    } catch {
       setNotify("error_save");
       setTimeout(() => setNotify(null), 3000);
     } finally {
@@ -78,58 +72,25 @@ const Profile = () => {
     }
   };
 
-  /* ---------------- deposit ---------------- */
-  const handleDeposit = async () => {
-    if (payInput < 100) {
-      setNotify("error_pay");
-      setTimeout(() => setNotify(null), 3000);
-      return;
-    }
-    setLoading(true);
-
+  const handleTelegramLink = async (): Promise<void> => {
     try {
-      const invoice = await createInvoice(payInput, provider);
+      setLoading(true);
+      setError(null);
 
-      if (!invoice?.success || !invoice.payment_url) {
-        throw new Error("Invoice error");
-      }
-      localStorage.setItem("payment_id", invoice.payment_id.toString());
-
-      window.location.href = invoice.payment_url;
-    } catch (err: any) {
-      navigate("/failed-payment");
+      const response = await linkTelegramAccount();
+      window.open(response.deep_link, "_blank", "noopener,noreferrer");
+    } catch {
+      setNotify("error_telegram");
+      setTimeout(() => setNotify(null), 3000);
     } finally {
       setLoading(false);
     }
   };
 
-  // /* ---------------- link for telegram ---------------- */
-  // useEffect(() => {
-  //   const handleLink = async () => {
-  //     try {
-  //       const res = await linkForTelegram();
-  //       setLink(res.deep_link);
-
-  //     } catch (err) {
-
-  //     }
-  //   };
-  //   handleLink();
-  // }, []);
-
-  /* ---------------- toast config ---------------- */
   const toastConfig: Record<
     NotifyType,
     { type: "access" | "error"; message: string }
   > = {
-    access_pay: {
-      type: "access",
-      message: `Баланс успешно пополнен! Текущий баланс: ${user?.balance} ₽`,
-    },
-    error_pay: {
-      type: "error",
-      message: "Минимальная сумма пополнения 100₽",
-    },
     access_save: {
       type: "access",
       message: "Информация успешно обновлена",
@@ -138,9 +99,11 @@ const Profile = () => {
       type: "error",
       message: "Ошибка при обновлении профиля",
     },
+    error_telegram: {
+      type: "error",
+      message: "Не удалось создать ссылку для привязки Telegram",
+    },
   };
-
-  /* ---------------- animate motion ---------------- */
 
   const container = {
     hidden: {},
@@ -176,7 +139,7 @@ const Profile = () => {
 
       {loading && <Loader fullScreen />}
 
-      <div className="max-w-[1100px] w-full mx-auto flex flex-col gap-8">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-8">
         <h1 className="text-[24px] font-semibold tracking-tight text-slate-900">
           Профиль пользователя
         </h1>
@@ -185,19 +148,18 @@ const Profile = () => {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 gap-8 w-full"
+          className="grid w-full grid-cols-1 gap-8"
         >
-          {/* LEFT CARD */}
           <motion.div
             variants={item}
-            className="bg-white border w-full border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col gap-6"
+            className="flex w-full flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:p-7"
           >
             <p className="text-[18px] font-semibold text-slate-900">
               Основная информация
             </p>
 
             <div className="space-y-3 text-[15px]">
-              <p className="flex items-center justify-between rounded-xl  text-slate-600">
+              <p className="flex items-center justify-between rounded-xl text-slate-600">
                 <span>Никнейм:</span>
                 <span className="font-medium text-slate-900">
                   {user?.username}
@@ -219,6 +181,30 @@ const Profile = () => {
                 <span className="font-medium text-slate-900">{user?.role}</span>
               </p>
 
+              <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-1">
+                  <span className="text-slate-600">Telegram:</span>
+                  <span className="font-medium text-slate-900">
+                    {user?.telegram_username
+                      ? `@${user.telegram_username}`
+                      : "Не привязан"}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTelegramLink}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#27A7E7] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d96d3]"
+                >
+                  <FaTelegramPlane size={16} />
+                  <span>
+                    {user?.telegram_username
+                      ? "Перепривязать Telegram"
+                      : "Привязать Telegram"}
+                  </span>
+                </button>
+              </div>
+
               <p className="flex items-center justify-between rounded-xl text-slate-600">
                 <span>Дата регистрации:</span>
                 <span className="font-medium text-slate-900">
@@ -228,204 +214,14 @@ const Profile = () => {
                 </span>
               </p>
             </div>
-            {/* <a href={link} target="_blank" rel="noreferrer">
-                <button className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition">
-                  привязать тг
-                </button>
-              </a> */}
 
             <button
               onClick={saveProfile}
-              className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
+              className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-600"
             >
-              сохранить изменения
+              Сохранить изменения
             </button>
           </motion.div>
-
-          {/* <motion.div
-            variants={item}
-            className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 lg:p-7 flex flex-col justify-between gap-6"
-          >
-            <div className="flex flex-col gap-4">
-              <p className="text-[18px] font-semibold text-slate-900">
-                Баланс и лимиты
-              </p>
-
-              <div className="rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-slate-50 px-5 py-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-cyan-700/70">
-                  Текущий баланс
-                </p>
-                <span className="mt-3 block text-[34px] leading-none font-semibold text-slate-900">
-                  {user?.balance ?? 0} ₽
-                </span>
-              </div>
-
-              <p className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-slate-600 text-[15px]">
-                <span>Бесплатные запросы:</span>
-                <span className="font-medium text-slate-900">
-                  {user?.free_requests_count ?? 0}
-                </span>
-              </p>
-
-            </div>
-
-            <button
-              onClick={() => setOpenModal(true)}
-              className="px-4 py-2.5 rounded-xl bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
-            >
-              Пополнить баланс
-            </button>
-          </motion.div> */}
-
-          {/* RIGHT CARD */}
-          {/* <motion.div
-            variants={item}
-            className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex flex-col justify-between gap-6"
-          >
-            <div className="flex flex-col gap-4">
-              <p className="text-[16px] font-medium text-slate-900 text-center">
-                Тарифный план
-              </p>
-
-              <p className="flex justify-between text-slate-600 text-[15px]">
-                Число свободных запросов:{" "}
-                <span className="font-medium text-slate-900">
-                  {user?.free_requests_count}
-                </span>
-              </p>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600">Баланс:</span>
-                <span className="text-[20px] font-semibold text-slate-900">
-                  {user?.balance} ₽
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setOpenModal(true)}
-              className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm font-medium hover:bg-cyan-600 transition"
-            >
-              пополнить баланс
-            </button>
-          </motion.div> */}
-
-          {/* MODAL */}
-          {openModal && (
-            <div
-              onClick={() => {
-                setOpenModal(false);
-                setPayInput(100);
-              }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-xl p-6 shadow-xl w-[360px] flex flex-col gap-5"
-              >
-                <p className="text-lg font-semibold text-slate-900 text-center">
-                  Оплата
-                </p>
-
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="amount" className="text-sm text-slate-600">
-                    Введите сумму
-                  </label>
-                  <input
-                    id="amount"
-                    type="number"
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    onChange={(e) => setPayInput(Number(e.target.value))}
-                    value={payInput}
-                    placeholder="*введите сумму от 100₽"
-                  />
-
-                  {payInput < 100 && (
-                    <span className="text-red-500 text-xs">
-                      *пополнение от 100₽
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-xs text-slate-500">
-                  *или выберите из предложенных
-                </p>
-
-                <div className="flex justify-between gap-2">
-                  <button
-                    onClick={() => setPayInput((p) => Number(p) + 100)}
-                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                  >
-                    +100₽
-                  </button>
-                  <button
-                    onClick={() => setPayInput((p) => Number(p) + 500)}
-                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                  >
-                    +500₽
-                  </button>
-                  <button
-                    onClick={() => setPayInput((p) => Number(p) + 1000)}
-                    className="px-3 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100 transition"
-                  >
-                    +1000₽
-                  </button>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs text-slate-500">Способ оплаты</p>
-
-                  <div className="flex gap-2">
-                    {/* <button
-                        type="button"
-                        onClick={() => setProvider("cryptocloud")}
-                        className={clsx(
-                          "px-3 py-2 rounded-lg border text-sm font-medium transition flex-1",
-                          provider === "cryptocloud"
-                            ? "bg-cyan-500 text-white border-cyan-500"
-                            : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
-                        )}
-                      >
-                        CryptoCloud
-                      </button> */}
-
-                    {/* <button
-                        type="button"
-                        onClick={() => setProvider("bithide")}
-                        className={clsx(
-                          "px-3 py-2 rounded-lg border text-sm font-medium transition flex-1",
-                          provider === "bithide"
-                            ? "bg-cyan-500 text-white border-cyan-500"
-                            : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
-                        )}
-                      >
-                        BitHide
-                      </button> */}
-                    <button
-                      type="button"
-                      onClick={() => setProvider("plisio")}
-                      className={clsx(
-                        "px-3 py-2 rounded-lg border text-sm font-medium transition flex-1",
-                        provider === "plisio"
-                          ? "bg-cyan-500 text-white border-cyan-500"
-                          : "bg-white text-slate-700 border-gray-300 hover:bg-gray-100",
-                      )}
-                    >
-                      Plisio
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleDeposit}
-                  className="px-3 py-2 rounded-lg border text-sm font-medium text-slate-900 hover:bg-green-500/70 hover:text-white transition w-full"
-                >
-                  оплатить
-                </button>
-              </div>
-            </div>
-          )}
         </motion.div>
       </div>
     </section>
