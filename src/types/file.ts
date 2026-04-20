@@ -15,7 +15,7 @@ export type FileItem = {
   processing_completed_at?: string;
   processing_started_at?: string;
   upload_date?: string;
-  extracted_entities?: number;
+  extracted_entities?: number; 
   file_type?: string;
 
   quality_score?: number | null;
